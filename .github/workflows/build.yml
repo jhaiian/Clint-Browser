@@ -20,6 +20,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Download Gradle Wrapper JAR
+        run: |
+          mkdir -p gradle/wrapper
+          curl -fL "https://github.com/gradle/gradle/raw/v8.6.0/gradle/wrapper/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar
+
       - name: Grant Execute Permission for gradlew
         run: chmod +x gradlew
 
