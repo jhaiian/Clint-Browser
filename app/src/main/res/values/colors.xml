@@ -14,4 +14,7 @@
     <color name="address_bar_color">#2B0845</color>
     <color name="on_surface">#FFFFFFFF</color>
     <color name="on_surface_medium">#99FFFFFF</color>
+    <color name="incognito_toolbar_color">#0B1A14</color>
+    <color name="incognito_accent">#66BB6A</color>
+    <color name="incognito_button_color">#1B3A2A</color>
 </resources>
