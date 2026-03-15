@@ -71,7 +71,7 @@ class ClintWebViewClient(
                 val response = dohClient.newCall(reqBuilder.build()).execute()
                 val contentType = response.header("Content-Type") ?: "application/octet-stream"
                 val mimeType = contentType.split(";")[0].trim()
-                val charset = Regex("charset=([\w-]+)").find(contentType)?.groupValues?.get(1) ?: "UTF-8"
+                val charset = Regex("charset=([\\w-]+)").find(contentType)?.groupValues?.get(1) ?: "UTF-8"
                 val responseHeaders = mutableMapOf<String, String>()
                 for (i in 0 until response.headers.size) {
                     responseHeaders[response.headers.name(i)] = response.headers.value(i)

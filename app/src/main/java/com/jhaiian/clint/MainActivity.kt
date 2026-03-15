@@ -81,16 +81,14 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
             .indexOf(tabManager.activeTab)
             .coerceAtLeast(0)
         prefs.edit()
-            .putString("saved_tab_urls", urls.joinToString("
-"))
+            .putString("saved_tab_urls", urls.joinToString("\n"))
             .putInt("saved_tab_active", activeNonIncognito)
             .apply()
     }
 
     private fun restoreTabs(): Boolean {
         val savedUrls = prefs.getString("saved_tab_urls", null)
-            ?.split("
-")
+            ?.split("\n")
             ?.filter { it.isNotEmpty() }
             ?: return false
         if (savedUrls.isEmpty()) return false
