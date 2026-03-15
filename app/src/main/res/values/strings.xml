@@ -65,7 +65,7 @@ Device architecture: %3$s</string>
     <string name="about_license_link_label">View GPL v3.0 license ↗</string>
     <string name="about_opensource_text">The full source code is publicly available on GitHub. Contributions, bug reports, and feature requests are welcome.</string>
     <string name="about_github_url">github.com/jhaiian/Clint-Browser ↗</string>
-    <string name="about_donate_text">Clint is built and maintained in free time. If it's useful to you, consider supporting its development.</string>
+    <string name="about_donate_text">Clint is built and maintained in free time. If it\'s useful to you, consider supporting its development.</string>
     <string name="about_kofi_url">ko-fi.com/jhaiian ↗</string>
     <string name="about_paypal_email">jhaiianbetter@gmail.com ↗</string>
 </resources>
