@@ -5,7 +5,6 @@ import okhttp3.OkHttpClient
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.dnsoverhttps.DnsOverHttps
 import java.net.InetAddress
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 object DohManager {
@@ -18,18 +17,16 @@ object DohManager {
     const val PROVIDER_CLOUDFLARE = "cloudflare"
     const val PROVIDER_QUAD9 = "quad9"
 
-    @Volatile private var dnsClient: OkHttpClient? = null
+    @Volatile private var httpClient: OkHttpClient? = null
     @Volatile private var cachedMode: String = MODE_OFF
     @Volatile private var cachedProvider: String = PROVIDER_CLOUDFLARE
 
-    private val executor = Executors.newCachedThreadPool()
-
     private val bootstrapClient = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(5, TimeUnit.SECONDS)
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
         .build()
 
-    private fun buildDnsClient(provider: String): OkHttpClient {
+    private fun buildClient(provider: String): OkHttpClient {
         val (dohUrl, bootstrapIps) = when (provider) {
             PROVIDER_QUAD9 -> Pair(
                 "https://dns.quad9.net/dns-query",
@@ -47,29 +44,24 @@ object DohManager {
             .build()
         return OkHttpClient.Builder()
             .dns(dns)
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(5, TimeUnit.SECONDS)
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
             .build()
     }
 
-    private fun getOrBuildClient(prefs: SharedPreferences): OkHttpClient? {
+    fun getClient(prefs: SharedPreferences): OkHttpClient? {
         val mode = prefs.getString("doh_mode", MODE_OFF) ?: MODE_OFF
-        if (mode == MODE_OFF) { dnsClient = null; return null }
+        if (mode == MODE_OFF) { httpClient = null; return null }
         val provider = prefs.getString("doh_provider", PROVIDER_CLOUDFLARE) ?: PROVIDER_CLOUDFLARE
-        if (dnsClient != null && cachedMode == mode && cachedProvider == provider) return dnsClient
-        return buildDnsClient(provider).also {
-            dnsClient = it
+        if (httpClient != null && cachedMode == mode && cachedProvider == provider) return httpClient
+        return runCatching { buildClient(provider) }.getOrNull()?.also {
+            httpClient = it
             cachedMode = mode
             cachedProvider = provider
         }
     }
 
-    fun invalidate() { dnsClient = null }
-
-    fun preResolveDns(host: String, prefs: SharedPreferences) {
-        val client = getOrBuildClient(prefs) ?: return
-        executor.submit {
-            runCatching { client.dns.lookup(host) }
-        }
-    }
+    fun invalidate() { httpClient = null }
 }
