@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.net.http.SslError
-import android.net.Uri
 import android.webkit.CookieManager
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceRequest
@@ -13,7 +12,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import okhttp3.Request
 import java.io.ByteArrayInputStream
-import java.io.IOException
 
 class ClintWebViewClient(
     private val prefs: SharedPreferences,
@@ -62,8 +60,10 @@ class ClintWebViewClient(
         view: WebView,
         request: WebResourceRequest
     ): WebResourceResponse? {
-        val host = request.url.host ?: return super.shouldInterceptRequest(view, request)
-        val scheme = request.url.scheme ?: return super.shouldInterceptRequest(view, request)
+        val host = request.url.host
+            ?: return super.shouldInterceptRequest(view, request)
+        val scheme = request.url.scheme
+            ?: return super.shouldInterceptRequest(view, request)
 
         if (scheme != "http" && scheme != "https") {
             return super.shouldInterceptRequest(view, request)
@@ -75,7 +75,8 @@ class ClintWebViewClient(
             }
         }
 
-        val dohClient = DohManager.getClient(prefs) ?: return super.shouldInterceptRequest(view, request)
+        val dohClient = DohManager.getClient(prefs)
+            ?: return super.shouldInterceptRequest(view, request)
 
         if (!request.method.equals("GET", ignoreCase = true) &&
             !request.method.equals("HEAD", ignoreCase = true)) {
@@ -93,68 +94,76 @@ class ClintWebViewClient(
                 }
             }
 
-            val cookies = CookieManager.getInstance().getCookie(request.url.toString())
+            val cookies = runCatching {
+                CookieManager.getInstance().getCookie(request.url.toString())
+            }.getOrNull()
             if (!cookies.isNullOrEmpty()) {
                 reqBuilder.header("Cookie", cookies)
             }
 
-            val response = dohClient.newCall(reqBuilder.build()).execute()
+            val call = dohClient.newCall(reqBuilder.build())
+            val response = call.execute()
+
+            val statusCode = response.code
+            val statusMsg = response.message.ifEmpty { "OK" }
+            val isRedirect = response.isRedirect
+            val locationHeader = response.header("Location")
 
             val setCookieHeaders = response.headers.values("Set-Cookie")
             if (setCookieHeaders.isNotEmpty()) {
                 val urlStr = request.url.toString()
+                val cm = CookieManager.getInstance()
                 setCookieHeaders.forEach { cookie ->
-                    CookieManager.getInstance().setCookie(urlStr, cookie)
+                    runCatching { cm.setCookie(urlStr, cookie) }
                 }
-                CookieManager.getInstance().flush()
+                runCatching { cm.flush() }
             }
 
-            if (response.isRedirect) {
-                val location = response.header("Location")
-                if (!location.isNullOrEmpty()) {
-                    response.close()
+            if (isRedirect) {
+                response.close()
+                if (!locationHeader.isNullOrEmpty()) {
                     return WebResourceResponse(
                         "text/plain", "UTF-8",
-                        response.code, response.message.ifEmpty { "Redirect" },
-                        mapOf("Location" to location),
+                        statusCode,
+                        if (statusCode in 300..399) "Redirect" else statusMsg,
+                        mapOf("Location" to locationHeader),
                         ByteArrayInputStream(ByteArray(0))
                     )
                 }
-                response.close()
                 return super.shouldInterceptRequest(view, request)
             }
 
             val contentType = response.header("Content-Type") ?: "application/octet-stream"
             val mimeType = contentType.split(";")[0].trim().ifEmpty { "application/octet-stream" }
-            val charset = Regex("[Cc]harset=([\\w-]+)")
+            val charset = Regex("[Cc]harset=([\w-]+)")
                 .find(contentType)?.groupValues?.get(1) ?: "UTF-8"
 
             val responseHeaders = mutableMapOf<String, String>()
             for (i in 0 until response.headers.size) {
                 val name = response.headers.name(i).lowercase()
-                if (name != "content-encoding" && name != "transfer-encoding" &&
-                    name != "connection" && name != "set-cookie") {
+                if (name !in setOf("content-encoding", "transfer-encoding",
+                        "connection", "set-cookie")) {
                     responseHeaders[response.headers.name(i)] = response.headers.value(i)
                 }
             }
 
-            val body = response.body?.bytes() ?: ByteArray(0)
+            val body = runCatching { response.body?.bytes() }.getOrNull() ?: ByteArray(0)
             response.close()
 
             WebResourceResponse(
                 mimeType, charset,
-                response.code, response.message.ifEmpty { "OK" },
+                statusCode, statusMsg,
                 responseHeaders,
                 ByteArrayInputStream(body)
             )
 
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             val mode = prefs.getString("doh_mode", DohManager.MODE_OFF) ?: DohManager.MODE_OFF
             if (mode == DohManager.MODE_MAX) {
                 val errorHtml = "<html><body style='background:#0D0114;color:#CE93D8;" +
                     "font-family:sans-serif;padding:24px'><h2>Secure DNS Failed</h2>" +
                     "<p>Could not connect to <b>$host</b> via your DoH provider.</p>" +
-                    "<p>Max Protection is enabled. You can change this in Settings - " +
+                    "<p>Max Protection is enabled. You can change this in Settings &gt; " +
                     "DNS over HTTPS.</p></body></html>"
                 WebResourceResponse(
                     "text/html", "UTF-8", 521, "Secure DNS Failed",
