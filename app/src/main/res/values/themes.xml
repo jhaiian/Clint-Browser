@@ -16,6 +16,7 @@
         <item name="android:navigationBarColor">@color/toolbar_color</item>
     </style>
     <style name="ThemeOverlay.ClintBrowser.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="shapeAppearanceMediumComponent">@style/ClintDialogShape</item>
         <item name="colorSurface">@color/toolbar_color</item>
         <item name="colorOnSurface">@color/on_surface</item>
         <item name="colorPrimary">@color/purple_300</item>
