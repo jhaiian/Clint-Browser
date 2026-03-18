@@ -57,7 +57,8 @@
                 android:singleLine="true"
                 android:imeOptions="actionGo"
                 android:inputType="textUri"
-                android:textSize="14sp" />
+                android:textSize="14sp"
+                android:selectAllOnFocus="true" />
 
             <TextView
                 android:id="@+id/btnTabCount"

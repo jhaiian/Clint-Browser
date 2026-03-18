@@ -340,7 +340,11 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
             } else false
         }
         binding.addressBar.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) updateAddressBar(tabManager.activeTab?.webView?.url ?: "")
+            if (hasFocus) {
+                binding.addressBar.post { binding.addressBar.selectAll() }
+            } else {
+                updateAddressBar(tabManager.activeTab?.webView?.url ?: "")
+            }
         }
     }
 
