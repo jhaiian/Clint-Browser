@@ -1,13 +1,13 @@
 package com.jhaiian.clint
 
 import android.annotation.SuppressLint
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -21,6 +21,7 @@ import android.webkit.WebView
 import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
@@ -33,6 +34,10 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
     private lateinit var prefs: SharedPreferences
     private val tabManager = TabManager()
     private var isDesktopMode = false
+
+    private val notifPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {}
 
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         when (key) {
@@ -52,6 +57,13 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
         setContentView(binding.root)
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
         prefs.registerOnSharedPreferenceChangeListener(prefsListener)
+        ClintDownloadManager.createNotificationChannel(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+        ) {
+            notifPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
         setupSwipeRefresh()
         setupAddressBar()
         setupNavigationButtons()
@@ -242,16 +254,9 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
         }
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
-            val request = DownloadManager.Request(Uri.parse(url))
-            request.setMimeType(mimetype)
-            request.addRequestHeader("User-Agent", userAgent)
-            request.setDescription(getString(R.string.downloading))
-            request.setTitle(URLUtil.guessFileName(url, contentDisposition, mimetype))
-            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, URLUtil.guessFileName(url, contentDisposition, mimetype))
-            val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            dm.enqueue(request)
-            Toast.makeText(applicationContext, R.string.download_started, Toast.LENGTH_LONG).show()
+            val filename = URLUtil.guessFileName(url, contentDisposition, mimetype)
+            ClintDownloadManager.enqueue(this, url, filename, userAgent)
+            Toast.makeText(applicationContext, "Downloading $filename", Toast.LENGTH_SHORT).show()
         }
         return webView
     }
@@ -394,6 +399,10 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
                     putExtra(Intent.EXTRA_TEXT, tabManager.activeTab?.webView?.url)
                 }
                 startActivity(Intent.createChooser(i, getString(R.string.share_url)))
+            }
+            popupView.findViewById<View>(R.id.menu_downloads).setOnClickListener {
+                popup.dismiss()
+                startActivity(Intent(this, DownloadsActivity::class.java))
             }
             popupView.findViewById<View>(R.id.menu_desktop_mode).setOnClickListener {
                 isDesktopMode = !isDesktopMode
