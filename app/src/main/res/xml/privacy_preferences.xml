@@ -28,6 +28,12 @@
             app:summary="@string/custom_user_agent_summary"
             app:defaultValue="true" />
 
+        <SwitchPreferenceCompat
+            app:key="do_not_track"
+            app:title="@string/do_not_track"
+            app:summary="@string/do_not_track_summary"
+            app:defaultValue="true" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

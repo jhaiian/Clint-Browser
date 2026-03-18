@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
             "block_third_party_cookies" -> applyCookiePolicy()
             "custom_user_agent" -> applyUserAgent()
             "block_trackers" -> reattachWebClients()
+            "do_not_track" -> tabManager.activeTab?.webView?.reload()
             "doh_mode", "doh_provider" -> { DohManager.invalidate(); reattachWebClients() }
         }
     }
@@ -114,7 +115,7 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
                 if (tabManager.activeTab?.id == tab.id) updateTabCount()
             }
         )
-        webView.loadUrl(url)
+        webView.loadUrl(url, buildExtraHeaders())
     }
 
     private var nestedScrollActive = false
@@ -415,9 +416,13 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
     override fun onNewIncognitoTab() { openNewTab(true) }
 
     fun loadUrl(input: String) {
-        tabManager.activeTab?.webView?.loadUrl(formatUrl(input))
+        tabManager.activeTab?.webView?.loadUrl(formatUrl(input), buildExtraHeaders())
         tabManager.activeTab?.url = formatUrl(input)
         hideKeyboard()
+    }
+
+    private fun buildExtraHeaders(): Map<String, String> {
+        return if (prefs.getBoolean("do_not_track", true)) mapOf("DNT" to "1") else emptyMap()
     }
 
     private fun navigateToInput() {
