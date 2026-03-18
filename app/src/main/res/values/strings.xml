@@ -23,8 +23,6 @@
     <string name="block_third_party_cookies_summary">Prevent cross-site cookie tracking</string>
     <string name="custom_user_agent">Use generic User-Agent</string>
     <string name="custom_user_agent_summary">Report as standard Chrome browser to reduce fingerprinting</string>
-    <string name="do_not_track">Do Not Track (DNT)</string>
-    <string name="do_not_track_summary">Request websites not to track your browsing activity</string>
     <string name="search_engine">Search Engine</string>
     <string name="choose_search_engine">Choose your default search engine</string>
     <string name="engine_duckduckgo">DuckDuckGo</string>

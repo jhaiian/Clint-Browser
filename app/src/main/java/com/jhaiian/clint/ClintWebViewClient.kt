@@ -1,8 +1,10 @@
 package com.jhaiian.clint
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslError
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceRequest
@@ -26,7 +28,7 @@ class ClintWebViewClient(
 
     override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
         super.onPageStarted(view, url, favicon)
-        android.net.Uri.parse(url).host?.let { host ->
+        Uri.parse(url).host?.let { host ->
             DohManager.preResolveDns(host, prefs)
         }
         if (isActive()) (view.context as? MainActivity)?.onPageStarted(url)
@@ -39,17 +41,69 @@ class ClintWebViewClient(
     }
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-        val scheme = request.url.scheme ?: return true
-        if (scheme != "http" && scheme != "https") {
-            runCatching { view.context.startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
+        val url = request.url
+        val scheme = url.scheme ?: return true
+
+        if (scheme == "intent") {
+            try {
+                val intent = Intent.parseUri(url.toString(), Intent.URI_INTENT_SCHEME)
+                val context = view.context
+                if (intent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(intent)
+                    return true
+                }
+                val fallbackUrl = intent.getStringExtra("browser_fallback_url")
+                if (!fallbackUrl.isNullOrEmpty()) {
+                    view.loadUrl(fallbackUrl)
+                    return true
+                }
+            } catch (_: Exception) {}
             return true
         }
-        val host = request.url.host ?: return false
+
+        if (scheme != "http" && scheme != "https") {
+            try {
+                view.context.startActivity(Intent(Intent.ACTION_VIEW, url))
+            } catch (_: ActivityNotFoundException) {}
+            return true
+        }
+
+        val host = url.host ?: return false
         if (prefs.getBoolean("block_trackers", true)) {
             if (trackerHosts.any { host.contains(it) }) return true
         }
         DohManager.preResolveDns(host, prefs)
+
+        if (!request.isForMainFrame) return false
+        val context = view.context
+        val intent = Intent(Intent.ACTION_VIEW, url).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+        val pm = context.packageManager
+        val matches = pm.queryIntentActivities(intent, 0)
+        val nonBrowserMatch = matches.any { info ->
+            val pkg = info.activityInfo.packageName
+            pkg != context.packageName && !isBrowserPackage(pkg)
+        }
+        if (nonBrowserMatch) {
+            try {
+                val appIntent = Intent(Intent.ACTION_VIEW, url).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(appIntent)
+                return true
+            } catch (_: ActivityNotFoundException) {}
+        }
+
         return false
+    }
+
+    private fun isBrowserPackage(pkg: String): Boolean {
+        return pkg.contains("browser") || pkg.contains("chrome") ||
+               pkg.contains("firefox") || pkg.contains("opera") ||
+               pkg.contains("samsung.android.app.internet") ||
+               pkg.contains("microsoft.bing") || pkg.contains("brave")
     }
 
     override fun shouldInterceptRequest(
