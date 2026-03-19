@@ -17,14 +17,27 @@ class DownloadsAdapter(
     private val items = mutableListOf<ClintDownloadManager.DownloadItem>()
 
     fun setItems(newItems: List<ClintDownloadManager.DownloadItem>) {
-        val oldSize = items.size
-        val newSize = newItems.size
-        items.clear()
-        items.addAll(newItems)
-        if (oldSize == newSize) {
-            notifyItemRangeChanged(0, newSize)
-        } else {
+        if (items.size != newItems.size) {
+            items.clear()
+            items.addAll(newItems)
             notifyDataSetChanged()
+            return
+        }
+        newItems.forEachIndexed { i, newItem ->
+            val old = items[i]
+            if (old.id != newItem.id) {
+                items.clear()
+                items.addAll(newItems)
+                notifyDataSetChanged()
+                return
+            }
+            if (old.bytesDownloaded != newItem.bytesDownloaded ||
+                old.totalBytes != newItem.totalBytes ||
+                old.status != newItem.status
+            ) {
+                items[i] = newItem
+                notifyItemChanged(i, PAYLOAD_PROGRESS)
+            }
         }
     }
 
@@ -43,10 +56,21 @@ class DownloadsAdapter(
 
     override fun getItemCount() = items.size
 
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: List<Any>) {
+        if (payloads.contains(PAYLOAD_PROGRESS)) {
+            bindProgress(holder, items[position])
+        } else {
+            onBindViewHolder(holder, position)
+        }
+    }
+
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.filename.text = item.filename
+        bindProgress(holder, item)
+    }
 
+    private fun bindProgress(holder: ViewHolder, item: ClintDownloadManager.DownloadItem) {
         when (item.status) {
             ClintDownloadManager.DownloadStatus.DOWNLOADING -> {
                 val pct = item.progressPercent
@@ -84,5 +108,9 @@ class DownloadsAdapter(
         bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
         bytes >= 1024 -> "%.0f KB".format(bytes / 1024.0)
         else -> "$bytes B"
+    }
+
+    companion object {
+        private const val PAYLOAD_PROGRESS = "progress"
     }
 }
