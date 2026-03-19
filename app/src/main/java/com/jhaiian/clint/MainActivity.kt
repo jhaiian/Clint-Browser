@@ -16,6 +16,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
 import android.webkit.URLUtil
+import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.ImageView
@@ -127,7 +128,9 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
             onTitleChanged = { title ->
                 tab.title = title
                 if (tabManager.activeTab?.id == tab.id) updateTabCount()
-            }
+            },
+            onFullscreenShow = { view, cb -> onShowCustomView(view, cb) },
+            onFullscreenHide = { exitFullscreen() }
         )
         webView.loadUrl(url)
     }
@@ -282,7 +285,9 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
             onTitleChanged = { title ->
                 tab.title = title
                 if (tabManager.activeTab?.id == tab.id) updateTabCount()
-            }
+            },
+            onFullscreenShow = { view, cb -> onShowCustomView(view, cb) },
+            onFullscreenHide = { exitFullscreen() }
         )
         tabManager.switchTo(index)
         attachActiveWebView()
@@ -513,8 +518,50 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
         binding.addressBar.clearFocus()
     }
 
+    private var fullscreenView: View? = null
+    private var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
+
+    fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback) {
+        if (fullscreenView != null) {
+            callback.onCustomViewHidden()
+            return
+        }
+        fullscreenCallback = callback
+        fullscreenView = view
+        binding.fullscreenContainer.addView(view, android.view.ViewGroup.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        ))
+        binding.fullscreenContainer.visibility = View.VISIBLE
+        binding.toolbarTop.visibility = View.GONE
+        binding.bottomBar.visibility = View.GONE
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        )
+    }
+
+    fun exitFullscreen() {
+        fullscreenCallback?.onCustomViewHidden()
+        fullscreenCallback = null
+        fullscreenView?.let { binding.fullscreenContainer.removeView(it) }
+        fullscreenView = null
+        binding.fullscreenContainer.visibility = View.GONE
+        binding.toolbarTop.visibility = View.VISIBLE
+        binding.bottomBar.visibility = View.VISIBLE
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (fullscreenView != null) {
+                exitFullscreen()
+                return true
+            }
             val wv = tabManager.activeTab?.webView
             if (wv?.canGoBack() == true) { wv.goBack(); return true }
         }

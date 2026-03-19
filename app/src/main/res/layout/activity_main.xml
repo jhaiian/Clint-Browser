@@ -1,129 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/surface_dark">
 
     <LinearLayout
-        android:id="@+id/toolbarTop"
+        android:id="@+id/mainContent"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@color/toolbar_color"
-        android:elevation="4dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <LinearLayout
+            android:id="@+id/toolbarTop"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="10dp"
-            android:paddingEnd="6dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/toolbar_color"
+            android:elevation="4dp">
 
-            <ImageView
-                android:id="@+id/incognitoIcon"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_incognito_24"
-                android:tint="@color/incognito_accent"
-                android:layout_marginEnd="4dp"
-                android:visibility="gone"
-                android:contentDescription="@string/incognito" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="10dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
 
-            <ImageView
-                android:id="@+id/lockIcon"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_lock_24"
-                android:tint="@color/purple_200"
-                android:layout_marginEnd="6dp"
-                android:contentDescription="@string/connection_secure" />
+                <ImageView
+                    android:id="@+id/incognitoIcon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_incognito_24"
+                    android:tint="@color/incognito_accent"
+                    android:layout_marginEnd="4dp"
+                    android:visibility="gone"
+                    android:contentDescription="@string/incognito" />
 
-            <EditText
-                android:id="@+id/addressBar"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="40dp"
-                android:background="@drawable/address_bar_background"
-                android:textColor="@color/on_surface"
-                android:textColorHint="@color/on_surface_medium"
-                android:hint="@string/address_bar_hint"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:singleLine="true"
-                android:imeOptions="actionGo"
-                android:inputType="textUri"
-                android:textSize="14sp"
-                android:selectAllOnFocus="true" />
+                <ImageView
+                    android:id="@+id/lockIcon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_lock_24"
+                    android:tint="@color/purple_200"
+                    android:layout_marginEnd="6dp"
+                    android:contentDescription="@string/connection_secure" />
 
-            <TextView
-                android:id="@+id/btnTabCount"
-                android:layout_width="34dp"
-                android:layout_height="26dp"
-                android:layout_marginStart="8dp"
-                android:text="1"
-                android:textColor="@color/purple_200"
-                android:textSize="12sp"
-                android:fontFamily="sans-serif-medium"
-                android:gravity="center"
-                android:background="@drawable/tab_count_background"
-                android:contentDescription="@string/tabs" />
+                <EditText
+                    android:id="@+id/addressBar"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="40dp"
+                    android:background="@drawable/address_bar_background"
+                    android:textColor="@color/on_surface"
+                    android:textColorHint="@color/on_surface_medium"
+                    android:hint="@string/address_bar_hint"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:singleLine="true"
+                    android:imeOptions="actionGo"
+                    android:inputType="textUri"
+                    android:textSize="14sp"
+                    android:selectAllOnFocus="true" />
 
-            <ImageButton
-                android:id="@+id/btnMenu"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_more_vert_24"
-                android:tint="@color/purple_200"
-                android:layout_marginStart="2dp"
-                android:contentDescription="@string/menu" />
+                <TextView
+                    android:id="@+id/btnTabCount"
+                    android:layout_width="34dp"
+                    android:layout_height="26dp"
+                    android:layout_marginStart="8dp"
+                    android:text="1"
+                    android:textColor="@color/purple_200"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:background="@drawable/tab_count_background"
+                    android:contentDescription="@string/tabs" />
+
+                <ImageButton
+                    android:id="@+id/btnMenu"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_more_vert_24"
+                    android:tint="@color/purple_200"
+                    android:layout_marginStart="2dp"
+                    android:contentDescription="@string/menu" />
+
+            </LinearLayout>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="invisible"
+                android:max="100"
+                android:progress="0"
+                app:trackThickness="3dp"
+                app:indicatorColor="@color/purple_300"
+                app:trackColor="@color/toolbar_color" />
 
         </LinearLayout>
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/progressBar"
+        <com.jhaiian.clint.ClintSwipeRefreshLayout
+            android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="invisible"
-            android:max="100"
-            android:progress="0"
-            app:trackThickness="3dp"
-            app:indicatorColor="@color/purple_300"
-            app:trackColor="@color/toolbar_color" />
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <FrameLayout
+                android:id="@+id/webContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </com.jhaiian.clint.ClintSwipeRefreshLayout>
+
+        <LinearLayout
+            android:id="@+id/bottomBar"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@color/toolbar_color"
+            android:orientation="horizontal"
+            android:elevation="8dp">
+
+            <ImageButton android:id="@+id/btnBack" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_arrow_back_24" android:tint="@color/purple_200" android:alpha="0.38" android:contentDescription="@string/back" />
+            <ImageButton android:id="@+id/btnForward" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_arrow_forward_24" android:tint="@color/purple_200" android:alpha="0.38" android:contentDescription="@string/forward" />
+            <ImageButton android:id="@+id/btnRefresh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_refresh_24" android:tint="@color/purple_200" android:contentDescription="@string/refresh" />
+            <ImageButton android:id="@+id/btnHome" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_home_24" android:tint="@color/purple_200" android:contentDescription="@string/home" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
-    <com.jhaiian.clint.ClintSwipeRefreshLayout
-        android:id="@+id/swipeRefresh"
+    <FrameLayout
+        android:id="@+id/fullscreenContainer"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:visibility="gone" />
 
-        <FrameLayout
-            android:id="@+id/webContainer"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </com.jhaiian.clint.ClintSwipeRefreshLayout>
-
-    <LinearLayout
-        android:id="@+id/bottomBar"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:background="@color/toolbar_color"
-        android:orientation="horizontal"
-        android:elevation="8dp">
-
-        <ImageButton android:id="@+id/btnBack" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_arrow_back_24" android:tint="@color/purple_200" android:alpha="0.38" android:contentDescription="@string/back" />
-        <ImageButton android:id="@+id/btnForward" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_arrow_forward_24" android:tint="@color/purple_200" android:alpha="0.38" android:contentDescription="@string/forward" />
-        <ImageButton android:id="@+id/btnRefresh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_refresh_24" android:tint="@color/purple_200" android:contentDescription="@string/refresh" />
-        <ImageButton android:id="@+id/btnHome" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_home_24" android:tint="@color/purple_200" android:contentDescription="@string/home" />
-
-    </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>

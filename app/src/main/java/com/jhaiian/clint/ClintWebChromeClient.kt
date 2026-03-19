@@ -1,11 +1,14 @@
 package com.jhaiian.clint
 
+import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 
 class ClintWebChromeClient(
     private val isActive: () -> Boolean = { true },
-    private val onTitleChanged: (String) -> Unit = {}
+    private val onTitleChanged: (String) -> Unit = {},
+    private val onFullscreenShow: (View, CustomViewCallback) -> Unit = { _, _ -> },
+    private val onFullscreenHide: () -> Unit = {}
 ) : WebChromeClient() {
 
     override fun onProgressChanged(view: WebView, newProgress: Int) {
@@ -17,5 +20,13 @@ class ClintWebChromeClient(
         super.onReceivedTitle(view, title)
         onTitleChanged(title)
         if (isActive()) (view.context as? MainActivity)?.updateAddressBar(view.url ?: "")
+    }
+
+    override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+        onFullscreenShow(view, callback)
+    }
+
+    override fun onHideCustomView() {
+        onFullscreenHide()
     }
 }
