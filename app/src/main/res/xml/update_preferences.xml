@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="Updates">
+
+        <SwitchPreferenceCompat
+            app:key="check_update_on_launch"
+            app:title="Check for updates on launch"
+            app:summary="Automatically check for a new version each time the app starts"
+            app:defaultValue="true" />
+
+        <Preference
+            app:key="check_for_updates"
+            app:title="Check for updates"
+            app:summary="Check now for the latest stable or beta release" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Channel">
+
+        <SwitchPreferenceCompat
+            app:key="beta_channel"
+            app:title="Enrol in Beta"
+            app:summary="Receive early access builds before they reach stable. May contain bugs."
+            app:defaultValue="false" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

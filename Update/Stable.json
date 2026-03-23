@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "changelog": "## v1.0.0 — First Release\n\n### Browser Core\n- WebView-based browsing with full tab management\n- Multi-tab support with tab switcher\n- Incognito mode with no cookies, cache, or history saved\n- Address bar with select-all on focus for easy URL replacement\n- Back, forward, refresh, and home navigation\n- Pull-to-refresh support\n- Desktop Mode toggle via the ⋮ menu\n- Intent support — websites can open installed apps (e.g. YouTube, Spotify)\n- Full screen video and media support\n\n### Privacy & Security\n- Tracker and analytics domain blocking at the network level\n- Third-party cookie blocking\n- Generic User-Agent to reduce fingerprinting\n- DNS over HTTPS (DoH) with four modes: Off, Default, Increased, Max\n- DoH provider choice: Cloudflare or Quad9\n- SSL error enforcement — invalid certificates are always rejected\n- Incognito tabs fully isolated from normal session data\n\n### Search\n- Default search engine selection: DuckDuckGo, Brave Search, or Google\n- Google privacy warning shown when switching to Google\n\n### Downloads\n- Custom download engine built on OkHttp — no system DownloadManager\n- Real-time download progress with percentage and file size\n- Cancel downloads in-app or from notification\n- Open completed files directly from the downloads screen\n\n### Updates\n- In-app update checker for Stable and Beta channels\n- Architecture-aware download links\n- Optional check on launch\n\n### Setup & Onboarding\n- First-launch setup wizard with Privacy Policy & Terms consent\n- Search engine and DoH configuration on first launch",
+  "downloads": {
+    "arm64-v8a": "",
+    "armeabi-v7a": "",
+    "x86": "",
+    "x86_64": "",
+    "universal": ""
+  }
+}

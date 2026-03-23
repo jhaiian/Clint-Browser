@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "changelog": "## v1.0.0-beta — Beta Channel\n\nSame as stable v1.0.0. Beta channel active — future beta builds will appear here before stable release.",
+  "downloads": {
+    "arm64-v8a": "",
+    "armeabi-v7a": "",
+    "x86": "",
+    "x86_64": "",
+    "universal": ""
+  }
+}

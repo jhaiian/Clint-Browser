@@ -30,6 +30,13 @@
         app:fragment="com.jhaiian.clint.CrashReportFragment" />
 
     <Preference
+        app:key="pref_updates"
+        app:title="Updates"
+        app:summary="Check for updates, manage channel"
+        app:icon="@drawable/ic_update_24"
+        app:fragment="com.jhaiian.clint.UpdateSettingsFragment" />
+
+    <Preference
         app:key="pref_about"
         app:title="@string/about"
         app:icon="@drawable/ic_info_24"

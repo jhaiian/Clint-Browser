@@ -65,6 +65,10 @@ class MainActivity : AppCompatActivity(), TabSwitcherSheet.Listener {
         ) {
             notifPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
+        if (prefs.getBoolean("check_update_on_launch", true)) {
+            val isBeta = prefs.getBoolean("beta_channel", false)
+            UpdateChecker.check(this, isBeta, silent = true)
+        }
         setupSwipeRefresh()
         setupAddressBar()
         setupNavigationButtons()
