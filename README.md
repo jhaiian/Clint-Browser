@@ -120,8 +120,7 @@ Contributions, bug reports, and feature requests are welcome.
 2. Fork the repo and create a branch for your change
 3. Submit a pull request with a clear description
 
-To report a crash, use the built-in **Debug & Crash Reports** screen in Settings. It generates a pre-filled GitHub issue template with your device in
-fo and crash log.
+To report a crash, use the built-in **Debug & Crash Reports** screen in Settings. It generates a pre-filled GitHub issue template with your device info and crash log. For more detail about contributing guidelines, view [Contributing](https://github.com/jhaiian/Clint-Browser/blob/main/Contributing.md).
 
 ---
 
