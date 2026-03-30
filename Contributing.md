@@ -55,21 +55,59 @@ APKs will be output to `app/build/outputs/apk/release/`.
 ```
 ClintBrowser/
 ├── app/src/main/java/com/jhaiian/clint/
-│   ├── MainActivity.kt           # Browser UI, tab management
-│   ├── ClintWebViewClient.kt     # Request interception, tracker blocking
-│   ├── ClintWebChromeClient.kt   # Progress, title updates
-│   ├── TabManager.kt             # Multi-tab state
-│   ├── DohManager.kt             # DNS over HTTPS
-│   ├── ClintDownloadManager.kt   # Custom download engine
-│   ├── UpdateChecker.kt          # In-app updates
-│   ├── CrashHandler.kt           # Local crash reporting
-│   ├── SetupActivity.kt          # First-launch wizard
-│   └── ...
+│   ├── activities/
+│   │   ├── MainActivity.kt           # Browser UI, scroll-hide bars, tab management
+│   │   ├── BookmarksActivity.kt      # Bookmarks screen
+│   │   ├── DownloadsActivity.kt      # Downloads screen
+│   │   ├── SettingsActivity.kt       # Settings host activity
+│   │   └── SetupActivity.kt          # First-launch wizard
+│   ├── bookmarks/
+│   │   ├── Bookmark.kt               # Bookmark data model
+│   │   ├── BookmarkManager.kt        # Local bookmark storage
+│   │   └── BookmarksAdapter.kt       # Bookmarks list adapter
+│   ├── crash/
+│   │   ├── CrashHandler.kt           # Local crash reporting
+│   │   └── CrashReportFragment.kt    # Crash log viewer UI
+│   ├── downloads/
+│   │   ├── ClintDownloadManager.kt   # Custom download engine
+│   │   ├── DownloadActionReceiver.kt # Notification action receiver
+│   │   └── DownloadsAdapter.kt       # Downloads list adapter
+│   ├── network/
+│   │   └── DohManager.kt             # DNS over HTTPS
+│   ├── settings/
+│   │   ├── MainSettingsFragment.kt   # Settings root screen
+│   │   ├── GeneralSettingsFragment.kt# General settings (scroll-hide, display)
+│   │   ├── PrivacySettingsFragment.kt# Privacy & security settings
+│   │   ├── DohSettingsFragment.kt    # DNS over HTTPS settings
+│   │   ├── SearchEngineSettingsFragment.kt
+│   │   ├── UpdateSettingsFragment.kt # Update channel settings
+│   │   └── AboutFragment.kt          # About screen
+│   ├── tabs/
+│   │   ├── BrowserTab.kt             # Tab data model
+│   │   ├── TabManager.kt             # Multi-tab state
+│   │   ├── TabAdapter.kt             # Tab switcher adapter
+│   │   ├── TabPreview.kt             # Tab thumbnail model
+│   │   └── TabSwitcherSheet.kt       # Bottom sheet tab switcher
+│   ├── update/
+│   │   └── UpdateChecker.kt          # In-app update checker
+│   └── webview/
+│       ├── ClintWebViewClient.kt     # Request interception, tracker blocking
+│       ├── ClintWebChromeClient.kt   # Progress, title, fullscreen updates
+│       ├── ClintSwipeRefreshLayout.kt# Custom swipe refresh with scroll callbacks
+│       └── WebViewCookieJar.kt       # OkHttp cookie integration
 ├── Update/
-│   ├── Stable.json               # Stable channel update manifest
-│   └── Beta.json                 # Beta channel update manifest
+│   ├── Stable.json                   # Stable channel update manifest
+│   └── Beta.json                     # Beta channel update manifest
 ├── docs/
-│   └── clint_logo.png
+│   ├── clint_logo.png
+│   ├── screenshot1.jpg               # Welcome screen
+│   ├── screenshot2.jpg               # Search engine setup
+│   ├── screenshot3.jpg               # Secure DNS setup
+│   ├── screenshot4.jpg               # Browsing
+│   ├── screenshot5.jpg               # Menu
+│   ├── screenshot6.jpg               # Settings
+│   ├── screenshot7.jpg               # Downloads
+│   └── screenshot8.jpg               # Bookmarks
 ├── CHANGELOG.md
 ├── PRIVACY_POLICY.md
 └── TERMS_OF_SERVICE.md

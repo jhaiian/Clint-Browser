@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreferenceCompat
+        app:key="hide_bars_on_scroll"
+        app:title="@string/hide_bars_on_scroll"
+        app:summary="@string/hide_bars_on_scroll_summary"
+        app:defaultValue="true"
+        app:icon="@drawable/ic_globe_24" />
+
+</PreferenceScreen>

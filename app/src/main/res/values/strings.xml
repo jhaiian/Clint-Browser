@@ -88,6 +88,10 @@ Device architecture: %3$s</string>
     <string name="doh_provider_cloudflare_desc">1.1.1.1  -  Fast, privacy-first resolver by Cloudflare</string>
     <string name="doh_provider_quad9">Quad9</string>
     <string name="doh_provider_quad9_desc">9.9.9.9  -  Security-focused resolver with malware blocking</string>
+    <string name="general_settings">General</string>
+    <string name="general_settings_summary">Scroll behavior and display options</string>
+    <string name="hide_bars_on_scroll">Hide bars when scrolling</string>
+    <string name="hide_bars_on_scroll_summary">Toolbar and navigation bar slide away when scrolling down, and return when scrolling up</string>
     <string name="debug_title">Debug &amp; Crash Reports</string>
     <string name="debug_summary">View crash logs and create bug reports</string>
     <string name="crash_reports_title">CRASH LOGS</string>
@@ -107,4 +111,10 @@ Device architecture: %3$s</string>
     <string name="crash_copy_template">Copy template</string>
     <string name="crash_template_copied">Template copied to clipboard</string>
     <string name="crash_open_github">Open GitHub Issues</string>
+    <string name="about_section_contact">CONTACT</string>
+    <string name="about_contact_email">jhaiianbetter@gmail.com</string>
+    <string name="about_section_contributors">CONTRIBUTORS</string>
+    <string name="about_contributors_text">View the full list of people who contributed to Clint.</string>
+    <string name="about_contributors_link">Contributors.md ↗</string>
+    <string name="about_linktree_url">jhaiian ↗</string>
 </resources>

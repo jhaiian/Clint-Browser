@@ -6,7 +6,7 @@
     android:background="@color/surface_dark">
 
     <LinearLayout
-        android:id="@+id/downloads_toolbar"
+        android:id="@+id/bookmarks_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -28,30 +28,17 @@
                 android:src="@drawable/ic_arrow_back_24"
                 android:padding="12dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Back" />
+                android:contentDescription="@string/back" />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
-                android:text="Downloads"
+                android:text="Bookmarks"
                 android:textColor="@color/on_surface"
                 android:textSize="19sp"
                 android:fontFamily="sans-serif-medium" />
-
-            <TextView
-                android:id="@+id/btn_clear_downloads"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingEnd="4dp"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
-                android:text="Clear done"
-                android:textColor="@color/purple_300"
-                android:textSize="14sp"
-                android:background="?attr/selectableItemBackgroundBorderless" />
 
         </LinearLayout>
 
@@ -63,17 +50,17 @@
         android:background="#18FFFFFF" />
 
     <TextView
-        android:id="@+id/downloads_empty"
+        android:id="@+id/bookmarks_empty"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:text="No downloads yet"
+        android:text="No bookmarks yet"
         android:textColor="@color/on_surface_medium"
         android:textSize="15sp"
         android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/downloads_recycler"
+        android:id="@+id/bookmarks_recycler"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingTop="8dp"

@@ -10,7 +10,8 @@ A privacy-focused Android browser built on Android WebView — no Google telemet
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blueviolet.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-blueviolet.svg)](https://developer.android.com)
-[![Version](https://img.shields.io/badge/Version-1.0.0-blueviolet.svg)](CHANGELOG.md)
+[![Stable](https://img.shields.io/badge/Stable-1.0.0-blueviolet.svg)](https://github.com/jhaiian/Clint-Browser/releases/tag/v1.0.0)
+[![Beta](https://img.shields.io/badge/Beta-1.0.1--beta--1-9400d3.svg)](https://github.com/jhaiian/Clint-Browser/releases/tag/v1.0.1-beta-1)
 [![Open Source](https://img.shields.io/badge/Open%20Source-Yes-blueviolet.svg)](https://github.com/jhaiian/Clint-Browser)
 
 </div>
@@ -25,17 +26,47 @@ Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo de
 
 ---
 
+## Screenshots
+
+<div align="center">
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshot1.jpg" width="180" alt="Welcome screen" /><br/><sub>Welcome</sub></td>
+    <td align="center"><img src="docs/screenshot2.jpg" width="180" alt="Search engine setup" /><br/><sub>Search Engine Setup</sub></td>
+    <td align="center"><img src="docs/screenshot3.jpg" width="180" alt="Secure DNS setup" /><br/><sub>Secure DNS</sub></td>
+    <td align="center"><img src="docs/screenshot4.jpg" width="180" alt="Browsing" /><br/><sub>Browsing</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshot5.jpg" width="180" alt="Menu" /><br/><sub>Menu</sub></td>
+    <td align="center"><img src="docs/screenshot6.jpg" width="180" alt="Settings" /><br/><sub>Settings</sub></td>
+    <td align="center"><img src="docs/screenshot7.jpg" width="180" alt="Downloads" /><br/><sub>Downloads</sub></td>
+    <td align="center"><img src="docs/screenshot8.jpg" width="180" alt="Bookmarks" /><br/><sub>Bookmarks</sub></td>
+  </tr>
+</table>
+
+</div>
+
+---
+
 ## Features
 
 ### 🌐 Browser Core
 - Full multi-tab browsing with a bottom sheet tab switcher
 - Incognito mode — no cookies, no cache, no history saved
 - Pull-to-refresh with smart nested scroll detection
+- Scroll-hide toolbar and navigation bar — bars slide away while scrolling and return on scroll up, configurable in Settings
 - Desktop Mode toggle
 - Address bar with select-all on focus
 - Back, forward, refresh, and home navigation
 - Intent support — links open installed apps (YouTube, Spotify, etc.)
 - Full-screen video and media support
+
+### 🔖 Bookmarks
+- Save any page with a single tap from the navigation bar
+- Bookmark icon updates live to reflect the saved state of the current page
+- View, open, and delete bookmarks from a dedicated screen
+- All bookmarks are stored locally on your device — never synced or uploaded
 
 ### 🔒 Privacy & Security
 - **Tracker blocking** — 16+ known analytics and ad domains blocked at the network level
@@ -56,6 +87,7 @@ Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo de
 - Real-time progress with percentage and file size
 - Cancel downloads in-app or from the notification
 - Open completed files directly from the downloads screen
+- Install downloaded APK files directly from the downloads screen
 - Automatic duplicate filename handling
 
 ### 🔄 Updates
@@ -108,7 +140,7 @@ Choose the APK for your device architecture:
 | `universal` | All architectures (larger file size) |
 
 Not sure which to use? Install the **Universal** APK.
-But right now, all the APKs don’t have any differences because we haven’t added the C++ library yet. However, the workflow is built that way so we won’t have problems in future updates.
+But right now, all the APKs don't have any differences because we haven't added the C++ library yet. However, the workflow is built that way so we won't have problems in future updates.
 
 ---
 

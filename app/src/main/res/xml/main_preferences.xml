@@ -3,43 +3,50 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <Preference
+        app:key="pref_general"
+        app:title="@string/general_settings"
+        app:summary="@string/general_settings_summary"
+        app:icon="@drawable/ic_settings_24"
+        app:fragment="com.jhaiian.clint.settings.GeneralSettingsFragment" />
+
+    <Preference
         app:key="pref_privacy"
         app:title="@string/privacy_settings"
         app:summary="@string/privacy_settings_summary"
         app:icon="@drawable/ic_lock_24"
-        app:fragment="com.jhaiian.clint.PrivacySettingsFragment" />
+        app:fragment="com.jhaiian.clint.settings.PrivacySettingsFragment" />
 
     <Preference
         app:key="pref_doh"
         app:title="@string/doh_title"
         app:summary="@string/doh_settings_summary"
         app:icon="@drawable/ic_shield_24"
-        app:fragment="com.jhaiian.clint.DohSettingsFragment" />
+        app:fragment="com.jhaiian.clint.settings.DohSettingsFragment" />
 
     <Preference
         app:key="pref_search_engine"
         app:title="@string/search_engine"
         app:icon="@drawable/ic_search_24"
-        app:fragment="com.jhaiian.clint.SearchEngineSettingsFragment" />
+        app:fragment="com.jhaiian.clint.settings.SearchEngineSettingsFragment" />
 
     <Preference
         app:key="pref_debug"
         app:title="@string/debug_title"
         app:summary="@string/debug_summary"
         app:icon="@drawable/ic_bug_24"
-        app:fragment="com.jhaiian.clint.CrashReportFragment" />
+        app:fragment="com.jhaiian.clint.crash.CrashReportFragment" />
 
     <Preference
         app:key="pref_updates"
         app:title="Updates"
         app:summary="Check for updates, manage channel"
         app:icon="@drawable/ic_update_24"
-        app:fragment="com.jhaiian.clint.UpdateSettingsFragment" />
+        app:fragment="com.jhaiian.clint.settings.UpdateSettingsFragment" />
 
     <Preference
         app:key="pref_about"
         app:title="@string/about"
         app:icon="@drawable/ic_info_24"
-        app:fragment="com.jhaiian.clint.AboutFragment" />
+        app:fragment="com.jhaiian.clint.settings.AboutFragment" />
 
 </PreferenceScreen>

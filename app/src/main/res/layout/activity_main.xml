@@ -17,6 +17,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@color/toolbar_color"
+            android:clipChildren="true"
+            android:clipToPadding="true"
             android:elevation="4dp">
 
             <LinearLayout
@@ -103,7 +105,7 @@
 
         </LinearLayout>
 
-        <com.jhaiian.clint.ClintSwipeRefreshLayout
+        <com.jhaiian.clint.webview.ClintSwipeRefreshLayout
             android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -114,20 +116,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
-        </com.jhaiian.clint.ClintSwipeRefreshLayout>
+        </com.jhaiian.clint.webview.ClintSwipeRefreshLayout>
 
         <LinearLayout
             android:id="@+id/bottomBar"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:background="@color/toolbar_color"
+            android:clipChildren="true"
+            android:clipToPadding="true"
             android:orientation="horizontal"
             android:elevation="8dp">
 
             <ImageButton android:id="@+id/btnBack" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_arrow_back_24" android:tint="@color/purple_200" android:alpha="0.38" android:contentDescription="@string/back" />
             <ImageButton android:id="@+id/btnForward" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_arrow_forward_24" android:tint="@color/purple_200" android:alpha="0.38" android:contentDescription="@string/forward" />
-            <ImageButton android:id="@+id/btnRefresh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_refresh_24" android:tint="@color/purple_200" android:contentDescription="@string/refresh" />
             <ImageButton android:id="@+id/btnHome" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_home_24" android:tint="@color/purple_200" android:contentDescription="@string/home" />
+            <ImageButton android:id="@+id/btnRefresh" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_refresh_24" android:tint="@color/purple_200" android:contentDescription="@string/refresh" />
+            <ImageButton android:id="@+id/btnBookmark" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_bookmark_24" android:tint="@color/purple_200" android:contentDescription="Bookmark" />
 
         </LinearLayout>
 

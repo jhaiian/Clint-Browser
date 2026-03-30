@@ -14,6 +14,10 @@ Clint Browser does not collect, store, transmit, or share any personal data. The
 
 All browsing data — including history, cookies, cached content, and site storage — is stored locally on your device only. You can clear this data at any time through your device's app settings. Incognito tabs do not save cookies, cached content, or browsing history to your device.
 
+## Bookmarks
+
+Bookmarks are stored locally on your device only, in a private file within the app's data directory. They are never synced, uploaded, or shared. No third party has access to your bookmarks. You can remove individual bookmarks at any time from within the app, or delete all bookmark data by clearing the app's storage through your device settings.
+
 ## Downloads
 
 Files you download are saved directly to your device's Downloads folder. Clint Browser does not upload, scan, or transmit downloaded files anywhere.
@@ -30,6 +34,7 @@ Clint Browser requests the following permissions:
 - **Network State** — used to check connectivity
 - **Write External Storage** (Android 9 and below) — required to save downloaded files
 - **Post Notifications** (Android 13 and above) — used to show download progress notifications
+- **Request Install Packages** — used in two cases: to install app updates downloaded through the browser's built-in update checker, and to allow you to install APK files you have manually downloaded through the browser. In both cases, installation only happens when you explicitly confirm it. This permission is never used to install software without your knowledge or consent.
 
 No permission is used for data collection or tracking purposes.
 

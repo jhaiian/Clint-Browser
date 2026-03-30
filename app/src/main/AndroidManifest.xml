@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:allowBackup="true"
@@ -18,7 +19,7 @@
         android:usesCleartextTraffic="false">
 
         <activity
-            android:name=".SetupActivity"
+            android:name=".activities.SetupActivity"
             android:exported="true"
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
@@ -28,7 +29,7 @@
         </activity>
 
         <activity
-            android:name=".MainActivity"
+            android:name=".activities.MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:windowSoftInputMode="stateHidden">
@@ -42,14 +43,19 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
+            android:name=".activities.SettingsActivity"
             android:exported="false"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".activities.MainActivity" />
 
         <activity
-            android:name=".DownloadsActivity"
+            android:name=".activities.DownloadsActivity"
             android:exported="false"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".activities.MainActivity" />
+
+        <activity
+            android:name=".activities.BookmarksActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.MainActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -62,7 +68,7 @@
         </provider>
 
         <receiver
-            android:name=".DownloadActionReceiver"
+            android:name=".downloads.DownloadActionReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.jhaiian.clint.DOWNLOAD_CANCEL" />
