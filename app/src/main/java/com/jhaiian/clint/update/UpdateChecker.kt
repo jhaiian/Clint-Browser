@@ -37,13 +37,23 @@ object UpdateChecker {
     private val client = OkHttpClient()
 
     fun check(activity: Activity, isBeta: Boolean, silent: Boolean) {
-        val url = if (isBeta) BETA_URL else STABLE_URL
         executor.submit {
             try {
-                val request = Request.Builder().url(url).build()
-                val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: return@submit
-                val json = JSONObject(body)
+                // Always fetch the stable manifest. When enrolled in beta, also fetch
+                // the beta manifest and pick whichever channel has the higher versionCode.
+                val stableJson = fetchJson(STABLE_URL)
+                val betaJson   = if (isBeta) fetchJson(BETA_URL) else null
+
+                // Choose the manifest with the highest versionCode. If both are available,
+                // prefer beta only when its versionCode strictly exceeds stable's, so that
+                // a promoted stable release is always surfaced to beta users.
+                val (json, isSelectedBeta) = when {
+                    betaJson == null -> Pair(stableJson, false)
+                    betaJson.getLong("versionCode") > stableJson.getLong("versionCode") ->
+                        Pair(betaJson, true)
+                    else -> Pair(stableJson, false)
+                }
+
                 val remoteVersion = json.getString("version")
                 val remoteVersionCode = json.getLong("versionCode")
                 val changelog = json.getString("changelog")
@@ -66,7 +76,7 @@ object UpdateChecker {
 
                 activity.runOnUiThread {
                     if (hasUpdate && !isSkipped) {
-                        showUpdateDialog(activity, remoteVersion, remoteVersionCode, changelog, downloadUrl, isBeta)
+                        showUpdateDialog(activity, remoteVersion, remoteVersionCode, changelog, downloadUrl, isSelectedBeta)
                     } else if (!silent) {
                         showNoUpdateDialog(activity)
                     }
@@ -77,6 +87,13 @@ object UpdateChecker {
                 }
             }
         }
+    }
+
+    private fun fetchJson(url: String): JSONObject {
+        val request = Request.Builder().url(url).build()
+        val body = client.newCall(request).execute().body?.string()
+            ?: throw Exception("Empty response from $url")
+        return JSONObject(body)
     }
 
     private fun cleanStaleApk(activity: Activity, currentVersionCode: Long) {
