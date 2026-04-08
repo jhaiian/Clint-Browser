@@ -10,8 +10,8 @@ A privacy-focused Android browser built on Android WebView — no Google telemet
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blueviolet.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-blueviolet.svg)](https://developer.android.com)
-[![Stable](https://img.shields.io/badge/Stable-1.0.0-blueviolet.svg)](https://github.com/jhaiian/Clint-Browser/releases/tag/v1.0.0)
-[![Beta](https://img.shields.io/badge/Beta-1.0.1--beta--2-9400d3.svg)](https://github.com/jhaiian/Clint-Browser/releases/tag/v1.0.1-beta-2)
+[![Stable](https://img.shields.io/badge/Stable-1.0.1-blueviolet.svg)](https://github.com/jhaiian/Clint-Browser/releases/tag/v1.0.1)
+[![Beta](https://img.shields.io/badge/Beta-1.0.1-blueviolet.svg)](https://github.com/jhaiian/Clint-Browser/releases/tag/v1.0.1-beta-2)
 [![Open Source](https://img.shields.io/badge/Open%20Source-Yes-blueviolet.svg)](https://github.com/jhaiian/Clint-Browser)
 
 </div>
