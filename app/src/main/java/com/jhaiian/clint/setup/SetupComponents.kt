@@ -1,0 +1,154 @@
+package com.jhaiian.clint.setup
+import androidx.compose.material.icons.filled.Check
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import com.jhaiian.clint.R
+
+@Composable
+fun SelectableCard(
+    selected: Boolean,
+    onClick: () -> Unit,
+    cardBackground: Color,
+    primary: Color,
+    modifier: Modifier = Modifier,
+    contentPadding: androidx.compose.ui.unit.Dp = 16.dp,
+    bottomSpacing: androidx.compose.ui.unit.Dp = 10.dp,
+    content: @Composable RowScope.() -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = bottomSpacing)
+            .alpha(if (selected) 1.0f else 0.45f),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBackground),
+        border = if (selected) BorderStroke(3.dp, primary) else null
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(contentPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            content = content
+        )
+    }
+}
+
+/** Reserves the same 22dp footprint as the original View.INVISIBLE check icon so layout doesn't shift. */
+@Composable
+fun RowScope.CheckSlot(visible: Boolean, tint: Color) {
+    Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+        if (visible) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.Filled.Check,
+                contentDescription = null,
+                tint = tint
+            )
+        }
+    }
+}
+
+@Composable
+fun SectionLabel(text: String, primary: Color, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        color = primary,
+        fontSize = 11.sp,
+        letterSpacing = 0.1.sp,
+        fontWeight = FontWeight.Medium,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun SetupPrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    backgroundColor: Color,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    iconTint: Color = Color.Unspecified,
+    textColor: Color = Color.Unspecified
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .alpha(if (enabled) 1.0f else 0.5f),
+        shape = RoundedCornerShape(26.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            disabledContainerColor = backgroundColor
+        )
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = textColor)
+    }
+}
+
+@Composable
+fun DefaultChip(text: String, color: Color, modifier: Modifier = Modifier) {
+    Box(modifier) {
+        AndroidView(
+            factory = { ctx -> android.view.View(ctx) },
+            update = { view -> view.background = ContextCompat.getDrawable(view.context, R.drawable.chip_background) },
+            modifier = Modifier.matchParentSize()
+        )
+        Text(
+            text = text,
+            color = color,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+        )
+    }
+}
+
+/**
+ * Renders a drawable resource that painterResource() can't load — layer-list, shape, selector,
+ * inset, etc. — via a plain Android View. painterResource only supports vector and raster
+ * (PNG/WEBP/JPG) assets; anything else throws IllegalArgumentException at runtime.
+ */
+@Composable
+fun DrawableImage(drawableRes: Int, modifier: Modifier = Modifier) {
+    AndroidView(
+        factory = { ctx -> android.view.View(ctx) },
+        update = { view -> view.background = ContextCompat.getDrawable(view.context, drawableRes) },
+        modifier = modifier
+    )
+}

@@ -97,9 +97,6 @@ internal object CustomFilterListFetcher {
                     )
                 }
                 val body = response.body
-                    ?: throw CustomFilterListFetchException(
-                        appContext.getString(R.string.quiver_guard_download_error_empty)
-                    )
 
                 val totalBytes = body.contentLength()
                 var bytesRead = 0L

@@ -10,8 +10,8 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.webkit.WebView
+import android.widget.Toast
 import com.jhaiian.clint.R
-import com.jhaiian.clint.ui.ClintToast
 
 internal fun MainActivity.setupLinkLongPress(webView: WebView) {
     webView.setOnLongClickListener {
@@ -64,10 +64,8 @@ private fun MainActivity.showTrackedLinkLongPressSheet(webView: WebView, linkUrl
 }
 
 internal fun MainActivity.showLinkLongPressSheet(url: String, linkText: String) {
-    val existing = supportFragmentManager.findFragmentByTag("link_long_press")
-    if (existing != null && existing.isAdded) return
-    LinkLongPressSheet.newInstance(url, linkText)
-        .show(supportFragmentManager, "link_long_press")
+    if (uiState.linkLongPressRequest != null) return
+    uiState.linkLongPressRequest = LinkLongPressRequest(url, linkText)
 }
 
 internal fun MainActivity.handleLinkOpenInNewTab(url: String) {
@@ -79,17 +77,15 @@ internal fun MainActivity.handleLinkOpenIncognito(url: String) {
 }
 
 internal fun MainActivity.handleLinkPreviewPage(url: String) {
-    val existing = supportFragmentManager.findFragmentByTag("link_preview")
-    if (existing != null && existing.isAdded) return
-    ContentPreviewSheet.newInstanceForPage(url, isDesktopMode)
-        .show(supportFragmentManager, "link_preview")
+    if (uiState.contentPreviewRequest != null) return
+    uiState.contentPreviewRequest = ContentPreviewRequest.forPage(url, isDesktopMode)
 }
 
 internal fun MainActivity.handleLinkCopyAddress(url: String) {
     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.link_copy_address), url))
     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-        ClintToast.show(this, getString(R.string.link_address_copied), R.drawable.ic_copy_24)
+        Toast.makeText(this, getString(R.string.link_address_copied), Toast.LENGTH_SHORT).show()
     }
 }
 
@@ -97,7 +93,7 @@ internal fun MainActivity.handleLinkCopyText(text: String) {
     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.link_copy_text), text))
     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-        ClintToast.show(this, getString(R.string.link_text_copied), R.drawable.ic_copy_24)
+        Toast.makeText(this, getString(R.string.link_text_copied), Toast.LENGTH_SHORT).show()
     }
 }
 

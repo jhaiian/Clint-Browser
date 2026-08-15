@@ -1,0 +1,367 @@
+package com.jhaiian.clint.browser
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+
+import com.jhaiian.clint.browser.delegates.*
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.jhaiian.clint.tabs.TabSwitcherSheet
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.viewinterop.AndroidView
+import com.jhaiian.clint.R
+import com.jhaiian.clint.ui.theme.LocalClintColors
+
+/**
+ * Root Compose UI for [MainActivity], replacing `activity_main.xml`. Layer order mirrors the
+ * old `FrameLayout` exactly (bottom to top): the WebView/SwipeRefreshLayout island, the two
+ * toolbar positions, the bottom nav bar, the search overlay, the fullscreen video host, and the
+ * status-bar spacer.
+ */
+@Composable
+internal fun MainScreen(activity: MainActivity, state: MainUiState) {
+    val density = LocalDensity.current
+    var tabSwitcherOpen by remember { mutableStateOf(false) }
+    val hideStatusBar = state.hideStatusBar
+    val rawStatusBarPx = WindowInsets.statusBars.getTop(density)
+    val rawNavBarPx = WindowInsets.navigationBars.getBottom(density)
+    val rawImePx = WindowInsets.ime.getBottom(density)
+
+    LaunchedEffect(rawStatusBarPx) {
+        if (rawStatusBarPx > 0) state.cachedStatusBarInsetPx = rawStatusBarPx
+    }
+    LaunchedEffect(rawNavBarPx) {
+        if (rawNavBarPx > 0) state.navBarInsetPx = rawNavBarPx
+    }
+    val effectiveStatusBarPx = if (hideStatusBar || state.addressBarPosition == AddressBarPosition.BOTTOM) {
+        0
+    } else {
+        rawStatusBarPx.takeIf { it > 0 } ?: state.cachedStatusBarInsetPx
+    }
+    LaunchedEffect(effectiveStatusBarPx) {
+        state.statusBarInsetPx = effectiveStatusBarPx
+        activity.updateMainContentInsets()
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // WebView + pull-to-refresh island. The View itself is created once by MainActivity;
+        // Compose only positions it and keeps its content padding in sync with the toolbars.
+        AndroidView(
+            factory = { activity.swipeRefreshView },
+            modifier = Modifier.fillMaxSize(),
+            update = { view ->
+                view.setPadding(0, state.contentPaddingTopPx, 0, state.contentPaddingBottomPx)
+            }
+        )
+
+        if (!state.isFullscreen && (state.addressBarPosition == AddressBarPosition.TOP || state.addressBarPosition == AddressBarPosition.SPLIT)) {
+            TopToolbar(
+                activity = activity,
+                state = state,
+                statusBarPaddingPx = effectiveStatusBarPx,
+                onTabCountClick = { tabSwitcherOpen = true },
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+        }
+
+        if (!state.isFullscreen && state.addressBarPosition == AddressBarPosition.SPLIT) {
+            BottomNavBar(
+                activity = activity,
+                state = state,
+                navBarPaddingPx = state.navBarInsetPx,
+                modifier = Modifier.align(Alignment.BottomStart)
+            )
+        }
+
+        if (!state.isFullscreen && state.addressBarPosition == AddressBarPosition.BOTTOM) {
+            BottomToolbar(
+                activity = activity,
+                state = state,
+                bottomPaddingPx = maxOf(rawImePx, state.navBarInsetPx),
+                onTabCountClick = { tabSwitcherOpen = true },
+                modifier = Modifier.align(Alignment.BottomStart)
+            )
+        }
+
+        // Grows out of whichever edge the tapped address bar docks to, so the overlay reads
+        // as that bar expanding into fullscreen rather than an unrelated screen swap.
+        AnimatedVisibility(
+            visible = state.searchOverlayOpen,
+            enter = fadeIn(tween(200)) + expandVertically(
+                animationSpec = tween(300),
+                expandFrom = if (state.searchOverlayIsBottom) Alignment.Bottom else Alignment.Top
+            ),
+            exit = fadeOut(tween(150)) + shrinkVertically(
+                animationSpec = tween(250),
+                shrinkTowards = if (state.searchOverlayIsBottom) Alignment.Bottom else Alignment.Top
+            )
+        ) {
+            SearchOverlay(
+                initialText = state.searchQuery,
+                isBottom = state.searchOverlayIsBottom,
+                hint = stringResource(R.string.search_bar_hint, stringResource(engineNameRes(activity.prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo"))),
+                suggestions = state.suggestions,
+                voiceResult = state.voiceResult,
+                onVoiceResultConsumed = { state.voiceResult = null },
+                onQueryChange = { activity.onSearchQueryChanged(it) },
+                onSubmit = { activity.onSearchSubmitted(it) },
+                onVoiceSearch = { activity.handleVoiceSearchTap() },
+                onClose = { activity.closeSearchOverlay() },
+                onSuggestionClick = { activity.onSuggestionChosen(it) },
+                onSuggestionDelete = { activity.onSuggestionHistoryDelete(it) },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        if (state.isFullscreen) {
+            AndroidView(
+                factory = { activity.fullscreenContainerView },
+                modifier = Modifier.fillMaxSize().background(Color.Black)
+            )
+        }
+
+        if (tabSwitcherOpen) {
+            TabSwitcherSheet(activity = activity, onDismiss = { tabSwitcherOpen = false })
+        }
+
+        state.imageLongPressRequest?.let { req ->
+            com.jhaiian.clint.browser.sheets.ImageLongPressSheet(request = req, activity = activity, onDismiss = { state.imageLongPressRequest = null })
+        }
+        state.linkLongPressRequest?.let { req ->
+            com.jhaiian.clint.browser.sheets.LinkLongPressSheet(request = req, activity = activity, onDismiss = { state.linkLongPressRequest = null })
+        }
+        state.contentPreviewRequest?.let { req ->
+            com.jhaiian.clint.browser.sheets.ContentPreviewSheet(request = req, activity = activity, onDismiss = { state.contentPreviewRequest = null })
+        }
+
+        val hideStatusBarPref = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+        com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(state.confirmDialogConfig, hideStatusBarPref) { state.confirmDialogConfig = null }
+        state.conflictDialogRequest?.let { req ->
+            com.jhaiian.clint.downloads.DownloadConflictDialog(req, hideStatusBarPref) { state.conflictDialogRequest = null }
+        }
+        state.webPermissionDialogRequest?.let { req ->
+            com.jhaiian.clint.ui.WebPermissionDialog(req, hideStatusBarPref) { state.webPermissionDialogRequest = null }
+        }
+        state.popupAlertRequest?.let { req ->
+            com.jhaiian.clint.browser.dialogs.PopupAlertDialog(req, hideStatusBarPref) { state.popupAlertRequest = null }
+        }
+        state.refreshLinkDialogRequest?.let { req ->
+            com.jhaiian.clint.browser.dialogs.RefreshLinkDialog(req, hideStatusBarPref) { state.refreshLinkDialogRequest = null }
+        }
+        state.openInAppRequest?.let { req ->
+            com.jhaiian.clint.browser.webview.OpenInAppDialog(req, hideStatusBarPref) { state.openInAppRequest = null }
+        }
+
+        if (!state.isFullscreen && effectiveStatusBarPx > 0) {
+            val colors = LocalClintColors.current
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .height(with(density) { effectiveStatusBarPx.toDp() })
+                    .background(colors.surface)
+            )
+        }
+    }
+}
+
+@Composable
+private fun TopToolbar(
+    activity: MainActivity,
+    state: MainUiState,
+    statusBarPaddingPx: Int,
+    onTabCountClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalClintColors.current
+    val density = LocalDensity.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                val contentBarHeight = (state.topBarFullHeightPx - state.statusBarInsetPx).toFloat()
+                translationY = -state.topBarFraction * contentBarHeight
+            }
+            .onGloballyPositioned { coordinates ->
+                val h = coordinates.size.height
+                if (state.topBarFullHeightPx == 0 && h > 0) {
+                    state.topBarFullHeightPx = h
+                    activity.swipeRefreshView.setProgressViewOffset(false, h + 4, h + 72)
+                    activity.updateMainContentInsets()
+                }
+            }
+            .background(colors.surface)
+            .padding(top = with(density) { statusBarPaddingPx.toDp() })
+    ) {
+        AddressBarRow(
+            activity = activity,
+            isIncognito = state.isIncognito,
+            addressBarText = state.addressBarTextTop,
+            isSecure = state.addressBarSecureTop,
+            tabCountText = state.tabCountText,
+            onAddressBarClick = { activity.openSearchOverlay(isBottom = false) },
+            onTabCountClick = onTabCountClick
+        )
+        if (state.isPageLoading) {
+            LinearProgressIndicator(
+                progress = { state.pageLoadProgress / 100f },
+                color = colors.primary,
+                trackColor = colors.surface,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun BottomToolbar(
+    activity: MainActivity,
+    state: MainUiState,
+    bottomPaddingPx: Int,
+    onTabCountClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalClintColors.current
+    val density = LocalDensity.current
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer { translationY = state.bottomBarFraction * state.bottomBarFullHeightPx }
+            .onGloballyPositioned { coordinates ->
+                val h = coordinates.size.height
+                if (h > 0 && state.bottomBarFullHeightPx != h) {
+                    state.bottomBarFullHeightPx = h
+                    activity.updateMainContentInsets()
+                }
+            }
+            .background(colors.surface)
+            .padding(bottom = with(density) { bottomPaddingPx.toDp() })
+    ) {
+        if (state.isPageLoading) {
+            LinearProgressIndicator(
+                progress = { state.pageLoadProgress / 100f },
+                color = colors.primary,
+                trackColor = colors.surface,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        AddressBarRow(
+            activity = activity,
+            isIncognito = state.isIncognito,
+            addressBarText = state.addressBarTextBottom,
+            isSecure = state.addressBarSecureBottom,
+            tabCountText = state.tabCountText,
+            onAddressBarClick = { activity.openSearchOverlay(isBottom = true) },
+            onTabCountClick = onTabCountClick
+        )
+    }
+}
+
+@Composable
+private fun BottomNavBar(
+    activity: MainActivity,
+    state: MainUiState,
+    navBarPaddingPx: Int,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalClintColors.current
+    val density = LocalDensity.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .graphicsLayer { translationY = state.bottomBarFraction * state.bottomBarFullHeightPx }
+            .onGloballyPositioned { coordinates ->
+                val h = coordinates.size.height
+                if (h > 0 && state.bottomBarFullHeightPx != h) {
+                    state.bottomBarFullHeightPx = h
+                    activity.updateMainContentInsets()
+                }
+            }
+            .background(colors.surface)
+            .padding(bottom = with(density) { navBarPaddingPx.toDp() }),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly
+    ) {
+        NavIconButton(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), enabled = state.canGoBack) { activity.navGoBack() }
+        NavIconButton(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowForward, stringResource(R.string.forward), enabled = state.canGoForward) { activity.navGoForward() }
+        NavIconButton(androidx.compose.material.icons.Icons.Filled.Home, stringResource(R.string.home), enabled = true) { activity.navGoHome() }
+        NavIconButton(
+            if (state.isPageLoading) androidx.compose.material.icons.Icons.Filled.Close else androidx.compose.material.icons.Icons.Filled.Refresh,
+            stringResource(R.string.refresh),
+            enabled = true
+        ) { activity.navRefreshOrStop() }
+        NavIconButton(
+            if (state.isBookmarked) androidx.compose.material.icons.Icons.Filled.Bookmark else androidx.compose.material.icons.Icons.Filled.BookmarkBorder,
+            stringResource(R.string.content_desc_bookmark),
+            enabled = state.hasActiveUrl
+        ) { activity.navToggleBookmark() }
+    }
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.NavIconButton(
+    iconRes: androidx.compose.ui.graphics.vector.ImageVector,
+    description: String,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.weight(1f).fillMaxSize()
+    ) {
+        Icon(
+            imageVector = iconRes,
+            contentDescription = description,
+            tint = colors.iconTint,
+            modifier = Modifier.alpha(if (enabled) 1.0f else 0.38f)
+        )
+    }
+}
+
+/** Maps the "search_engine" preference value to its display-name string resource. */
+private fun engineNameRes(engine: String): Int = when (engine) {
+    "brave" -> R.string.engine_brave
+    "google" -> R.string.engine_google
+    else -> R.string.engine_duckduckgo
+}

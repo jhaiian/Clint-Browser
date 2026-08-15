@@ -182,6 +182,7 @@ abstract class ClintActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun applySystemBarAppearance() {
         val isLight = appliedTheme == "light"
         val controller = WindowInsetsControllerCompat(window, window.decorView)
@@ -418,7 +419,12 @@ abstract class ClintActivity : AppCompatActivity() {
         val hide = PreferenceManager.getDefaultSharedPreferences(this)
             .getBoolean("hide_status_bar", false)
         if (hide) {
-            dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            dialog.window?.let { dialogWindow ->
+                val dialogController = WindowInsetsControllerCompat(dialogWindow, dialogWindow.decorView)
+                dialogController.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                dialogController.hide(WindowInsetsCompat.Type.statusBars())
+            }
         }
         trackDialogShown()
         dialog.setOnDismissListener { trackDialogDismissed() }

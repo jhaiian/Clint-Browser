@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import com.jhaiian.clint.tabs.BrowserTab
 import com.jhaiian.clint.tabs.SavedTab
 import com.jhaiian.clint.tabs.TabSessionManager
-import com.jhaiian.clint.tabs.TabSwitcherSheet
 import com.jhaiian.clint.browser.webview.ClintWebChromeClient
 import com.jhaiian.clint.browser.webview.ClintWebViewClient
 import com.jhaiian.clint.quiver.engine.BlockedRequestCounter
@@ -136,9 +135,9 @@ internal fun MainActivity.openNewTab(isIncognito: Boolean, url: String = getSear
 
 internal fun MainActivity.attachActiveWebView() {
     val tab = tabManager.activeTab ?: return
-    binding.webContainer.removeAllViews()
+    webContainer.removeAllViews()
     (tab.webView.parent as? android.view.ViewGroup)?.removeView(tab.webView)
-    binding.webContainer.addView(tab.webView, android.view.ViewGroup.LayoutParams(
+    webContainer.addView(tab.webView, android.view.ViewGroup.LayoutParams(
         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
         android.view.ViewGroup.LayoutParams.MATCH_PARENT
     ))
@@ -162,16 +161,6 @@ internal fun MainActivity.attachActiveWebView() {
     animateBottomBarTo(0f, animated = false)
     attachScrollListener(tab.webView)
     injectScrollTracker(tab.webView)
-}
-
-internal fun MainActivity.showTabSwitcher() {
-    val existing = supportFragmentManager.findFragmentByTag("tab_switcher") as? TabSwitcherSheet
-    if (existing != null && existing.isAdded) return
-    hideKeyboard()
-    val sheet = TabSwitcherSheet()
-    sheet.tabs = tabManager.previews().toMutableList()
-    sheet.activeIndex = tabManager.activeIndex
-    sheet.show(supportFragmentManager, "tab_switcher")
 }
 
 @SuppressLint("SetJavaScriptEnabled")

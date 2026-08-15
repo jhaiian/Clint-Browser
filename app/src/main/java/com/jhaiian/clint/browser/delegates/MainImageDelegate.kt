@@ -9,9 +9,9 @@ import android.content.Intent
 import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.jhaiian.clint.R
-import com.jhaiian.clint.ui.ClintToast
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -50,10 +50,8 @@ internal fun isStandaloneImagePage(url: String): Boolean {
 }
 
 internal fun MainActivity.showImageLongPressSheet(imageUrl: String, pageTitle: String, isStandalone: Boolean, referer: String = "") {
-    val existing = supportFragmentManager.findFragmentByTag("image_long_press")
-    if (existing != null && existing.isAdded) return
-    ImageLongPressSheet.newInstance(imageUrl, pageTitle, isStandalone, referer)
-        .show(supportFragmentManager, "image_long_press")
+    if (uiState.imageLongPressRequest != null) return
+    uiState.imageLongPressRequest = ImageLongPressRequest(imageUrl, pageTitle, isStandalone, referer)
 }
 
 internal fun MainActivity.handleImageOpenInNewTab(imageUrl: String) {
@@ -61,10 +59,8 @@ internal fun MainActivity.handleImageOpenInNewTab(imageUrl: String) {
 }
 
 internal fun MainActivity.handleImagePreview(imageUrl: String) {
-    val existing = supportFragmentManager.findFragmentByTag("image_preview")
-    if (existing != null && existing.isAdded) return
-    ContentPreviewSheet.newInstanceForImage(imageUrl)
-        .show(supportFragmentManager, "image_preview")
+    if (uiState.contentPreviewRequest != null) return
+    uiState.contentPreviewRequest = ContentPreviewRequest.forImage(imageUrl)
 }
 
 internal fun MainActivity.handleImageDownload(imageUrl: String, altText: String) {
@@ -150,7 +146,7 @@ internal fun MainActivity.handleImageCopy(imageUrl: String) {
     if (imageUrl.startsWith("data:")) {
         Thread {
             val bytes = dataUriBytes(imageUrl) ?: run {
-                runOnUiThread { ClintToast.show(this, getString(R.string.image_copy_failed), R.drawable.ic_copy_24) }
+                runOnUiThread { Toast.makeText(this, getString(R.string.image_copy_failed), Toast.LENGTH_SHORT).show() }
                 return@Thread
             }
             val mimeType = dataUriMimeType(imageUrl)
@@ -165,11 +161,11 @@ internal fun MainActivity.handleImageCopy(imageUrl: String) {
                     val clip = ClipData.newUri(contentResolver, getString(R.string.image_copy), uri)
                     clipboard.setPrimaryClip(clip)
                     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-                        ClintToast.show(this, getString(R.string.image_copied), R.drawable.ic_copy_24)
+                        Toast.makeText(this, getString(R.string.image_copied), Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (_: Exception) {
-                runOnUiThread { ClintToast.show(this, getString(R.string.image_copy_failed), R.drawable.ic_copy_24) }
+                runOnUiThread { Toast.makeText(this, getString(R.string.image_copy_failed), Toast.LENGTH_SHORT).show() }
             }
         }.start()
         return
@@ -182,10 +178,7 @@ internal fun MainActivity.handleImageCopy(imageUrl: String) {
         try {
             val request = Request.Builder().url(imageUrl).build()
             val response = client.newCall(request).execute()
-            val bytes = response.body?.bytes() ?: run {
-                runOnUiThread { ClintToast.show(this, getString(R.string.image_copy_failed), R.drawable.ic_copy_24) }
-                return@Thread
-            }
+            val bytes = response.body.bytes()
             val ext = imageUrl.substringAfterLast(".").substringBefore("?").lowercase().let { e ->
                 if (e in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp")) e else "jpg"
             }
@@ -205,11 +198,11 @@ internal fun MainActivity.handleImageCopy(imageUrl: String) {
                 val clip = ClipData.newUri(contentResolver, getString(R.string.image_copy), uri)
                 clipboard.setPrimaryClip(clip)
                 if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-                    ClintToast.show(this, getString(R.string.image_copied), R.drawable.ic_copy_24)
+                    Toast.makeText(this, getString(R.string.image_copied), Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (_: Exception) {
-            runOnUiThread { ClintToast.show(this, getString(R.string.image_copy_failed), R.drawable.ic_copy_24) }
+            runOnUiThread { Toast.makeText(this, getString(R.string.image_copy_failed), Toast.LENGTH_SHORT).show() }
         }
     }.start()
 }
@@ -251,32 +244,28 @@ internal fun MainActivity.handleImageShare(imageUrl: String) {
         try {
             val request = Request.Builder().url(imageUrl).build()
             val response = client.newCall(request).execute()
-            val bytes = response.body?.bytes()
-            if (bytes != null) {
-                val ext = imageUrl.substringAfterLast(".").substringBefore("?").lowercase().let { e ->
-                    if (e in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp")) e else "jpg"
+            val ext = imageUrl.substringAfterLast(".").substringBefore("?").lowercase().let { e ->
+                if (e in listOf("jpg", "jpeg", "png", "gif", "webp", "bmp")) e else "jpg"
+            }
+            val mimeType = when (ext) {
+                "png" -> "image/png"
+                "gif" -> "image/gif"
+                "webp" -> "image/webp"
+                "bmp" -> "image/bmp"
+                else -> "image/jpeg"
+            }
+            val bytes = response.body.bytes()
+            val cacheDir = File(cacheDir, "image_cache").also { it.mkdirs() }
+            val file = File(cacheDir, "shared_image.$ext")
+            file.writeBytes(bytes)
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            runOnUiThread {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                val mimeType = when (ext) {
-                    "png" -> "image/png"
-                    "gif" -> "image/gif"
-                    "webp" -> "image/webp"
-                    "bmp" -> "image/bmp"
-                    else -> "image/jpeg"
-                }
-                val cacheDir = File(cacheDir, "image_cache").also { it.mkdirs() }
-                val file = File(cacheDir, "shared_image.$ext")
-                file.writeBytes(bytes)
-                val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
-                runOnUiThread {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = mimeType
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    startActivity(Intent.createChooser(intent, getString(R.string.image_share)))
-                }
-            } else {
-                runOnUiThread { shareImageUrl(imageUrl) }
+                startActivity(Intent.createChooser(intent, getString(R.string.image_share)))
             }
         } catch (_: Exception) {
             runOnUiThread { shareImageUrl(imageUrl) }

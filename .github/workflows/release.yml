@@ -71,12 +71,22 @@ jobs:
         run: |
           chmod +x gradlew
 
-      - name: Download Gradle wrapper JAR if missing
+      - name: Cache Gradle Wrapper JAR
+        id: cache-wrapper-jar
+        uses: actions/cache@v4
+        with:
+          path: gradle/wrapper/gradle-wrapper.jar
+          key: gradle-wrapper-jar-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+
+      - name: Provision Gradle wrapper JAR if missing
+        if: steps.cache-wrapper-jar.outputs.cache-hit != 'true'
         run: |
-          JAR="gradle/wrapper/gradle-wrapper.jar"
-          if [ ! -f "$JAR" ]; then
-            curl -sL "https://raw.githubusercontent.com/gradle/gradle/v8.6.0/gradle/wrapper/gradle-wrapper.jar" -o "$JAR"
-          fi
+          GRADLE_VERSION=$(grep -oP '(?<=gradle-)[0-9]+\.[0-9]+(\.[0-9]+)?(?=-bin\.zip)' gradle/wrapper/gradle-wrapper.properties)
+          cp gradle/wrapper/gradle-wrapper.properties /tmp/gradle-wrapper.properties.bak
+          curl -fL -o /tmp/gradle-bin.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+          unzip -q /tmp/gradle-bin.zip -d /tmp/gradle-dist
+          "/tmp/gradle-dist/gradle-${GRADLE_VERSION}/bin/gradle" wrapper --gradle-version "$GRADLE_VERSION" --distribution-type bin
+          cp /tmp/gradle-wrapper.properties.bak gradle/wrapper/gradle-wrapper.properties
 
       - name: Build GitHub release APKs
         run: |

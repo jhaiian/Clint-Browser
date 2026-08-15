@@ -25,13 +25,54 @@ object QuiverGuardEngine {
     val isLoaded: Boolean
         get() = lock.read { handle != 0L }
 
+    /** Outcome of a [preload] attempt. */
+    enum class PreloadResult {
+        /** Loaded successfully, or an engine was already active. */
+        LOADED,
+        /** No compiled database file exists yet - nothing to load. */
+        NO_DATABASE,
+        /** The file couldn't even be read (rare - `NO_DATABASE` covers the common case of it
+         *  not existing at all). Not necessarily fixable by recompiling, so kept separate from
+         *  the deserialization-specific reasons below. */
+        FAILED,
+        /** The on-disk file was compiled by an incompatible earlier/later version of
+         *  adblock-rust. */
+        VERSION_MISMATCH,
+        /** The file is too short or missing its fixed magic-byte header - not a compiled
+         *  engine file at all (e.g. truncated write, or an unrelated file). */
+        BAD_HEADER,
+        /** The header looked right, but the payload's checksum didn't match - the file was
+         *  corrupted or partially overwritten after it was originally written. */
+        BAD_CHECKSUM,
+        /** The checksum matched, but the payload itself isn't valid flatbuffer data. */
+        FLATBUFFER_PARSING_ERROR,
+        /** A `DeserializationError` variant not otherwise mapped above (forward-compatibility
+         *  fallback for a future adblock-rust release adding a new one). */
+        UNKNOWN_DESERIALIZATION_ERROR;
+
+        /** True when the on-disk file exists and was read, but couldn't be turned into an
+         *  engine at all - reloading won't help, only recompiling from the stored filter list
+         *  text will. Callers can use this to decide whether to prompt for a recompile. */
+        val requiresRecompile: Boolean
+            get() = this != LOADED && this != NO_DATABASE && this != FAILED
+    }
+
     /** Loads the on-disk compiled engine, if one exists and nothing is loaded yet. */
-    fun preload(context: Context) {
-        lock.read { if (handle != 0L) return }
+    fun preload(context: Context): PreloadResult {
+        lock.read { if (handle != 0L) return PreloadResult.LOADED }
         val file = QuiverGuardPaths.databaseFile(context)
-        if (!file.exists()) return
+        if (!file.exists()) return PreloadResult.NO_DATABASE
         val newHandle = QuiverGuardNative.nativeLoadEngine(file.absolutePath)
-        if (newHandle == 0L) return
+        val failure = when (newHandle) {
+            0L -> PreloadResult.FAILED
+            -1L -> PreloadResult.VERSION_MISMATCH
+            -2L -> PreloadResult.BAD_HEADER
+            -3L -> PreloadResult.BAD_CHECKSUM
+            -4L -> PreloadResult.FLATBUFFER_PARSING_ERROR
+            -5L -> PreloadResult.UNKNOWN_DESERIALIZATION_ERROR
+            else -> null // A real engine pointer - success.
+        }
+        if (failure != null) return failure
         lock.write {
             if (handle != 0L) {
                 // Lost a race with another preload/activate; drop what we just loaded.
@@ -40,6 +81,7 @@ object QuiverGuardEngine {
                 handle = newHandle
             }
         }
+        return PreloadResult.LOADED
     }
 
     /** Atomically activates a freshly compiled engine file, replacing whatever was active. */
@@ -165,7 +207,7 @@ object QuiverGuardEngine {
     }
 
     private fun JSONObject.stringOrNull(key: String): String? =
-        if (isNull(key)) null else optString(key, null)
+        if (isNull(key)) null else getString(key)
 
     private fun JSONArray?.toStringList(): List<String> {
         if (this == null) return emptyList()

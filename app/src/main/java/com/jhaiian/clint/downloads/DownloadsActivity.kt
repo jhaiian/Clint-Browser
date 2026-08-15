@@ -1,80 +1,65 @@
 package com.jhaiian.clint.downloads
 
-import com.jhaiian.clint.util.formatFileSize
-import com.jhaiian.clint.util.formatStorageBytes
+import com.jhaiian.clint.R
 
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
-import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.PopupWindow
-import android.widget.Switch
-import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
-import com.google.android.material.textfield.TextInputEditText
-import com.jhaiian.clint.R
+import androidx.preference.PreferenceManager
 import com.jhaiian.clint.base.ClintActivity
-import com.jhaiian.clint.ui.ClintToast
+import com.jhaiian.clint.ui.OverlayHostActivity
+import com.jhaiian.clint.ui.rememberMaxContentWidth
+import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class DownloadsActivity : ClintActivity() {
+/**
+ * Hosts the Compose [DownloadsScreen]. See [com.jhaiian.clint.history.HistoryActivity] for the
+ * general hosting pattern.
+ *
+ * Everything item-scoped (open/share/properties/APK-install/redownload/change-settings/etc.) is
+ * preserved unchanged below, since none of it ever depended on the old per-tab Fragment/
+ * ViewPager2 architecture this rewrite removes — it always operated on a single [DownloadItem]
+ * (or an explicit list of them) passed in directly. Only the toolbar, tab filtering, sort/
+ * search/selection state, and bulk-delete flow were coupled to that architecture and needed
+ * rewriting.
+ */
+class DownloadsActivity : ClintActivity(), OverlayHostActivity {
+
+    /** Full-window Compose overlay (e.g. the redownload dialog) rendered inline in this
+     *  activity's own composition; see [OverlayHostActivity]. */
+    override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
 
     companion object {
         const val EXTRA_OPEN_ID = "open_download_id"
     }
 
-    enum class SortBy { NAME, DATE, SIZE, STATUS }
-    enum class SortOrder { ASCENDING, DESCENDING }
+    internal lateinit var uiState: DownloadsUiState
 
-    private val handler = Handler(Looper.getMainLooper())
-    private val refreshRunnable = Runnable { refresh() }
-    @Volatile internal var lastRefreshMs = 0L
-    private val minRefreshIntervalMs = 400L
-
-    private lateinit var viewPager: ViewPager2
-    private lateinit var tabLayout: TabLayout
-    private lateinit var toolbarTitle: TextView
-    private lateinit var btnBack: ImageView
-    private lateinit var btnSort: ImageView
-    private lateinit var btnDownloadSettings: ImageView
-    private lateinit var btnSelectionOptions: ImageView
-    private lateinit var btnMultiItemOptions: ImageView
-    private lateinit var btnSearch: ImageView
-    private lateinit var btnSearchClose: ImageView
-    private lateinit var searchEditText: EditText
-    private lateinit var fabDelete: FloatingActionButton
-    private lateinit var fabAdd: FloatingActionButton
+    /** No-op shims: multiRedownload/multiRemove below reset this and call refresh() to force an
+     *  immediate re-render after their own action, matching the pre-Compose throttled-polling
+     *  design. Compose already re-renders reactively from ClintDownloadManager.downloadsFlow on
+     *  every emission, so there's nothing left for these to actually do. */
+    internal var lastRefreshMs = 0L
+    internal fun refresh() {}
 
     internal var manualFolderPickerCallback: ((Uri) -> Unit)? = null
     internal val manualFolderPickerLauncher = registerForActivityResult(
@@ -87,17 +72,6 @@ class DownloadsActivity : ClintActivity() {
         manualFolderPickerCallback = null
     }
 
-    private var isSearchMode = false
-    internal var sortBy: SortBy = SortBy.DATE
-    internal var sortOrder: SortOrder = SortOrder.DESCENDING
-    private var allItems: MutableList<DownloadItem> = mutableListOf()
-
-    internal val sharedSelection = SharedSelectionState()
-    private val tabCounts = IntArray(DownloadsTabType.values().size)
-    internal val tabFragments = mutableMapOf<DownloadsTabType, DownloadsTabFragment>()
-
-    private var tabLayoutMediator: TabLayoutMediator? = null
-
     private var pendingApkItem: DownloadItem? = null
     private val installPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -107,153 +81,121 @@ class DownloadsActivity : ClintActivity() {
         if (packageManager.canRequestPackageInstalls()) launchApkInstall(item)
     }
 
-    internal fun registerTabFragment(type: DownloadsTabType, fragment: DownloadsTabFragment) {
-        tabFragments[type] = fragment
-    }
-
-    internal fun unregisterTabFragment(type: DownloadsTabType) {
-        tabFragments.remove(type)
-    }
-
-    internal fun getItemsForTab(type: DownloadsTabType): List<DownloadItem> {
-        val sorted = getSortedItems()
-        return when (type) {
-            DownloadsTabType.ALL -> sorted
-            DownloadsTabType.DOWNLOADING -> sorted.filter { it.status in DownloadsTabType.ACTIVE_STATUSES }
-            DownloadsTabType.FINISHED -> sorted.filter { it.status == DownloadStatus.COMPLETE }
-            DownloadsTabType.ERROR -> sorted.filter { it.status == DownloadStatus.FAILED }
+    fun launchManualFolderPicker(onPicked: (Uri) -> Unit) {
+        manualFolderPickerCallback = { uri ->
+            contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            onPicked(uri)
         }
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+            )
+        }
+        manualFolderPickerLauncher.launch(intent)
     }
 
-    internal fun onTabSelectionChanged(count: Int) {
-        tabFragments.values.forEach { if (it.isAdded) it.syncSelectionUi() }
-        updateSelectionUi(count)
+    private fun submitManualDownload(submission: ManualDownloadSubmission, onDismiss: () -> Unit, onRename: () -> Unit) {
+        val ua = android.webkit.WebSettings.getDefaultUserAgent(this)
+        performManualDownload(
+            url = submission.url,
+            filename = submission.filename,
+            userAgent = ua,
+            retryEnabled = submission.retryEnabled,
+            unmeteredOnly = submission.unmeteredOnly,
+            splitParts = submission.splitParts,
+            multithreadingParts = submission.multithreadingParts,
+            speedLimitBytesPerSec = submission.speedLimitBytesPerSec,
+            locationMode = submission.locationMode,
+            customLocationUri = submission.customLocationUri,
+            scheduledStartAtMillis = submission.scheduledStartAtMillis,
+            onDismiss = {
+                Toast.makeText(this, getString(R.string.toast_downloading, submission.filename), Toast.LENGTH_SHORT).show()
+                onDismiss()
+            },
+            onRename = onRename
+        )
     }
-
-    private val currentTabFragment: DownloadsTabFragment?
-        get() = tabFragments[DownloadsTabType.values()[viewPager.currentItem]]
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        setContentView(R.layout.activity_downloads)
+        handleOpenIntent(intent)
 
-        val toolbar = findViewById<View>(R.id.downloads_toolbar)
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { v, insets ->
-            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            v.setPadding(0, statusBars.top, 0, 0)
-            insets
-        }
+        uiState = DownloadsUiState()
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val theme = prefs.getString("app_theme", "dark") ?: "dark"
+        val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
 
-        viewPager = findViewById(R.id.downloads_view_pager)
-        tabLayout = findViewById(R.id.downloads_tab_layout)
+        setContent {
+            ClintComposeTheme(theme = theme) {
+                val maxContentWidth = rememberMaxContentWidth(this)
+                val allItems by ClintDownloadManager.downloadsFlow.collectAsState()
 
-        fabDelete = findViewById(R.id.fab_delete)
-        ViewCompat.setOnApplyWindowInsetsListener(fabDelete) { v, insets ->
-            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            val lp = v.layoutParams as FrameLayout.LayoutParams
-            lp.bottomMargin = (24 * resources.displayMetrics.density).toInt() + navBars.bottom
-            v.layoutParams = lp
-            insets
-        }
-
-        fabAdd = findViewById(R.id.fab_add_download)
-        ViewCompat.setOnApplyWindowInsetsListener(fabAdd) { v, insets ->
-            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            val lp = v.layoutParams as FrameLayout.LayoutParams
-            lp.bottomMargin = (24 * resources.displayMetrics.density).toInt() + navBars.bottom
-            v.layoutParams = lp
-            insets
-        }
-        fabAdd.setOnClickListener { showManualDownloadDialog() }
-
-        toolbarTitle = findViewById(R.id.toolbar_title)
-        btnBack = findViewById(R.id.btn_back)
-        btnSort = findViewById(R.id.btn_sort)
-        btnDownloadSettings = findViewById(R.id.btn_download_settings)
-        btnSelectionOptions = findViewById(R.id.btn_selection_options)
-        btnMultiItemOptions = findViewById(R.id.btn_multi_item_options)
-        btnSearch = findViewById(R.id.btn_search)
-        btnSearchClose = findViewById(R.id.btn_search_close)
-        searchEditText = findViewById(R.id.search_edit_text)
-
-        btnBack.setOnClickListener {
-            when {
-                isSearchMode -> exitSearchMode()
-                sharedSelection.isActive -> exitSelectionMode()
-                else -> finish()
-            }
-        }
-
-        btnSearch.setOnClickListener { enterSearchMode() }
-        btnSearchClose.setOnClickListener { exitSearchMode() }
-
-        searchEditText.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s?.toString() ?: ""
-                tabFragments.values.forEach { it.setTextFilter(query) }
-            }
-        })
-
-        searchEditText.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
-                    .hideSoftInputFromWindow(searchEditText.windowToken, 0)
-                true
-            } else false
-        }
-
-        btnSort.setOnClickListener { showSortMenu(it) }
-        btnDownloadSettings.setOnClickListener {
-            val intent = Intent(this, com.jhaiian.clint.settings.SettingsActivity::class.java)
-            intent.putExtra(com.jhaiian.clint.settings.SettingsActivity.EXTRA_OPEN_FRAGMENT, "download_settings")
-            startActivity(intent)
-        }
-        btnSelectionOptions.setOnClickListener { showMoreOptionsMenu(it) }
-        btnMultiItemOptions.setOnClickListener { showMultiItemOptions(it) }
-        fabDelete.setOnClickListener { showDeleteConfirmDialog() }
-
-        val pagerAdapter = DownloadsPagerAdapter(this)
-        viewPager.adapter = pagerAdapter
-        viewPager.offscreenPageLimit = DownloadsTabType.values().size - 1
-
-        tabLayoutMediator = TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            val type = DownloadsTabType.values()[position]
-            val count = tabCounts[position]
-            val name = tabNameForType(type)
-            tab.text = getString(R.string.downloads_tab_label_format, name, count)
-        }.also { it.attach() }
-
-        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                val fragment = tabFragments[DownloadsTabType.values()[position]]
-                fragment?.syncSelectionUi()
-                val inSelection = sharedSelection.isActive
-                val selCount = sharedSelection.count
-                updateSelectionUi(if (inSelection) selCount else 0)
-            }
-        })
-
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                ClintDownloadManager.downloadsFlow.collect {
-                    val now = System.currentTimeMillis()
-                    val hasActiveDownload = ClintDownloadManager.downloadsFlow.value.any {
-                        it.status == DownloadStatus.DOWNLOADING || it.status == DownloadStatus.COPYING_TEMP ||
-                            it.status == DownloadStatus.DELETING_TEMP
+                // Active downloads show elapsed time and speed/ETA text computed from
+                // System.currentTimeMillis() at render time, not stored reactively in the Flow's
+                // value — so this ticks recomposition once a second to keep that text current
+                // even when the Flow itself hasn't emitted a new list.
+                var tick by remember { mutableStateOf(0L) }
+                LaunchedEffect(Unit) {
+                    while (true) {
+                        delay(1000)
+                        tick++
                     }
-                    if (!hasActiveDownload) lastRefreshMs = 0L
-                    if (now - lastRefreshMs >= minRefreshIntervalMs) {
-                        lastRefreshMs = now
-                        handler.post(refreshRunnable)
+                }
+
+                Box {
+                    DownloadsScreen(
+                        state = uiState,
+                        allItems = allItems,
+                        tick = tick,
+                        maxContentWidth = maxContentWidth,
+                        hideStatusBar = hideStatusBar,
+                        onExit = { finish() },
+                        onOpenItem = { item -> handleOpenItem(item) },
+                        onDownloadSettingsClick = {
+                            startActivity(Intent(this@DownloadsActivity, com.jhaiian.clint.settings.SettingsActivity::class.java)
+                                .putExtra(com.jhaiian.clint.settings.SettingsActivity.EXTRA_OPEN_FRAGMENT, "download_settings"))
+                        },
+                        onPause = { id -> ClintDownloadManager.pause(this@DownloadsActivity, id) },
+                        onResume = { id -> ClintDownloadManager.resume(this@DownloadsActivity, id) },
+                        onRetry = { id -> ClintDownloadManager.retryFailed(this@DownloadsActivity, id) },
+                        itemActions = DownloadItemActions(
+                            onOpen = { item -> handleOpenItem(item) },
+                            onShare = { item -> shareFile(item) },
+                            onOpenFolder = { item -> openFolder(item) },
+                            onRedownload = { item -> redownload(item) },
+                            onRedownloadOptions = { item -> showRedownloadDialog(item) },
+                            onChangeSettings = { item -> uiState.changeSettingsItem = item },
+                            onUpdateLink = { item -> uiState.updateLinkItem = item },
+                            onUpdateLinkInBrowser = { item -> openBrowserForRefreshLink(item) },
+                            onRemove = { item -> uiState.deleteConfirmItems = listOf(item) },
+                            onCopyLink = { item -> copyDownloadLink(item) },
+                            onCopyFilename = { item -> copyFileName(item) },
+                            onCopyPath = { item -> copyFilePath(item) },
+                            onProperties = { item -> uiState.propertiesItem = item }
+                        ),
+                        onAddClick = { uiState.manualDownloadDialogOpen = true },
+                        onDeleteSelectedClick = { items -> uiState.deleteConfirmItems = items },
+                        onDeleteConfirmed = { items, deleteFromStorage -> executeDelete(items, deleteFromStorage) },
+                        onMultiRedownload = { items -> multiRedownload(items); uiState.exitSelectionMode() },
+                        onMultiCopyLink = { items -> multiCopyToClipboard(items.joinToString("\n") { it.url }, getString(R.string.download_menu_link_copied)) },
+                        onMultiCopyFilename = { items -> multiCopyToClipboard(items.joinToString("\n") { it.filename }, getString(R.string.download_menu_filename_copied)) },
+                        onMultiCopyPath = { items -> multiCopyToClipboard(items.joinToString("\n") { pathFor(it) }, getString(R.string.download_menu_path_copied)) },
+                        onSubmitManualDownload = { submission, onDismiss, onRename -> submitManualDownload(submission, onDismiss, onRename) }
+                    )
+                    com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(uiState.confirmDialogConfig, hideStatusBar) { uiState.confirmDialogConfig = null }
+                    uiState.conflictDialogRequest?.let { req ->
+                        DownloadConflictDialog(req, hideStatusBar) { uiState.conflictDialogRequest = null }
                     }
+                    overlayContent?.invoke()
                 }
             }
         }
-
-        handleOpenIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -262,336 +204,35 @@ class DownloadsActivity : ClintActivity() {
         handleOpenIntent(intent)
     }
 
-    override fun onResume() {
-        super.onResume()
-        lastRefreshMs = 0L
-        refresh()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        handler.removeCallbacks(refreshRunnable)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        tabLayoutMediator?.detach()
-        handler.removeCallbacks(refreshRunnable)
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        when {
-            isSearchMode -> exitSearchMode()
-            sharedSelection.isActive -> exitSelectionMode()
-            else -> @Suppress("DEPRECATION") super.onBackPressed()
-        }
-    }
-
-    internal fun refresh() {
-        allItems = ClintDownloadManager.downloadsFlow.value.map { it.copy() }.toMutableList()
-
-        val allSorted = getSortedItems()
-        val downloadingItems = allSorted.filter { it.status in DownloadsTabType.ACTIVE_STATUSES }
-        val finishedItems = allSorted.filter { it.status == DownloadStatus.COMPLETE }
-        val errorItems = allSorted.filter { it.status == DownloadStatus.FAILED }
-
-        tabCounts[DownloadsTabType.ALL.ordinal] = allSorted.size
-        tabCounts[DownloadsTabType.DOWNLOADING.ordinal] = downloadingItems.size
-        tabCounts[DownloadsTabType.FINISHED.ordinal] = finishedItems.size
-        tabCounts[DownloadsTabType.ERROR.ordinal] = errorItems.size
-
-        tabFragments[DownloadsTabType.ALL]?.refreshItems(allSorted)
-        tabFragments[DownloadsTabType.DOWNLOADING]?.refreshItems(downloadingItems)
-        tabFragments[DownloadsTabType.FINISHED]?.refreshItems(finishedItems)
-        tabFragments[DownloadsTabType.ERROR]?.refreshItems(errorItems)
-
-        updateTabLabels()
-    }
-
-    private fun updateTabLabels() {
-        DownloadsTabType.values().forEachIndexed { index, type ->
-            val tab = tabLayout.getTabAt(index) ?: return@forEachIndexed
-            val name = tabNameForType(type)
-            tab.text = getString(R.string.downloads_tab_label_format, name, tabCounts[index])
-        }
-    }
-
-    private fun tabNameForType(type: DownloadsTabType): String = when (type) {
-        DownloadsTabType.ALL -> getString(R.string.downloads_tab_all)
-        DownloadsTabType.DOWNLOADING -> getString(R.string.downloads_tab_downloading)
-        DownloadsTabType.FINISHED -> getString(R.string.downloads_tab_finished)
-        DownloadsTabType.ERROR -> getString(R.string.downloads_tab_error)
-    }
-
-    private fun getSortedItems(): List<DownloadItem> {
-        val statusPriority = mapOf(
-            DownloadStatus.CONNECTING to 0,
-            DownloadStatus.ALLOCATING to 0,
-            DownloadStatus.DOWNLOADING to 0,
-            DownloadStatus.RETRYING to 0,
-            DownloadStatus.COPYING_TEMP to 0,
-            DownloadStatus.DELETING_TEMP to 0,
-            DownloadStatus.QUEUED to 1,
-            DownloadStatus.PAUSED to 2,
-            DownloadStatus.FAILED to 3,
-            DownloadStatus.COMPLETE to 4
-        )
-        val sorted = when (sortBy) {
-            SortBy.NAME -> allItems.sortedBy { it.filename.lowercase() }
-            SortBy.DATE -> allItems.sortedBy { it.startedAt }
-            SortBy.SIZE -> allItems.sortedBy { if (it.totalBytes > 0) it.totalBytes else it.bytesDownloaded }
-            SortBy.STATUS -> allItems.sortedWith(
-                compareBy({ statusPriority[it.status] ?: 99 }, { -it.startedAt })
-            )
-        }
-        return if (sortOrder == SortOrder.DESCENDING && sortBy != SortBy.STATUS) sorted.reversed()
-        else sorted
-    }
-
-    private fun applySortAndRefresh() {
-        val allSorted = getSortedItems()
-        val downloadingItems = allSorted.filter { it.status in DownloadsTabType.ACTIVE_STATUSES }
-        val finishedItems = allSorted.filter { it.status == DownloadStatus.COMPLETE }
-        val errorItems = allSorted.filter { it.status == DownloadStatus.FAILED }
-
-        tabCounts[DownloadsTabType.ALL.ordinal] = allSorted.size
-        tabCounts[DownloadsTabType.DOWNLOADING.ordinal] = downloadingItems.size
-        tabCounts[DownloadsTabType.FINISHED.ordinal] = finishedItems.size
-        tabCounts[DownloadsTabType.ERROR.ordinal] = errorItems.size
-
-        tabFragments[DownloadsTabType.ALL]?.let { f ->
-            f.adapter.updateItems(allSorted)
-            f.notifyFastScrollerDataChanged()
-        }
-        tabFragments[DownloadsTabType.DOWNLOADING]?.let { f ->
-            f.adapter.updateItems(downloadingItems)
-            f.notifyFastScrollerDataChanged()
-        }
-        tabFragments[DownloadsTabType.FINISHED]?.let { f ->
-            f.adapter.updateItems(finishedItems)
-            f.notifyFastScrollerDataChanged()
-        }
-        tabFragments[DownloadsTabType.ERROR]?.let { f ->
-            f.adapter.updateItems(errorItems)
-            f.notifyFastScrollerDataChanged()
-        }
-
-        val isNameSort = sortBy == SortBy.NAME
-        tabFragments.values.forEach { it.setFastScrollerInteractive(isNameSort) }
-
-        updateTabLabels()
-    }
-
-    private fun showSortMenu(anchor: View) {
-        val popupView = LayoutInflater.from(this).inflate(R.layout.popup_downloads_sort, null)
-        val popup = PopupWindow(
-            popupView, ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT, true
-        ).apply {
-            elevation = 12f
-            isOutsideTouchable = true
-        }
-
-        popupView.findViewById<View>(R.id.check_sort_by_name).visibility =
-            if (sortBy == SortBy.NAME) View.VISIBLE else View.GONE
-        popupView.findViewById<View>(R.id.check_sort_by_date).visibility =
-            if (sortBy == SortBy.DATE) View.VISIBLE else View.GONE
-        popupView.findViewById<View>(R.id.check_sort_by_size).visibility =
-            if (sortBy == SortBy.SIZE) View.VISIBLE else View.GONE
-        popupView.findViewById<View>(R.id.check_sort_by_status).visibility =
-            if (sortBy == SortBy.STATUS) View.VISIBLE else View.GONE
-        popupView.findViewById<View>(R.id.check_sort_ascending).visibility =
-            if (sortOrder == SortOrder.ASCENDING) View.VISIBLE else View.GONE
-        popupView.findViewById<View>(R.id.check_sort_descending).visibility =
-            if (sortOrder == SortOrder.DESCENDING) View.VISIBLE else View.GONE
-
-        popupView.findViewById<View>(R.id.menu_sort_by_name).setOnClickListener {
-            popup.dismiss(); sortBy = SortBy.NAME; sortOrder = SortOrder.ASCENDING; applySortAndRefresh()
-        }
-        popupView.findViewById<View>(R.id.menu_sort_by_date).setOnClickListener {
-            popup.dismiss(); sortBy = SortBy.DATE; sortOrder = SortOrder.DESCENDING; applySortAndRefresh()
-        }
-        popupView.findViewById<View>(R.id.menu_sort_by_size).setOnClickListener {
-            popup.dismiss(); sortBy = SortBy.SIZE; sortOrder = SortOrder.DESCENDING; applySortAndRefresh()
-        }
-        popupView.findViewById<View>(R.id.menu_sort_by_status).setOnClickListener {
-            popup.dismiss(); sortBy = SortBy.STATUS; sortOrder = SortOrder.ASCENDING; applySortAndRefresh()
-        }
-        popupView.findViewById<View>(R.id.menu_sort_ascending).setOnClickListener {
-            popup.dismiss(); sortOrder = SortOrder.ASCENDING; applySortAndRefresh()
-        }
-        popupView.findViewById<View>(R.id.menu_sort_descending).setOnClickListener {
-            popup.dismiss(); sortOrder = SortOrder.DESCENDING; applySortAndRefresh()
-        }
-
-        popupView.measure(
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val maxPopupH = (resources.displayMetrics.heightPixels * 0.90).toInt()
-        if (popupView.measuredHeight > maxPopupH) {
-            popup.height = maxPopupH
-        }
-        popup.showAsDropDown(anchor, -popupView.measuredWidth + anchor.width, 0, Gravity.TOP or Gravity.END)
-    }
-
-    private fun showMoreOptionsMenu(anchor: View) {
-        val popupView = LayoutInflater.from(this).inflate(R.layout.popup_downloads_selection, null)
-        val popup = PopupWindow(
-            popupView, ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT, true
-        ).apply {
-            elevation = 12f
-            isOutsideTouchable = true
-        }
-
-        popupView.findViewById<View>(R.id.menu_select_all).setOnClickListener {
-            popup.dismiss(); currentTabFragment?.selectAll()
-        }
-        popupView.findViewById<View>(R.id.menu_invert_selection).setOnClickListener {
-            popup.dismiss(); currentTabFragment?.invertSelection()
-        }
-        popupView.findViewById<View>(R.id.menu_deselect_all).setOnClickListener {
-            popup.dismiss()
-            sharedSelection.ids.clear()
-            tabFragments.values.forEach { if (it.isAdded) it.syncSelectionUi() }
-            updateSelectionUi(0)
-        }
-
-        popupView.measure(
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val maxPopupH = (resources.displayMetrics.heightPixels * 0.90).toInt()
-        if (popupView.measuredHeight > maxPopupH) {
-            popup.height = maxPopupH
-        }
-        popup.showAsDropDown(anchor, -popupView.measuredWidth + anchor.width, 0, Gravity.TOP or Gravity.END)
-    }
-
-    private fun enterSearchMode() {
-        isSearchMode = true
-        toolbarTitle.visibility = View.GONE
-        btnSearch.visibility = View.GONE
-        btnSort.visibility = View.GONE
-        btnDownloadSettings.visibility = View.GONE
-        searchEditText.visibility = View.VISIBLE
-        btnSearchClose.visibility = View.VISIBLE
-        tabFragments.values.forEach { it.setFastScrollerInteractive(false) }
-        searchEditText.requestFocus()
-        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
-            .showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT)
-    }
-
-    private fun exitSearchMode() {
-        isSearchMode = false
-        searchEditText.setText("")
-        searchEditText.visibility = View.GONE
-        btnSearchClose.visibility = View.GONE
-        toolbarTitle.visibility = View.VISIBLE
-        val inSelectionMode = sharedSelection.isActive
-        if (inSelectionMode) {
-            toolbarTitle.text = getString(R.string.downloads_selected_count, sharedSelection.count)
-            btnSearch.visibility = View.VISIBLE
-        } else {
-            toolbarTitle.text = getString(R.string.downloads_title)
-            btnSearch.visibility = View.VISIBLE
-            btnSort.visibility = View.VISIBLE
-            btnDownloadSettings.visibility = View.VISIBLE
-        }
-        val isNameSort = sortBy == SortBy.NAME
-        tabFragments.values.forEach { it.setFastScrollerInteractive(isNameSort) }
-        tabFragments.values.forEach { it.setTextFilter("") }
-        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
-            .hideSoftInputFromWindow(searchEditText.windowToken, 0)
-    }
-
-    private fun updateSelectionUi(selectedCount: Int) {
-        val inSelectionMode = sharedSelection.isActive
-
-        btnSelectionOptions.visibility = if (inSelectionMode) View.VISIBLE else View.GONE
-        btnMultiItemOptions.visibility = if (inSelectionMode) View.VISIBLE else View.GONE
-        btnSort.visibility = if (inSelectionMode || isSearchMode) View.GONE else View.VISIBLE
-        btnDownloadSettings.visibility = if (inSelectionMode || isSearchMode) View.GONE else View.VISIBLE
-
-        if (inSelectionMode && sharedSelection.count > 0) fabDelete.show() else fabDelete.hide()
-        if (inSelectionMode) fabAdd.hide() else fabAdd.show()
-
-        if (inSelectionMode) {
-            toolbarTitle.text = getString(R.string.downloads_selected_count, selectedCount)
-            btnBack.setImageResource(R.drawable.ic_close_24)
-            btnSearch.visibility = if (isSearchMode) View.GONE else View.VISIBLE
-        } else {
-            toolbarTitle.text = getString(R.string.downloads_title)
-            btnBack.setImageResource(R.drawable.ic_arrow_back_24)
-            if (!isSearchMode) {
-                btnSearch.visibility = View.VISIBLE
-                val isNameSort = sortBy == SortBy.NAME
-                currentTabFragment?.setFastScrollerInteractive(isNameSort)
-                currentTabFragment?.notifyFastScrollerDataChanged()
+    private fun pathFor(item: DownloadItem): String = when {
+        item.file != null -> item.file!!.absolutePath
+        item.contentUri != null -> {
+            val uri = Uri.parse(item.contentUri)
+            val seg = uri.lastPathSegment ?: item.contentUri!!
+            when {
+                seg.startsWith("primary:") -> "/storage/emulated/0/${seg.removePrefix("primary:")}"
+                seg.contains(":") -> { val p = seg.split(":", limit = 2); "/storage/${p[0]}/${p[1]}" }
+                else -> item.contentUri!!
             }
         }
+        else -> item.filename
     }
 
-    private fun exitSelectionMode() {
-        sharedSelection.clear()
-        tabFragments.values.forEach { if (it.isAdded) it.syncSelectionUi() }
-        updateSelectionUi(0)
-    }
-
-    private fun showDeleteConfirmDialog() {
-        val frag = currentTabFragment ?: return
-        if (frag.selectedCount == 0) return
-        val count = frag.selectedCount
-        val checkboxView = layoutInflater.inflate(R.layout.dialog_download_delete_checkbox, null)
-        checkboxView.findViewById<TextView>(R.id.tv_delete_message).text =
-            getString(R.string.downloads_delete_confirm_message, count)
-        val cbDeleteFromStorage = checkboxView.findViewById<android.widget.CheckBox>(R.id.cb_delete_from_storage)
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.downloads_delete_confirm_title))
-            .setView(checkboxView)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(getString(R.string.action_delete)) { _, _ ->
-                executeDeleteItems(frag.getSelectedItems(), cbDeleteFromStorage.isChecked)
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
-    }
-
-    private fun executeDeleteItems(toRemove: List<DownloadItem>, deleteFromStorage: Boolean) {
+    private fun executeDelete(toRemove: List<DownloadItem>, deleteFromStorage: Boolean) {
         val count = toRemove.size
         if (count == 0) return
-
-        val progressView = layoutInflater.inflate(R.layout.dialog_download_delete_progress, null)
-        val progressBar = progressView.findViewById<com.google.android.material.progressindicator.LinearProgressIndicator>(R.id.progress_bar)
-        val progressText = progressView.findViewById<TextView>(R.id.progress_text)
-        progressBar.max = count
-        progressBar.progress = 0
-        progressText.text = getString(R.string.downloads_deleting_progress, 0, count)
-
-        val progressDialog = MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.downloads_deleting_title))
-            .setView(progressView)
-            .setCancelable(false)
-            .create()
-            .also { applyStatusBarFlagToDialog(it) }
-        progressDialog.show()
-
+        uiState.deleteProgress = DeleteProgress(0, count)
         lifecycleScope.launch {
             withContext(Dispatchers.Default) {
                 toRemove.forEachIndexed { index, item ->
                     ClintDownloadManager.remove(this@DownloadsActivity, item.id, deleteFromStorage)
                     val done = index + 1
-                    withContext(Dispatchers.Main) {
-                        progressBar.progress = done
-                        progressText.text = getString(R.string.downloads_deleting_progress, done, count)
-                    }
+                    withContext(Dispatchers.Main) { uiState.deleteProgress = DeleteProgress(done, count) }
                 }
             }
-            progressDialog.dismiss()
-            exitSelectionMode()
-            refresh()
-            ClintToast.show(this@DownloadsActivity, getString(R.string.downloads_items_removed), R.drawable.ic_delete_24)
+            uiState.deleteProgress = null
+            uiState.exitSelectionMode()
+            Toast.makeText(this@DownloadsActivity, getString(R.string.downloads_items_removed), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -613,29 +254,31 @@ class DownloadsActivity : ClintActivity() {
     }
 
     private fun handleApkOpen(item: DownloadItem) {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.install_apk_dialog_title))
-            .setMessage(getString(R.string.install_apk_dialog_message, item.filename))
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .setPositiveButton(getString(R.string.install_apk_dialog_confirm)) { _, _ ->
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.install_apk_dialog_title),
+            message = getString(R.string.install_apk_dialog_message, item.filename),
+            positiveLabel = getString(R.string.install_apk_dialog_confirm),
+            onPositive = {
                 if (packageManager.canRequestPackageInstalls()) launchApkInstall(item)
                 else showInstallPermissionDialog(item)
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
+            },
+            negativeLabel = getString(R.string.action_cancel)
+        )
     }
 
     private fun showInstallPermissionDialog(item: DownloadItem) {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.install_apk_permission_title))
-            .setMessage(getString(R.string.install_apk_permission_message))
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .setPositiveButton(getString(R.string.action_open_settings)) { _, _ ->
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.install_apk_permission_title),
+            message = getString(R.string.install_apk_permission_message),
+            positiveLabel = getString(R.string.action_open_settings),
+            onPositive = {
                 pendingApkItem = item
                 installPermissionLauncher.launch(
                     Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName"))
                 )
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
+            },
+            negativeLabel = getString(R.string.action_cancel)
+        )
     }
 
     private fun launchApkInstall(item: DownloadItem) {
@@ -653,85 +296,12 @@ class DownloadsActivity : ClintActivity() {
         } catch (_: Exception) {}
     }
 
-    private fun showMultiItemOptions(anchor: View) {
-        val frag = currentTabFragment ?: return
-        val selected = frag.getSelectedItems()
-        if (selected.isEmpty()) return
-        if (selected.size == 1) {
-            showDownloadItemOptions(selected[0], anchor)
-            return
-        }
-
-        val popupView = LayoutInflater.from(this).inflate(R.layout.popup_download_multi_options, null)
-        val popup = PopupWindow(
-            popupView, ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT, true
-        ).apply {
-            elevation = 12f
-            isOutsideTouchable = true
-        }
-
-        popupView.findViewById<View>(R.id.menu_multi_redownload).setOnClickListener {
-            popup.dismiss()
-            multiRedownload(selected)
-        }
-        popupView.findViewById<View>(R.id.menu_multi_remove).setOnClickListener {
-            popup.dismiss()
-            multiRemove(selected)
-        }
-        popupView.findViewById<View>(R.id.menu_multi_copy_link).setOnClickListener {
-            popup.dismiss()
-            multiCopyToClipboard(
-                selected.joinToString("\n") { it.url },
-                getString(R.string.download_menu_link_copied)
-            )
-        }
-        popupView.findViewById<View>(R.id.menu_multi_copy_filename).setOnClickListener {
-            popup.dismiss()
-            multiCopyToClipboard(
-                selected.joinToString("\n") { it.filename },
-                getString(R.string.download_menu_filename_copied)
-            )
-        }
-        popupView.findViewById<View>(R.id.menu_multi_copy_path).setOnClickListener {
-            popup.dismiss()
-            multiCopyToClipboard(
-                selected.joinToString("\n") { item ->
-                    when {
-                        item.file != null -> item.file!!.absolutePath
-                        item.contentUri != null -> {
-                            val uri = Uri.parse(item.contentUri)
-                            val seg = uri.lastPathSegment ?: item.contentUri!!
-                            when {
-                                seg.startsWith("primary:") -> "/storage/emulated/0/${seg.removePrefix("primary:")}"
-                                seg.contains(":") -> { val p = seg.split(":", limit = 2); "/storage/${p[0]}/${p[1]}" }
-                                else -> item.contentUri!!
-                            }
-                        }
-                        else -> item.filename
-                    }
-                },
-                getString(R.string.download_menu_path_copied)
-            )
-        }
-
-        popupView.measure(
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val maxPopupH = (resources.displayMetrics.heightPixels * 0.90).toInt()
-        if (popupView.measuredHeight > maxPopupH) {
-            popup.height = maxPopupH
-        }
-        popup.showAsDropDown(anchor, -popupView.measuredWidth + anchor.width, 0, Gravity.TOP or Gravity.END)
-    }
-
     private fun multiRedownload(items: List<DownloadItem>) {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.redownload_multi_confirm_title, items.size))
-            .setMessage(getString(R.string.redownload_multi_confirm_message))
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .setPositiveButton(getString(R.string.redownload_confirm_action)) { _, _ ->
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.redownload_multi_confirm_title, items.size),
+            message = getString(R.string.redownload_multi_confirm_message),
+            positiveLabel = getString(R.string.redownload_confirm_action),
+            onPositive = {
                 items.forEach { item ->
                     ClintDownloadManager.remove(this, item.id, true)
                     ClintDownloadManager.enqueue(
@@ -747,111 +317,18 @@ class DownloadsActivity : ClintActivity() {
                     )
                 }
                 lastRefreshMs = 0L
-                exitSelectionMode()
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
-    }
-
-    private fun multiRemove(items: List<DownloadItem>) {
-        val checkboxView = layoutInflater.inflate(R.layout.dialog_download_delete_checkbox, null)
-        checkboxView.findViewById<TextView>(R.id.tv_delete_message).text =
-            getString(R.string.downloads_delete_confirm_message, items.size)
-        val cbDeleteFromStorage = checkboxView.findViewById<android.widget.CheckBox>(R.id.cb_delete_from_storage)
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.downloads_delete_confirm_title))
-            .setView(checkboxView)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(getString(R.string.action_delete)) { _, _ ->
-                items.forEach { item ->
-                    ClintDownloadManager.remove(this, item.id, cbDeleteFromStorage.isChecked)
-                }
-                lastRefreshMs = 0L
-                exitSelectionMode()
-                refresh()
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
+                uiState.exitSelectionMode()
+            },
+            negativeLabel = getString(R.string.action_cancel)
+        )
     }
 
     private fun multiCopyToClipboard(text: String, toastMessage: String) {
         val clipboard = getSystemService(android.content.ClipboardManager::class.java)
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText("", text))
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-            ClintToast.show(this, toastMessage, R.drawable.ic_copy_24)
+            Toast.makeText(this, toastMessage, Toast.LENGTH_SHORT).show()
         }
-    }
-
-    internal fun showDownloadItemOptions(item: DownloadItem, anchor: android.view.View) {
-        val popupView = LayoutInflater.from(this).inflate(R.layout.popup_download_item_options, null)
-        val popup = PopupWindow(
-            popupView, ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT, true
-        ).apply {
-            elevation = 12f
-            isOutsideTouchable = true
-        }
-
-        popupView.findViewById<View>(R.id.menu_download_open).setOnClickListener {
-            popup.dismiss(); handleOpenItem(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_share).setOnClickListener {
-            popup.dismiss(); shareFile(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_open_folder).setOnClickListener {
-            popup.dismiss(); openFolder(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_redownload).setOnClickListener {
-            popup.dismiss(); redownload(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_redownload_options).setOnClickListener {
-            popup.dismiss(); showRedownloadDialog(item)
-        }
-
-        val menuChangeSettings = popupView.findViewById<View>(R.id.menu_download_change_settings)
-        if (item.status in DownloadStatus.NOT_FINISHED) {
-            menuChangeSettings.visibility = View.VISIBLE
-            menuChangeSettings.setOnClickListener {
-                popup.dismiss(); showChangeDownloadSettingsDialog(item)
-            }
-        }
-
-        val menuUpdateLink = popupView.findViewById<View>(R.id.menu_download_update_link)
-        val menuUpdateLinkInBrowser = popupView.findViewById<View>(R.id.menu_download_update_link_in_browser)
-        if (item.status != DownloadStatus.COMPLETE) {
-            menuUpdateLink.visibility = View.VISIBLE
-            menuUpdateLink.setOnClickListener {
-                popup.dismiss(); showUpdateDownloadLinkDialog(item)
-            }
-            menuUpdateLinkInBrowser.visibility = View.VISIBLE
-            menuUpdateLinkInBrowser.setOnClickListener {
-                popup.dismiss(); openBrowserForRefreshLink(item)
-            }
-        }
-
-        popupView.findViewById<View>(R.id.menu_download_remove).setOnClickListener {
-            popup.dismiss(); removeDownload(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_copy_link).setOnClickListener {
-            popup.dismiss(); copyDownloadLink(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_copy_filename).setOnClickListener {
-            popup.dismiss(); copyFileName(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_copy_path).setOnClickListener {
-            popup.dismiss(); copyFilePath(item)
-        }
-        popupView.findViewById<View>(R.id.menu_download_properties).setOnClickListener {
-            popup.dismiss(); showDownloadProperties(item)
-        }
-
-        popupView.measure(
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        )
-        val maxPopupH = (resources.displayMetrics.heightPixels * 0.90).toInt()
-        if (popupView.measuredHeight > maxPopupH) {
-            popup.height = maxPopupH
-        }
-        popup.showAsDropDown(anchor, -popupView.measuredWidth + anchor.width, 0, Gravity.TOP or Gravity.END)
     }
 
     private fun shareFile(item: DownloadItem) {
@@ -931,19 +408,19 @@ class DownloadsActivity : ClintActivity() {
     }
 
     private fun showOpenFolderError(path: String) {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.open_folder_error_title))
-            .setMessage(getString(R.string.open_folder_error_message, path))
-            .setPositiveButton(getString(R.string.action_ok), null)
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.open_folder_error_title),
+            message = getString(R.string.open_folder_error_message, path),
+            positiveLabel = getString(R.string.action_ok)
+        )
     }
 
     private fun redownload(item: DownloadItem) {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.redownload_confirm_title))
-            .setMessage(getString(R.string.redownload_confirm_message))
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .setPositiveButton(getString(R.string.redownload_confirm_action)) { _, _ ->
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.redownload_confirm_title),
+            message = getString(R.string.redownload_confirm_message),
+            positiveLabel = getString(R.string.redownload_confirm_action),
+            onPositive = {
                 ClintDownloadManager.remove(this, item.id, true)
                 lastRefreshMs = 0L
                 ClintDownloadManager.enqueue(
@@ -957,32 +434,16 @@ class DownloadsActivity : ClintActivity() {
                     locationMode = item.locationMode,
                     customLocationUri = item.customLocationUri
                 )
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
-    }
-
-    private fun removeDownload(item: DownloadItem) {
-        val checkboxView = layoutInflater.inflate(R.layout.dialog_download_delete_checkbox, null)
-        checkboxView.findViewById<TextView>(R.id.tv_delete_message).text =
-            getString(R.string.downloads_delete_confirm_message, 1)
-        val cbDeleteFromStorage = checkboxView.findViewById<android.widget.CheckBox>(R.id.cb_delete_from_storage)
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.downloads_delete_confirm_title))
-            .setView(checkboxView)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(getString(R.string.action_delete)) { _, _ ->
-                ClintDownloadManager.remove(this, item.id, cbDeleteFromStorage.isChecked)
-                lastRefreshMs = 0L
-                refresh()
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
+            },
+            negativeLabel = getString(R.string.action_cancel)
+        )
     }
 
     private fun copyDownloadLink(item: DownloadItem) {
         val clipboard = getSystemService(android.content.ClipboardManager::class.java)
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText(getString(R.string.download_dialog_link_clip_label), item.url))
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-            ClintToast.show(this, getString(R.string.download_menu_link_copied), R.drawable.ic_copy_24)
+            Toast.makeText(this, getString(R.string.download_menu_link_copied), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -990,7 +451,7 @@ class DownloadsActivity : ClintActivity() {
         val clipboard = getSystemService(android.content.ClipboardManager::class.java)
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText(getString(R.string.download_menu_copy_filename), item.filename))
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-            ClintToast.show(this, getString(R.string.download_menu_filename_copied), R.drawable.ic_copy_24)
+            Toast.makeText(this, getString(R.string.download_menu_filename_copied), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1014,7 +475,7 @@ class DownloadsActivity : ClintActivity() {
         val clipboard = getSystemService(android.content.ClipboardManager::class.java)
         clipboard.setPrimaryClip(android.content.ClipData.newPlainText(getString(R.string.download_menu_copy_path), path))
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-            ClintToast.show(this, getString(R.string.download_menu_path_copied), R.drawable.ic_copy_24)
+            Toast.makeText(this, getString(R.string.download_menu_path_copied), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1034,178 +495,6 @@ class DownloadsActivity : ClintActivity() {
         } catch (_: Exception) {}
     }
 
-    private fun showDownloadProperties(item: DownloadItem) {
-        val view = layoutInflater.inflate(R.layout.dialog_download_properties, null)
-
-        val resolvedPath = when {
-            item.contentUri != null -> {
-                val uri = Uri.parse(item.contentUri)
-                val seg = uri.lastPathSegment ?: item.contentUri!!
-                when {
-                    seg.startsWith("primary:") -> "/storage/emulated/0/${seg.removePrefix("primary:")}"
-                    seg.contains(":") -> { val p = seg.split(":", limit = 2); "/storage/${p[0]}/${p[1]}" }
-                    else -> item.contentUri!!
-                }
-            }
-            item.locationMode == com.jhaiian.clint.settings.fragments.DownloadSettingsFragment.MODE_CUSTOM -> {
-                val treeUri = DownloadFileHelper.getSafTreeUri(this, item)
-                if (treeUri != null) {
-                    val docId = try {
-                        android.provider.DocumentsContract.getTreeDocumentId(treeUri)
-                    } catch (_: Throwable) { null }
-                    when {
-                        docId != null && docId.startsWith("primary:") ->
-                            "/storage/emulated/0/${docId.removePrefix("primary:")}/${item.filename}"
-                        docId != null && docId.contains(":") -> {
-                            val p = docId.split(":", limit = 2)
-                            "/storage/${p[0]}/${p[1]}/${item.filename}"
-                        }
-                        else -> treeUri.toString()
-                    }
-                } else {
-                    item.file?.absolutePath ?: getString(R.string.download_props_dash)
-                }
-            }
-            item.file != null -> item.file!!.absolutePath
-            else -> getString(R.string.download_props_dash)
-        }
-
-        val totalBytesStr = if (item.totalBytes > 0)
-            getString(R.string.download_props_size_format, formatStorageBytes(item.totalBytes), item.totalBytes)
-        else getString(R.string.download_props_dash)
-
-        val downloadedStr = if (item.bytesDownloaded > 0)
-            getString(R.string.download_props_size_format, formatStorageBytes(item.bytesDownloaded), item.bytesDownloaded)
-        else getString(R.string.download_props_dash)
-
-        val currentInProgressMs = if (item.activeStartedAt > 0L) System.currentTimeMillis() - item.activeStartedAt else 0L
-        val totalActiveElapsedMs = item.activeElapsedMs + currentInProgressMs
-        val activeElapsedSec = totalActiveElapsedMs / 1000L
-        val activeTimeStr = if (activeElapsedSec > 0) propFormatElapsed(activeElapsedSec)
-        else getString(R.string.download_props_dash)
-
-        val avgSpeedStr = if (totalActiveElapsedMs > 0 && item.bytesDownloaded > 0) {
-            propFormatSpeed(item.averageSpeedBytesPerSec())
-        } else getString(R.string.download_props_dash)
-
-        val dateAddedStr = if (item.startedAt > 0L) propFormatTimestamp(item.startedAt)
-        else getString(R.string.download_props_dash)
-
-        val dateCompletedStr = if (item.completedAt > 0L) propFormatTimestamp(item.completedAt)
-        else getString(R.string.download_props_dash)
-
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_filename).text = item.filename
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_path).text = resolvedPath
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_size).text = totalBytesStr
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_downloaded).text = downloadedStr
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_url).text = item.url
-        val pageStr = item.referer.ifEmpty { getString(R.string.download_props_dash) }
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_page).text = pageStr
-        val dividerPage = view.findViewById<android.view.View>(R.id.divider_prop_page)
-        val rowPage = view.findViewById<android.view.View>(R.id.row_prop_page)
-        if (item.referer.isEmpty()) {
-            dividerPage.visibility = android.view.View.GONE
-            rowPage.visibility = android.view.View.GONE
-        }
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_speed).text = avgSpeedStr
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_active_time).text = activeTimeStr
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_date_added).text = dateAddedStr
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_date_completed).text = dateCompletedStr
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_unmetered).text =
-            if (item.unmeteredOnly) getString(R.string.download_props_yes) else getString(R.string.download_props_no)
-        view.findViewById<android.widget.TextView>(R.id.tv_prop_resumable).text =
-            if (item.resumable) getString(R.string.download_props_yes) else getString(R.string.download_props_no)
-
-        fun copyToClipboard(value: String) {
-            val cm = getSystemService(android.content.ClipboardManager::class.java)
-            cm.setPrimaryClip(android.content.ClipData.newPlainText("", value))
-            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-                ClintToast.show(this, getString(R.string.download_props_copied), R.drawable.ic_copy_24)
-            }
-        }
-
-        view.findViewById<android.view.View>(R.id.row_prop_filename).setOnClickListener { copyToClipboard(item.filename) }
-        view.findViewById<android.view.View>(R.id.row_prop_path).setOnClickListener { copyToClipboard(resolvedPath) }
-        view.findViewById<android.view.View>(R.id.row_prop_size).setOnClickListener { copyToClipboard(totalBytesStr) }
-        view.findViewById<android.view.View>(R.id.row_prop_downloaded).setOnClickListener { copyToClipboard(downloadedStr) }
-        view.findViewById<android.view.View>(R.id.row_prop_url).setOnClickListener { copyToClipboard(item.url) }
-        if (item.referer.isNotEmpty()) {
-            view.findViewById<android.view.View>(R.id.row_prop_page).setOnClickListener { copyToClipboard(item.referer) }
-        }
-        view.findViewById<android.view.View>(R.id.row_prop_speed).setOnClickListener { copyToClipboard(avgSpeedStr) }
-        view.findViewById<android.view.View>(R.id.row_prop_active_time).setOnClickListener { copyToClipboard(activeTimeStr) }
-        view.findViewById<android.view.View>(R.id.row_prop_date_added).setOnClickListener { copyToClipboard(dateAddedStr) }
-        view.findViewById<android.view.View>(R.id.row_prop_date_completed).setOnClickListener { copyToClipboard(dateCompletedStr) }
-
-        val tvMd5 = view.findViewById<android.widget.TextView>(R.id.tv_prop_md5)
-        val tvSha256 = view.findViewById<android.widget.TextView>(R.id.tv_prop_sha256)
-        val btnMd5 = view.findViewById<android.widget.Button>(R.id.btn_compute_md5)
-        val btnSha256 = view.findViewById<android.widget.Button>(R.id.btn_compute_sha256)
-        val rowMd5 = view.findViewById<android.view.View>(R.id.row_prop_md5)
-        val rowSha256 = view.findViewById<android.view.View>(R.id.row_prop_sha256)
-
-        val canCompute = item.file != null && item.file!!.exists()
-        if (!canCompute) {
-            val noFileStr = getString(R.string.download_props_checksum_na_no_file)
-            tvMd5.text = noFileStr
-            tvSha256.text = noFileStr
-            btnMd5.isEnabled = false
-            btnSha256.isEnabled = false
-        }
-
-        btnMd5.setOnClickListener {
-            if (!canCompute) return@setOnClickListener
-            btnMd5.isEnabled = false
-            btnMd5.text = getString(R.string.download_props_computing)
-            lifecycleScope.launch(Dispatchers.Default) {
-                val hash = runCatching { propComputeHash(item.file!!, "MD5") }.getOrElse { null }
-                withContext(Dispatchers.Main) {
-                    if (hash != null) {
-                        tvMd5.text = hash
-                        btnMd5.visibility = android.view.View.GONE
-                        rowMd5.setOnClickListener { copyToClipboard(hash) }
-                    } else {
-                        tvMd5.text = getString(R.string.download_props_checksum_na)
-                        btnMd5.isEnabled = true
-                        btnMd5.text = getString(R.string.download_props_compute)
-                    }
-                }
-            }
-        }
-
-        btnSha256.setOnClickListener {
-            if (!canCompute) return@setOnClickListener
-            btnSha256.isEnabled = false
-            btnSha256.text = getString(R.string.download_props_computing)
-            lifecycleScope.launch(Dispatchers.Default) {
-                val hash = runCatching { propComputeHash(item.file!!, "SHA-256") }.getOrElse { null }
-                withContext(Dispatchers.Main) {
-                    if (hash != null) {
-                        tvSha256.text = hash
-                        btnSha256.visibility = android.view.View.GONE
-                        rowSha256.setOnClickListener { copyToClipboard(hash) }
-                    } else {
-                        tvSha256.text = getString(R.string.download_props_checksum_na)
-                        btnSha256.isEnabled = true
-                        btnSha256.text = getString(R.string.download_props_compute)
-                    }
-                }
-            }
-        }
-
-        val isComplete = item.status == DownloadStatus.COMPLETE
-
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.download_props_title))
-            .setView(view)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton(getString(R.string.download_menu_share)) { _, _ -> shareFile(item) }
-            .apply {
-                if (isComplete) setPositiveButton(getString(R.string.action_open)) { _, _ -> handleOpenItem(item) }
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
-    }
-
     private fun openBrowserForRefreshLink(item: DownloadItem) {
         val intent = Intent(this, com.jhaiian.clint.browser.MainActivity::class.java).apply {
             putExtra(com.jhaiian.clint.browser.MainActivity.EXTRA_REFRESH_LINK_MODE, true)
@@ -1217,186 +506,4 @@ class DownloadsActivity : ClintActivity() {
         startActivity(intent)
     }
 
-    private fun showUpdateDownloadLinkDialog(item: DownloadItem) {
-        val view = layoutInflater.inflate(R.layout.dialog_download_update_link, null)
-        val til = view.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.til_update_link)
-        val et = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_update_link)
-        val pb = view.findViewById<android.widget.ProgressBar>(R.id.pb_update_link)
-        et.setText(item.url)
-        et.setSelection(et.text?.length ?: 0)
-        val dialog = MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.download_update_link_dialog_title))
-            .setView(view)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(getString(R.string.download_update_link_dialog_positive), null)
-            .create()
-            .also { applyStatusBarFlagToDialog(it) }
-        var debounceJob: Job? = null
-        var verifiedUrl: String? = null
-        val textWatcher = object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
-                debounceJob?.cancel()
-                verifiedUrl = null
-                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
-                val typed = s?.toString()?.trim() ?: ""
-                if (typed.isEmpty()) {
-                    til.error = null
-                    til.helperText = null
-                    pb.visibility = android.view.View.GONE
-                    return
-                }
-                til.error = null
-                til.helperText = null
-                pb.visibility = android.view.View.VISIBLE
-                debounceJob = lifecycleScope.launch {
-                    delay(600)
-                    val remoteSize = withContext(Dispatchers.IO) {
-                        try {
-                            var size = -1L
-                            val headRequest = okhttp3.Request.Builder().url(typed).head().build()
-                            val headResponse = ClintDownloadManager.httpClient.newCall(headRequest).execute()
-                            size = headResponse.header("Content-Length")?.toLongOrNull() ?: -1L
-                            headResponse.close()
-                            if (size < 0) {
-                                val rangeRequest = okhttp3.Request.Builder().url(typed).get()
-                                    .header("Range", "bytes=0-0").build()
-                                val rangeResponse = ClintDownloadManager.httpClient.newCall(rangeRequest).execute()
-                                val contentRange = rangeResponse.header("Content-Range")
-                                if (contentRange != null) {
-                                    size = contentRange.substringAfterLast("/").trim().toLongOrNull() ?: -1L
-                                }
-                                if (size < 0) {
-                                    size = rangeResponse.header("Content-Length")?.toLongOrNull() ?: -1L
-                                }
-                                rangeResponse.body?.close()
-                                rangeResponse.close()
-                            }
-                            size
-                        } catch (e: Throwable) {
-                            null
-                        }
-                    }
-                    pb.visibility = android.view.View.GONE
-                    if (remoteSize == null) {
-                        til.helperText = null
-                        til.error = getString(R.string.download_update_link_dialog_fetch_failed)
-                        verifiedUrl = null
-                        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
-                    } else {
-                        when {
-                            remoteSize < 0 -> {
-                                til.error = null
-                                til.helperText = getString(R.string.download_update_link_dialog_size_unverifiable)
-                                verifiedUrl = typed
-                                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.isEnabled = true
-                            }
-                            item.totalBytes <= 0 || remoteSize == item.totalBytes -> {
-                                til.error = null
-                                til.helperText = null
-                                verifiedUrl = typed
-                                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.isEnabled = true
-                            }
-                            else -> {
-                                til.helperText = null
-                                til.error = getString(R.string.download_update_link_dialog_size_mismatch, remoteSize, item.totalBytes)
-                                verifiedUrl = null
-                                dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        dialog.setOnShowListener {
-            val btn = dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-            btn.isEnabled = false
-            btn.setOnClickListener {
-                val url = verifiedUrl ?: return@setOnClickListener
-                ClintDownloadManager.updateDownloadUrl(item.id, url)
-                dialog.dismiss()
-            }
-            et.addTextChangedListener(textWatcher)
-        }
-        dialog.show()
-        et.requestFocus()
-        (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
-            .showSoftInput(et, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
-    }
-
-    /**
-     * Lets the person change the subset of a download's settings that stay safe to touch while
-     * it's queued, paused, or actively transferring: retry-on-failure, Wi-Fi/unmetered-only, and
-     * the speed limit. Filename, destination, and part count are deliberately left out since
-     * those are tied to bytes already written and changing them mid-transfer could corrupt the
-     * resume state.
-     */
-    private fun showChangeDownloadSettingsDialog(item: DownloadItem) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_change_download_settings, null)
-
-        val rowRetry = dialogView.findViewById<LinearLayout>(R.id.row_change_settings_retry)
-        val switchRetry = dialogView.findViewById<Switch>(R.id.switch_change_settings_retry)
-        val rowUnmetered = dialogView.findViewById<LinearLayout>(R.id.row_change_settings_unmetered)
-        val switchUnmetered = dialogView.findViewById<Switch>(R.id.switch_change_settings_unmetered)
-        val etSpeedLimit = dialogView.findViewById<TextInputEditText>(R.id.et_change_settings_speed_limit)
-        val speedLimitDropdown = dialogView.findViewById<AutoCompleteTextView>(R.id.speed_limit_unit_dropdown_change_settings)
-
-        switchRetry.isChecked = item.retryEnabled
-        switchUnmetered.isChecked = item.unmeteredOnly
-        rowRetry.setOnClickListener { switchRetry.isChecked = !switchRetry.isChecked }
-        rowUnmetered.setOnClickListener { switchUnmetered.isChecked = !switchUnmetered.isChecked }
-
-        val (initSpeedLimitAmount, initSpeedLimitUnit) = speedLimitBytesToAmountAndUnit(this, item.speedLimitBytesPerSec)
-        if (initSpeedLimitAmount > 0) etSpeedLimit.setText(initSpeedLimitAmount.toString())
-        val speedLimitUnitOptions = listOf(getString(R.string.speed_limit_unit_kb), getString(R.string.speed_limit_unit_mb))
-        speedLimitDropdown.setAdapter(ArrayAdapter(this, R.layout.item_dropdown, speedLimitUnitOptions))
-        speedLimitDropdown.setText(if (initSpeedLimitUnit == SPEED_LIMIT_UNIT_MB) speedLimitUnitOptions[1] else speedLimitUnitOptions[0], false)
-
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.download_change_settings_dialog_title))
-            .setView(dialogView)
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .setPositiveButton(getString(R.string.action_save)) { _, _ ->
-                val speedLimitAmount = etSpeedLimit.text?.toString()?.toIntOrNull()?.coerceAtLeast(0) ?: 0
-                val speedLimitUnit = if (speedLimitDropdown.text.toString() == speedLimitUnitOptions[1]) {
-                    SPEED_LIMIT_UNIT_MB
-                } else {
-                    SPEED_LIMIT_UNIT_KB
-                }
-                val speedLimitBytesPerSec = resolveSpeedLimitBytesPerSec(this, speedLimitAmount, speedLimitUnit)
-                ClintDownloadManager.updateDownloadSettings(
-                    this,
-                    item.id,
-                    retryEnabled = switchRetry.isChecked,
-                    unmeteredOnly = switchUnmetered.isChecked,
-                    speedLimitBytesPerSec = speedLimitBytesPerSec
-                )
-                ClintToast.show(this, getString(R.string.download_change_settings_saved), R.drawable.ic_tune_24)
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
-    }
-
-    private fun propComputeHash(file: java.io.File, algorithm: String): String {
-        val digest = java.security.MessageDigest.getInstance(algorithm)
-        java.io.FileInputStream(file).use { fis ->
-            val buffer = ByteArray(8192)
-            var read: Int
-            while (fis.read(buffer).also { read = it } != -1) digest.update(buffer, 0, read)
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
-
-    private fun propFormatSpeed(bps: Long): String = getString(R.string.download_speed_only, formatFileSize(bps))
-
-    private fun propFormatElapsed(seconds: Long): String = when {
-        seconds < 60 -> "${seconds}s"
-        seconds < 3600 -> "${seconds / 60}m ${seconds % 60}s"
-        else -> "${seconds / 3600}h ${(seconds % 3600) / 60}m"
-    }
-
-    private fun propFormatTimestamp(millis: Long): String {
-        val sdf = java.text.SimpleDateFormat("MMM d, yyyy  h:mm a", java.util.Locale.getDefault())
-        return sdf.format(java.util.Date(millis))
-    }
 }

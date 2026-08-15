@@ -2,15 +2,10 @@ package com.jhaiian.clint.browser.delegates
 import com.jhaiian.clint.browser.MainActivity
 
 import android.Manifest
-import android.view.LayoutInflater
-import android.view.View
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
-import android.widget.CheckBox
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jhaiian.clint.R
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionManager
@@ -35,20 +30,13 @@ private fun MainActivity.showWebPermissionDialog(
     onAllow: (remember: Boolean) -> Unit,
     onDeny: (remember: Boolean) -> Unit
 ) {
-    val view = LayoutInflater.from(this).inflate(R.layout.dialog_web_permission, null)
-    view.findViewById<TextView>(R.id.tvWebPermissionMessage).text = message
-    val checkRemember = view.findViewById<CheckBox>(R.id.checkWebPermissionRemember)
-    if (isIncognito) checkRemember.visibility = View.GONE
-    MaterialAlertDialogBuilder(this, getDialogTheme())
-        .setTitle(title)
-        .setView(view)
-        .setNegativeButton(getString(R.string.action_deny)) { _, _ ->
-            onDeny(checkRemember.isChecked)
-        }
-        .setPositiveButton(getString(R.string.action_allow)) { _, _ ->
-            onAllow(checkRemember.isChecked)
-        }
-        .create().also { applyStatusBarFlagToDialog(it) }.show()
+    uiState.webPermissionDialogRequest = com.jhaiian.clint.ui.WebPermissionDialogRequest(
+        title = title,
+        message = message,
+        isIncognito = isIncognito,
+        onAllow = onAllow,
+        onDeny = onDeny
+    )
 }
 
 internal fun MainActivity.onWebPermissionRequest(request: PermissionRequest) {
@@ -96,17 +84,17 @@ internal fun MainActivity.onWebPermissionRequest(request: PermissionRequest) {
             pendingWebPermissionRequest = request
             val needsRationale = shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)
             if (needsRationale) {
-                MaterialAlertDialogBuilder(this, getDialogTheme())
-                    .setTitle(getString(R.string.camera_permission_title))
-                    .setMessage(getString(R.string.camera_permission_message))
-                    .setNegativeButton(getString(R.string.action_deny)) { _, _ ->
+                uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+                    title = getString(R.string.camera_permission_title),
+                    message = getString(R.string.camera_permission_message),
+                    positiveLabel = getString(R.string.action_allow),
+                    onPositive = { webCameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
+                    negativeLabel = getString(R.string.action_deny),
+                    onNegative = {
                         pendingWebPermissionRequest?.deny()
                         pendingWebPermissionRequest = null
                     }
-                    .setPositiveButton(getString(R.string.action_allow)) { _, _ ->
-                        webCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                    .create().also { applyStatusBarFlagToDialog(it) }.show()
+                )
             } else {
                 webCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
@@ -146,17 +134,17 @@ internal fun MainActivity.onWebPermissionRequest(request: PermissionRequest) {
             pendingWebMicPermissionRequest = request
             val needsRationale = shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
             if (needsRationale) {
-                MaterialAlertDialogBuilder(this, getDialogTheme())
-                    .setTitle(getString(R.string.voice_search_permission_title))
-                    .setMessage(getString(R.string.voice_search_permission_message))
-                    .setNegativeButton(getString(R.string.action_deny)) { _, _ ->
+                uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+                    title = getString(R.string.voice_search_permission_title),
+                    message = getString(R.string.voice_search_permission_message),
+                    positiveLabel = getString(R.string.action_allow),
+                    onPositive = { webMicrophonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+                    negativeLabel = getString(R.string.action_deny),
+                    onNegative = {
                         pendingWebMicPermissionRequest?.deny()
                         pendingWebMicPermissionRequest = null
                     }
-                    .setPositiveButton(getString(R.string.action_allow)) { _, _ ->
-                        webMicrophonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    }
-                    .create().also { applyStatusBarFlagToDialog(it) }.show()
+                )
             } else {
                 webMicrophonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
@@ -290,18 +278,18 @@ internal fun MainActivity.onWebGeolocationRequest(origin: String, callback: Geol
         pendingWebGeoCallback = callback
         val needsRationale = shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
         if (needsRationale) {
-            MaterialAlertDialogBuilder(this, getDialogTheme())
-                .setTitle(getString(R.string.location_permission_title))
-                .setMessage(getString(R.string.location_permission_message))
-                .setNegativeButton(getString(R.string.action_deny)) { _, _ ->
+            uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+                title = getString(R.string.location_permission_title),
+                message = getString(R.string.location_permission_message),
+                positiveLabel = getString(R.string.action_allow),
+                onPositive = { webLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
+                negativeLabel = getString(R.string.action_deny),
+                onNegative = {
                     pendingWebGeoCallback?.invoke(pendingWebGeoOrigin ?: "", false, false)
                     pendingWebGeoOrigin = null
                     pendingWebGeoCallback = null
                 }
-                .setPositiveButton(getString(R.string.action_allow)) { _, _ ->
-                    webLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                }
-                .create().also { applyStatusBarFlagToDialog(it) }.show()
+            )
         } else {
             webLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }

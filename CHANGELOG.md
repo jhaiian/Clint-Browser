@@ -4,6 +4,55 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.0.8
+
+> This update focuses on Clint Browser's transition from XML-based Views to Jetpack Compose.
+
+---
+
+## What's New
+
+- **Full Jetpack Compose Migration** — Converted the app's UI from XML-based Views to Jetpack Compose.
+- **Updated Material Icons** — Replaced the previous icons with icons from the extended Material Icons library.
+- **Improved Search UI** — Refined the appearance and overall presentation of the Search overlay/Search View.
+- **Adaptive Layouts** — Added adaptive layouts to better support different screen sizes and form factors, including large screens and landscape mode.
+- **Removed Custom Toasts** — Removed the custom Toast implementation and switched back to the standard Android Toast system.
+- **Visual Improvements** — Some UI elements may look slightly different throughout the app as a result of the migration to Compose.
+- **Improved Backward Compatibility** — Enhanced support for older Android versions.
+
+---
+
+## Dependency Updates
+
+- **Updated adblock-rust** — Updated adblock-rust from 0.13.0 to 0.13.2.
+- **Updated uBlock Origin Resources** — Updated the bundled uBlock Origin resources to version 1.73.0.
+- **Updated Android Gradle Plugin** — Bumped `com.android.application` from 9.3.0 to 9.3.1 in [#19](https://github.com/jhaiian/ClintBrowser/pull/19) by [@dependabot[bot]](https://github.com/dependabot[bot]).
+- **Updated Gradle Wrapper** — Bumped Gradle from 9.6.1 to 9.7.0 in [#20](https://github.com/jhaiian/ClintBrowser/pull/20) by [@dependabot[bot]](https://github.com/dependabot[bot]).
+
+---
+
+## A Major Transition
+
+This update took a long time to complete because I essentially had to rewrite the entire UI codebase.
+
+Looking back, migrating to Jetpack Compose from the beginning would have saved me a lot of time. Definitely a rookie mistake.
+
+That said, the transition is finally complete, and development feels much easier now that Clint Browser is fully using Jetpack Compose.
+
+This release is mainly focused on the transition to Compose rather than being a complete visual redesign of every screen.
+
+---
+
+## What's Next
+
+I still have a lot of updates and ideas planned for Clint Browser, including some bigger features that will probably take quite a while to develop.
+
+For now, though, I want to focus on improving what's already there before adding more new features. I'll be spending the next few updates cleaning up the existing UI, making everything look more polished, and improving the overall user experience.
+
+Now that the Compose migration is finally out of the way, these smaller updates should come much faster... though I can't promise that because college has already begun, and yeah, I'm gonna get busy.
+
+---
+
 # v1.0.7
 
 > This update mainly enhances and fixes the download manager.

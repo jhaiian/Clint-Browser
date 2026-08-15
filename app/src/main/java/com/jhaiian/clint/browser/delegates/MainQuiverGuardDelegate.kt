@@ -1,8 +1,12 @@
 package com.jhaiian.clint.browser.delegates
 
+import android.content.Intent
 import androidx.lifecycle.lifecycleScope
+import com.jhaiian.clint.R
 import com.jhaiian.clint.browser.MainActivity
+import com.jhaiian.clint.quiver.QuiverGuardActivity
 import com.jhaiian.clint.quiver.engine.BlockedRequestCounter
+import com.jhaiian.clint.quiver.engine.QuiverGuardEngine
 import com.jhaiian.clint.quiver.engine.QuiverGuardWebIntegration
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionManager
@@ -23,8 +27,43 @@ internal fun MainActivity.observeQuiverGuardCounter() {
 // on first load, so it runs on Dispatchers.IO rather than blocking onCreate.
 internal fun MainActivity.initializeQuiverGuardEngine() {
     lifecycleScope.launch(Dispatchers.IO) {
-        QuiverGuardWebIntegration.initialize(this@initializeQuiverGuardEngine)
+        val result = QuiverGuardWebIntegration.initialize(this@initializeQuiverGuardEngine)
+        if (result.requiresRecompile) {
+            withContext(Dispatchers.Main) {
+                showQuiverGuardRecompileRequiredDialog(result)
+            }
+        }
     }
+}
+
+// Shown when the on-disk compiled filter database exists but couldn't be turned into an
+// engine - either because it was built by an incompatible adblock-rust version, or because
+// the file itself is corrupted/truncated/otherwise unreadable as a compiled engine. The
+// message is tailored to [reason] (see QuiverGuardEngine.PreloadResult), but the action is
+// always the same: not cancelable - dismissing it without recompiling would just leave
+// Quiver Guard silently unfiltered - so the only way out is the positive button, which opens
+// QuiverGuardActivity with EXTRA_AUTO_RECOMPILE so it starts recompiling the existing filter
+// list configuration immediately.
+internal fun MainActivity.showQuiverGuardRecompileRequiredDialog(reason: QuiverGuardEngine.PreloadResult) {
+    val messageRes = when (reason) {
+        QuiverGuardEngine.PreloadResult.VERSION_MISMATCH -> R.string.quiver_guard_recompile_reason_version_mismatch
+        QuiverGuardEngine.PreloadResult.BAD_HEADER -> R.string.quiver_guard_recompile_reason_bad_header
+        QuiverGuardEngine.PreloadResult.BAD_CHECKSUM -> R.string.quiver_guard_recompile_reason_bad_checksum
+        QuiverGuardEngine.PreloadResult.FLATBUFFER_PARSING_ERROR -> R.string.quiver_guard_recompile_reason_flatbuffer_error
+        else -> R.string.quiver_guard_recompile_reason_unknown
+    }
+    uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+        title = getString(R.string.quiver_guard_recompile_required_title),
+        message = getString(messageRes),
+        cancelable = false,
+        positiveLabel = getString(R.string.quiver_guard_recompile_required_button),
+        onPositive = {
+            startActivity(
+                Intent(this, QuiverGuardActivity::class.java)
+                    .putExtra(QuiverGuardActivity.EXTRA_AUTO_RECOMPILE, true)
+            )
+        }
+    )
 }
 
 // Called each time a new page starts loading in a tab. Determines whether
@@ -147,10 +186,13 @@ internal fun MainActivity.onQuiverGuardEnabled(enabled: Boolean) {
         return
     }
     lifecycleScope.launch {
-        withContext(Dispatchers.IO) {
+        val result = withContext(Dispatchers.IO) {
             QuiverGuardWebIntegration.initialize(this@onQuiverGuardEnabled)
         }
         reloadActiveTabIfWeb()
+        if (result.requiresRecompile) {
+            showQuiverGuardRecompileRequiredDialog(result)
+        }
     }
 }
 

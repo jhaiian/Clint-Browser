@@ -1,0 +1,160 @@
+package com.jhaiian.clint.downloads
+
+import com.jhaiian.clint.R
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.unit.dp
+import com.jhaiian.clint.settings.common.dialogSectionBackground
+import com.jhaiian.clint.settings.common.SettingsSection
+import com.jhaiian.clint.ui.ClintDialog
+import com.jhaiian.clint.ui.ClintOutlinedTextField
+import com.jhaiian.clint.ui.theme.LocalClintColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+
+@Composable
+fun DownloadUpdateLinkDialog(item: DownloadItem, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val colors = LocalClintColors.current
+
+    var text by remember(item.id) { mutableStateOf(item.url) }
+    var checking by remember { mutableStateOf(false) }
+    var errorText by remember { mutableStateOf<String?>(null) }
+    var helperText by remember { mutableStateOf<String?>(null) }
+    var verifiedUrl by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(text) {
+        verifiedUrl = null
+        val typed = text.trim()
+        if (typed.isEmpty()) {
+            checking = false
+            errorText = null
+            helperText = null
+            return@LaunchedEffect
+        }
+        errorText = null
+        helperText = null
+        checking = true
+        delay(600)
+        val remoteSize = withContext(Dispatchers.IO) {
+            try {
+                var size = -1L
+                val headRequest = okhttp3.Request.Builder().url(typed).head().build()
+                val headResponse = ClintDownloadManager.httpClient.newCall(headRequest).execute()
+                size = headResponse.header("Content-Length")?.toLongOrNull() ?: -1L
+                headResponse.close()
+                if (size < 0) {
+                    val rangeRequest = okhttp3.Request.Builder().url(typed).get()
+                        .header("Range", "bytes=0-0").build()
+                    val rangeResponse = ClintDownloadManager.httpClient.newCall(rangeRequest).execute()
+                    val contentRange = rangeResponse.header("Content-Range")
+                    if (contentRange != null) {
+                        size = contentRange.substringAfterLast("/").trim().toLongOrNull() ?: -1L
+                    }
+                    if (size < 0) {
+                        size = rangeResponse.header("Content-Length")?.toLongOrNull() ?: -1L
+                    }
+                    rangeResponse.body.close()
+                    rangeResponse.close()
+                }
+                size
+            } catch (e: Throwable) {
+                null
+            }
+        }
+        checking = false
+        when {
+            remoteSize == null -> {
+                helperText = null
+                errorText = context.getString(R.string.download_update_link_dialog_fetch_failed)
+            }
+            remoteSize < 0 -> {
+                errorText = null
+                helperText = context.getString(R.string.download_update_link_dialog_size_unverifiable)
+                verifiedUrl = typed
+            }
+            item.totalBytes <= 0 || remoteSize == item.totalBytes -> {
+                errorText = null
+                helperText = null
+                verifiedUrl = typed
+            }
+            else -> {
+                helperText = null
+                errorText = context.getString(R.string.download_update_link_dialog_size_mismatch, remoteSize, item.totalBytes)
+            }
+        }
+    }
+
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    ClintDialog(
+        title = stringResource(R.string.download_update_link_dialog_title),
+        hideStatusBar = hideStatusBar,
+        onDismiss = onDismiss,
+        footer = {
+            Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.action_cancel), color = colors.primary, fontWeight = FontWeight.Medium)
+                }
+                TextButton(
+                    onClick = {
+                        val url = verifiedUrl ?: return@TextButton
+                        ClintDownloadManager.updateDownloadUrl(item.id, url)
+                        onDismiss()
+                    },
+                    enabled = verifiedUrl != null
+                ) {
+                    Text(
+                        stringResource(R.string.download_update_link_dialog_positive),
+                        color = if (verifiedUrl != null) colors.primary else colors.secondaryText,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+            SettingsSection(colors.dialogSectionBackground) {
+                Column(Modifier.padding(16.dp)) {
+                    ClintOutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                        singleLine = true,
+                        isError = errorText != null,
+                        trailingIcon = if (checking) {
+                            { CircularProgressIndicator(modifier = Modifier.size(20.dp), color = colors.primary, strokeWidth = 2.dp) }
+                        } else null,
+                        supportingText = when {
+                            errorText != null -> { { Text(errorText!!, color = colors.colorError) } }
+                            helperText != null -> { { Text(helperText!!, color = colors.secondaryText) } }
+                            else -> null
+                        }
+                    )
+                }
+            }
+        }
+    }
+}

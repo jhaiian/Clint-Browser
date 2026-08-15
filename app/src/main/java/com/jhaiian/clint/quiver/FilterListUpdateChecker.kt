@@ -142,10 +142,6 @@ internal object FilterListUpdateChecker {
                 }
 
                 val body = response.body
-                    ?: return FilterListUpdateItemResult.Failed(
-                        filterList,
-                        context.getString(R.string.quiver_guard_download_error_empty)
-                    )
 
                 val responseEtag = response.header("ETag")
                 val responseLastModified = response.header("Last-Modified")

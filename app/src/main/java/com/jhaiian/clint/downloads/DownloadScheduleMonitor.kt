@@ -5,7 +5,7 @@ import androidx.preference.PreferenceManager
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -29,17 +29,17 @@ internal object DownloadScheduleMonitor {
     fun isEnabled(context: Context): Boolean {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return prefs.getBoolean(
-            DownloadSettingsFragment.PREF_SCHEDULE_ENABLED, DownloadSettingsFragment.DEFAULT_SCHEDULE_ENABLED
+            DownloadSettingsKeys.PREF_SCHEDULE_ENABLED, DownloadSettingsKeys.DEFAULT_SCHEDULE_ENABLED
         )
     }
 
     private fun windowMinutes(context: Context): Pair<Int, Int> {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val start = prefs.getInt(
-            DownloadSettingsFragment.PREF_SCHEDULE_START_MINUTES, DownloadSettingsFragment.DEFAULT_SCHEDULE_START_MINUTES
+            DownloadSettingsKeys.PREF_SCHEDULE_START_MINUTES, DownloadSettingsKeys.DEFAULT_SCHEDULE_START_MINUTES
         )
         val end = prefs.getInt(
-            DownloadSettingsFragment.PREF_SCHEDULE_END_MINUTES, DownloadSettingsFragment.DEFAULT_SCHEDULE_END_MINUTES
+            DownloadSettingsKeys.PREF_SCHEDULE_END_MINUTES, DownloadSettingsKeys.DEFAULT_SCHEDULE_END_MINUTES
         )
         return start to end
     }

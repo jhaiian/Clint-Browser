@@ -10,12 +10,11 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jhaiian.clint.R
 import com.jhaiian.clint.browser.MainActivity
 import com.jhaiian.clint.downloads.ClintDownloadManager
 import com.jhaiian.clint.downloads.DownloadFileHelper
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import java.io.File
 
 internal const val PREF_BATTERY_OPT_ASKED = "battery_opt_asked"
@@ -38,17 +37,19 @@ internal fun MainActivity.initiateDownload(
     onRename: () -> Unit = {}
 ) {
     if (unmeteredOnly && isNetworkMetered()) {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.download_metered_warning_title))
-            .setMessage(getString(R.string.download_metered_warning_message))
-            .setPositiveButton(getString(R.string.action_yes)) { _, _ ->
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.download_metered_warning_title),
+            message = getString(R.string.download_metered_warning_message),
+            positiveLabel = getString(R.string.action_yes),
+            onPositive = {
                 proceedWithDownload(url, filename, userAgent, referer, cookies, retryEnabled, false, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
-            }
-            .setNegativeButton(getString(R.string.action_no)) { _, _ ->
+            },
+            negativeLabel = getString(R.string.action_no),
+            onNegative = {
                 proceedWithDownload(url, filename, userAgent, referer, cookies, retryEnabled, true, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
-            }
-            .setNeutralButton(getString(R.string.action_cancel), null)
-            .show()
+            },
+            neutralLabel = getString(R.string.action_cancel)
+        )
         return
     }
     proceedWithDownload(url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
@@ -77,21 +78,23 @@ private fun MainActivity.proceedWithDownload(
         !pm.isIgnoringBatteryOptimizations(packageName)
     ) {
         prefs.edit().putBoolean(PREF_BATTERY_OPT_ASKED, true).apply()
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.battery_opt_rationale_title))
-            .setMessage(getString(R.string.battery_opt_rationale_message))
-            .setCancelable(false)
-            .setPositiveButton(getString(R.string.action_allow)) { _, _ ->
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.battery_opt_rationale_title),
+            message = getString(R.string.battery_opt_rationale_message),
+            cancelable = false,
+            positiveLabel = getString(R.string.action_allow),
+            onPositive = {
                 val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                     data = Uri.parse("package:$packageName")
                 }
                 startActivity(intent)
                 doEnqueueDownload(url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
-            }
-            .setNegativeButton(getString(R.string.action_not_now)) { _, _ ->
+            },
+            negativeLabel = getString(R.string.action_not_now),
+            onNegative = {
                 doEnqueueDownload(url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
             }
-            .show()
+        )
         return
     }
     doEnqueueDownload(url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
@@ -128,18 +131,20 @@ private fun MainActivity.doEnqueueDownload(
 
     pendingDownload = MainActivity.PendingDownload(url, filename, userAgent, referer, cookies)
 
-    MaterialAlertDialogBuilder(this, getDialogTheme())
-        .setTitle(getString(R.string.download_storage_permission_title))
-        .setMessage(getString(R.string.download_storage_permission_message))
-        .setPositiveButton(getString(R.string.action_allow)) { _, _ ->
+    uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+        title = getString(R.string.download_storage_permission_title),
+        message = getString(R.string.download_storage_permission_message),
+        positiveLabel = getString(R.string.action_allow),
+        onPositive = {
             onDismiss()
             storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-        .setNegativeButton(getString(R.string.action_cancel)) { _, _ ->
+        },
+        negativeLabel = getString(R.string.action_cancel),
+        onNegative = {
             pendingDownload = null
             onDismiss()
         }
-        .show()
+    )
 }
 
 private fun MainActivity.checkConflictAndEnqueue(
@@ -161,14 +166,15 @@ private fun MainActivity.checkConflictAndEnqueue(
 ) {
     val existing = ClintDownloadManager.findActiveDownloadForUrl(url)
     if (existing != null) {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.download_already_active_title))
-            .setMessage(getString(R.string.download_already_active_message, existing.filename))
-            .setPositiveButton(getString(R.string.action_download_anyway)) { _, _ ->
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.download_already_active_title),
+            message = getString(R.string.download_already_active_message, existing.filename),
+            positiveLabel = getString(R.string.action_download_anyway),
+            onPositive = {
                 checkFilenameConflictAndEnqueue(url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
-            }
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .show()
+            },
+            negativeLabel = getString(R.string.action_cancel)
+        )
         return
     }
     checkFilenameConflictAndEnqueue(url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
@@ -191,7 +197,7 @@ private fun MainActivity.checkFilenameConflictAndEnqueue(
     onDismiss: () -> Unit,
     onRename: () -> Unit
 ) {
-    val isSaf = locationMode == DownloadSettingsFragment.MODE_CUSTOM
+    val isSaf = locationMode == DownloadSettingsKeys.MODE_CUSTOM
     val fileExists = if (isSaf) {
         val treeUri = customLocationUri?.let { Uri.parse(it) }
             ?: DownloadFileHelper.getSafTreeUri(this)
@@ -206,32 +212,18 @@ private fun MainActivity.checkFilenameConflictAndEnqueue(
         return
     }
 
-    val items = arrayOf(
-        getString(R.string.download_conflict_add_duplicate),
-        getString(R.string.download_conflict_override),
-        getString(R.string.download_conflict_rename)
+    uiState.conflictDialogRequest = com.jhaiian.clint.downloads.DownloadConflictDialogRequest(
+        onAddDuplicate = {
+            onDismiss()
+            ClintDownloadManager.enqueue(this, url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
+        },
+        onOverride = {
+            deleteExistingDownload(filename, locationMode, customLocationUri)
+            onDismiss()
+            ClintDownloadManager.enqueue(this, url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
+        },
+        onRename = onRename
     )
-
-    MaterialAlertDialogBuilder(this, getDialogTheme())
-        .setTitle(getString(R.string.download_conflict_title))
-        .setItems(items) { _, which ->
-            when (which) {
-                0 -> {
-                    onDismiss()
-                    ClintDownloadManager.enqueue(this, url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
-                }
-                1 -> {
-                    deleteExistingDownload(filename, locationMode, customLocationUri)
-                    onDismiss()
-                    ClintDownloadManager.enqueue(this, url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
-                }
-                2 -> {
-                    onRename()
-                }
-            }
-        }
-        .setNegativeButton(getString(R.string.action_cancel), null)
-        .show()
 }
 
 private fun MainActivity.deleteExistingDownload(
@@ -242,7 +234,7 @@ private fun MainActivity.deleteExistingDownload(
     val matchingIds = ClintDownloadManager.downloadsFlow.value.filter { it.filename == filename }.map { it.id }
     matchingIds.forEach { ClintDownloadManager.remove(this, it, deleteFile = true) }
 
-    val isSaf = locationMode == DownloadSettingsFragment.MODE_CUSTOM
+    val isSaf = locationMode == DownloadSettingsKeys.MODE_CUSTOM
     if (isSaf) {
         val treeUri = customLocationUri?.let { Uri.parse(it) }
             ?: DownloadFileHelper.getSafTreeUri(this)

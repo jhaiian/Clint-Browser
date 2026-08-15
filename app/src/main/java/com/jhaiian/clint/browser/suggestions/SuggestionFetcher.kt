@@ -47,7 +47,7 @@ internal class SuggestionFetcher {
                 override fun onResponse(call: Call, response: Response) {
                     val results = mutableListOf<String>()
                     try {
-                        val body = response.body?.string() ?: ""
+                        val body = response.body.string()
                         val root = JSONArray(body)
                         if (root.length() >= 2) {
                             val suggestions = root.getJSONArray(1)

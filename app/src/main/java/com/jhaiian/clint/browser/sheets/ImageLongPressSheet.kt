@@ -1,278 +1,270 @@
 package com.jhaiian.clint.browser.sheets
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Tab
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.ui.graphics.asAndroidBitmap
 
-import android.app.Dialog
-import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.ImageView
-import android.widget.TextView
-import java.nio.ByteBuffer
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.preference.PreferenceManager
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.caverock.androidsvg.SVG
 import com.jhaiian.clint.R
+import com.jhaiian.clint.browser.MainActivity
+import com.jhaiian.clint.ui.theme.LocalClintColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.net.URLDecoder
+import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
-import com.caverock.androidsvg.SVG
 
-class ImageLongPressSheet : BottomSheetDialogFragment() {
+/** Everything the old newInstance() Bundle args carried. Also reused (with `isPreviewContext =
+ *  true`) by [ContentPreviewSheet] for image long-presses inside its own embedded WebView. */
+data class ImageLongPressRequest(
+    val imageUrl: String,
+    val pageTitle: String,
+    val isStandalone: Boolean,
+    val referer: String = "",
+    val isPreviewContext: Boolean = false
+)
 
-    interface Listener {
-        fun onImageOpenInNewTab(imageUrl: String)
-        fun onImageOpenIncognito(imageUrl: String)
-        fun onImageOpenInCurrentTab(imageUrl: String)
-        fun onImagePreview(imageUrl: String)
-        fun onImageCopy(imageUrl: String)
-        fun onImageDownload(imageUrl: String, altText: String)
-        fun onImageShare(imageUrl: String)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainActivity, onDismiss: () -> Unit) {
+    val colors = LocalClintColors.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+
+    fun dismissAnd(action: () -> Unit) {
+        onDismiss()
+        action()
     }
 
-    private var listener: Listener? = null
-    private var thumbnailClient: OkHttpClient? = null
-    private var thumbnailThread: Thread? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        listener = requireActivity() as? Listener
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
-        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        if (prefs.getBoolean("hide_status_bar", false)) {
-            @Suppress("DEPRECATION")
-            dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        }
-        dialog.setOnShowListener {
-            val sheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-            sheet?.let {
-                val behavior = BottomSheetBehavior.from(it)
-                behavior.skipCollapsed = true
-                val isLandscape = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-                if (isLandscape) {
-                    val screenHeight = resources.displayMetrics.heightPixels
-                    it.layoutParams?.height = screenHeight
-                    behavior.isFitToContents = false
-                    behavior.peekHeight = 0
-                    behavior.maxHeight = screenHeight
-                } else {
-                    behavior.isFitToContents = true
-                }
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            }
-        }
-        return dialog
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return inflater.inflate(R.layout.bottom_sheet_image_actions, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        val imageUrl = arguments?.getString(ARG_IMAGE_URL) ?: ""
-        val pageTitle = arguments?.getString(ARG_PAGE_TITLE) ?: ""
-        val isStandalone = arguments?.getBoolean(ARG_IS_STANDALONE) ?: false
-        val isPreviewContext = arguments?.getBoolean(ARG_IS_PREVIEW_CONTEXT) ?: false
-        val referer = arguments?.getString(ARG_REFERER) ?: ""
-
-        val isDataUri = imageUrl.startsWith("data:")
-        val urlFilename = if (!isDataUri) {
-            imageUrl.substringAfterLast("/").substringBefore("?")
-                .takeIf { it.length > 4 && it.contains(".") }
-                ?: run {
-                    try {
-                        val uri = android.net.Uri.parse(imageUrl)
-                        listOf("u", "url", "src", "img", "imgurl").firstNotNullOfOrNull { key ->
-                            uri.getQueryParameter(key)?.let { param ->
-                                java.net.URLDecoder.decode(param, "UTF-8")
-                                    .substringAfterLast("/").substringBefore("?")
-                                    .takeIf { it.contains(".") }
-                            }
-                        }
-                    } catch (_: Exception) { null }
-                }
-        } else null
-        val displayTitle = pageTitle.ifEmpty {
-            if (isDataUri) getString(R.string.image_embedded_title) else urlFilename ?: imageUrl
-        }
-
-        view.findViewById<TextView>(R.id.image_title).text = displayTitle
-
-        val userAgent = android.webkit.WebSettings.getDefaultUserAgent(requireContext())
-        loadThumbnail(view.findViewById(R.id.image_thumbnail), imageUrl, referer, userAgent)
-
-        val openInNewTab = view.findViewById<View>(R.id.action_open_in_new_tab)
-        val openIncognito = view.findViewById<View>(R.id.action_open_incognito)
-        val openInCurrentTab = view.findViewById<View>(R.id.action_open_in_current_tab)
-        val previewItem = view.findViewById<View>(R.id.action_preview)
-        val dividerTop = view.findViewById<View>(R.id.divider_top)
-        val dividerAfterNewTab = view.findViewById<View>(R.id.divider_after_new_tab)
-        val dividerAfterIncognito = view.findViewById<View>(R.id.divider_after_incognito)
-        val dividerAfterCurrentTab = view.findViewById<View>(R.id.divider_after_current_tab)
-        val dividerAfterPreviewItem = view.findViewById<View>(R.id.divider_after_preview_item)
-
-        val showTabActions = !isStandalone || isPreviewContext
-
-        dividerTop.visibility = if (showTabActions) View.VISIBLE else View.GONE
-        openInNewTab.visibility = if (showTabActions) View.VISIBLE else View.GONE
-        dividerAfterNewTab.visibility = if (showTabActions) View.VISIBLE else View.GONE
-        openIncognito.visibility = if (showTabActions) View.VISIBLE else View.GONE
-        dividerAfterIncognito.visibility = if (showTabActions) View.VISIBLE else View.GONE
-        openInCurrentTab.visibility = if (isPreviewContext) View.VISIBLE else View.GONE
-        dividerAfterCurrentTab.visibility = if (isPreviewContext) View.VISIBLE else View.GONE
-        previewItem.visibility = if (showTabActions && !isPreviewContext) View.VISIBLE else View.GONE
-        dividerAfterPreviewItem.visibility = if (showTabActions && !isPreviewContext) View.VISIBLE else View.GONE
-
-        openInNewTab.setOnClickListener { dismiss(); listener?.onImageOpenInNewTab(imageUrl) }
-        openIncognito.setOnClickListener { dismiss(); listener?.onImageOpenIncognito(imageUrl) }
-        openInCurrentTab.setOnClickListener { dismiss(); listener?.onImageOpenInCurrentTab(imageUrl) }
-        previewItem.setOnClickListener { dismiss(); listener?.onImagePreview(imageUrl) }
-        view.findViewById<View>(R.id.action_copy).setOnClickListener { dismiss(); listener?.onImageCopy(imageUrl) }
-        view.findViewById<View>(R.id.action_download).setOnClickListener { dismiss(); listener?.onImageDownload(imageUrl, pageTitle) }
-        view.findViewById<View>(R.id.action_share).setOnClickListener { dismiss(); listener?.onImageShare(imageUrl) }
-    }
-
-    private fun loadThumbnail(imageView: ImageView, url: String, referer: String, userAgent: String) {
-        if (url.isEmpty()) return
-        val handler = Handler(Looper.getMainLooper())
-        if (url.startsWith("data:")) {
-            val commaIdx = url.indexOf(",")
-            if (commaIdx < 0) return
-            val header = url.substring(0, commaIdx)
-            val content = url.substring(commaIdx + 1)
-            val t = Thread {
-                try {
-                    val bytes = if (header.contains(";base64")) {
-                        android.util.Base64.decode(content, android.util.Base64.DEFAULT)
-                    } else {
-                        try {
-                            java.net.URLDecoder.decode(content, "UTF-8").toByteArray(Charsets.UTF_8)
-                        } catch (_: Exception) { content.toByteArray(Charsets.UTF_8) }
-                    }
-                    renderBytesToImageView(handler, imageView, bytes)
-                } catch (_: Exception) {}
-            }
-            thumbnailThread = t
-            t.start()
-            return
-        }
-        thumbnailClient = OkHttpClient.Builder()
-            .connectTimeout(8, TimeUnit.SECONDS)
-            .readTimeout(8, TimeUnit.SECONDS)
-            .build()
-        val t = Thread {
-            try {
-                val request = Request.Builder()
-                    .url(url)
-                    .header("User-Agent", userAgent)
-                    .apply { if (referer.isNotEmpty()) header("Referer", referer) }
-                    .build()
-                val response = thumbnailClient?.newCall(request)?.execute() ?: return@Thread
-                val bytes = response.body?.bytes() ?: return@Thread
-                renderBytesToImageView(handler, imageView, bytes)
-            } catch (_: Exception) {}
-        }
-        thumbnailThread = t
-        t.start()
-    }
-
-    private fun renderBytesToImageView(handler: Handler, imageView: ImageView, bytes: ByteArray) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            try {
-                val source = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
-                val drawable = ImageDecoder.decodeDrawable(source)
-                handler.post {
-                    if (isAdded) {
-                        imageView.setPadding(0, 0, 0, 0)
-                        imageView.imageTintList = null
-                        imageView.setImageDrawable(drawable)
-                        (drawable as? AnimatedImageDrawable)?.start()
+    val isDataUri = request.imageUrl.startsWith("data:")
+    val urlFilename = if (!isDataUri) {
+        request.imageUrl.substringAfterLast("/").substringBefore("?")
+            .takeIf { it.length > 4 && it.contains(".") }
+            ?: runCatching {
+                val uri = android.net.Uri.parse(request.imageUrl)
+                listOf("u", "url", "src", "img", "imgurl").firstNotNullOfOrNull { key ->
+                    uri.getQueryParameter(key)?.let { param ->
+                        URLDecoder.decode(param, "UTF-8")
+                            .substringAfterLast("/").substringBefore("?")
+                            .takeIf { it.contains(".") }
                     }
                 }
-                return
-            } catch (_: Exception) {}
-        } else {
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            if (bitmap != null) {
-                handler.post {
-                    if (isAdded) {
-                        imageView.setPadding(0, 0, 0, 0)
-                        imageView.imageTintList = null
-                        imageView.setImageBitmap(bitmap)
-                    }
-                }
-                return
-            }
-        }
-        renderSvgToImageView(handler, imageView, bytes)
+            }.getOrNull()
+    } else null
+    val displayTitle = request.pageTitle.ifEmpty {
+        if (isDataUri) stringResource(R.string.image_embedded_title) else urlFilename ?: request.imageUrl
     }
 
-    private fun renderSvgToImageView(handler: Handler, imageView: ImageView, bytes: ByteArray) {
-        try {
-            val svg = SVG.getFromString(bytes.toString(Charsets.UTF_8))
-            val vb = svg.documentViewBox
-            val rawW = vb?.width()?.toInt()?.takeIf { it > 0 }
-                ?: svg.documentWidth.toInt().takeIf { it > 0 } ?: 512
-            val rawH = vb?.height()?.toInt()?.takeIf { it > 0 }
-                ?: svg.documentHeight.toInt().takeIf { it > 0 } ?: 512
-            val scale = 512f / maxOf(rawW, rawH).toFloat()
-            val bw = (rawW * scale).toInt().coerceAtLeast(1)
-            val bh = (rawH * scale).toInt().coerceAtLeast(1)
-            val bitmap = android.graphics.Bitmap.createBitmap(bw, bh, android.graphics.Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(bitmap)
-            svg.renderToCanvas(canvas)
-            handler.post {
-                if (isAdded) {
-                    imageView.setPadding(0, 0, 0, 0)
-                    imageView.imageTintList = null
-                    imageView.setImageBitmap(bitmap)
+    val showTabActions = !request.isStandalone || request.isPreviewContext
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = colors.popupBackground) {
+        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
+        Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            ImageThumbnail(request.imageUrl, request.referer)
+
+            Text(
+                displayTitle,
+                color = colors.secondaryText,
+                fontSize = 13.sp,
+                maxLines = 2,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+
+            if (showTabActions) {
+                ActionSheetDivider()
+                ActionSheetRow(androidx.compose.material.icons.Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.image_open_in_new_tab)) {
+                    dismissAnd { activity.onImageOpenInNewTab(request.imageUrl) }
+                }
+                ActionSheetDivider()
+                ActionSheetRow(androidx.compose.material.icons.Icons.Filled.VisibilityOff, stringResource(R.string.image_open_incognito)) {
+                    dismissAnd { activity.onImageOpenIncognito(request.imageUrl) }
                 }
             }
-        } catch (_: Exception) {}
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        thumbnailThread?.interrupt()
-        thumbnailThread = null
-        thumbnailClient = null
-    }
-
-    companion object {
-        private const val ARG_IMAGE_URL = "image_url"
-        private const val ARG_PAGE_TITLE = "page_title"
-        private const val ARG_IS_STANDALONE = "is_standalone"
-        private const val ARG_REFERER = "referer"
-        private const val ARG_IS_PREVIEW_CONTEXT = "is_preview_context"
-
-        fun newInstance(imageUrl: String, pageTitle: String, isStandaloneImage: Boolean, referer: String = "", isPreviewContext: Boolean = false): ImageLongPressSheet {
-            return ImageLongPressSheet().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_IMAGE_URL, imageUrl)
-                    putString(ARG_PAGE_TITLE, pageTitle)
-                    putBoolean(ARG_IS_STANDALONE, isStandaloneImage)
-                    putString(ARG_REFERER, referer)
-                    putBoolean(ARG_IS_PREVIEW_CONTEXT, isPreviewContext)
+            if (request.isPreviewContext) {
+                ActionSheetDivider()
+                ActionSheetRow(androidx.compose.material.icons.Icons.Filled.Tab, stringResource(R.string.image_open_in_current_tab)) {
+                    dismissAnd { activity.onImageOpenInCurrentTab(request.imageUrl) }
                 }
+            }
+            if (showTabActions && !request.isPreviewContext) {
+                ActionSheetDivider()
+                ActionSheetRow(androidx.compose.material.icons.Icons.Filled.ZoomIn, stringResource(R.string.image_preview)) {
+                    dismissAnd { activity.onImagePreview(request.imageUrl) }
+                }
+            }
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.ContentCopy, stringResource(R.string.image_copy)) {
+                dismissAnd { activity.onImageCopy(request.imageUrl) }
+            }
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.Download, stringResource(R.string.image_download)) {
+                dismissAnd { activity.onImageDownload(request.imageUrl, request.pageTitle) }
+            }
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.Share, stringResource(R.string.image_share)) {
+                dismissAnd { activity.onImageShare(request.imageUrl) }
             }
         }
     }
 }
+
+/** Hosts a plain [ImageView] via interop rather than Compose's Image()/AsyncImage, since this is
+ *  the one spot in the app that needs to keep an [AnimatedImageDrawable] (animated GIF/WebP)
+ *  actually animating — Compose has no built-in equivalent for that. */
+@Composable
+private fun ImageThumbnail(imageUrl: String, referer: String) {
+    val context = LocalContext.current
+    val colors = LocalClintColors.current
+    var drawable by remember(imageUrl) { mutableStateOf<Drawable?>(null) }
+
+    LaunchedEffect(imageUrl) {
+        if (imageUrl.isEmpty()) return@LaunchedEffect
+        val userAgent = android.webkit.WebSettings.getDefaultUserAgent(context)
+        val bytes = withContext(Dispatchers.IO) { fetchImageBytes(context, imageUrl, referer, userAgent) } ?: return@LaunchedEffect
+        drawable = withContext(Dispatchers.IO) { decodeThumbnailDrawable(bytes) }
+    }
+
+    val placeholderDrawable = rememberVectorDrawable(androidx.compose.material.icons.Icons.Filled.Public, 48)
+
+    AndroidView(
+        factory = { ctx ->
+            ImageView(ctx).apply {
+                scaleType = ImageView.ScaleType.FIT_CENTER
+                setImageDrawable(placeholderDrawable)
+                imageTintList = android.content.res.ColorStateList.valueOf(colors.iconTint.toArgbCompat())
+                setPadding(dpToPx(ctx, 48), dpToPx(ctx, 48), dpToPx(ctx, 48), dpToPx(ctx, 48))
+            }
+        },
+        update = { imageView ->
+            val d = drawable
+            if (d != null) {
+                imageView.setPadding(0, 0, 0, 0)
+                imageView.imageTintList = null
+                imageView.setImageDrawable(d)
+                (d as? AnimatedImageDrawable)?.start()
+            }
+        },
+        modifier = Modifier.fillMaxWidth().height(160.dp).padding(horizontal = 16.dp, vertical = 0.dp).padding(top = 16.dp)
+    )
+}
+
+@Composable
+private fun rememberVectorDrawable(image: androidx.compose.ui.graphics.vector.ImageVector, sizeDp: Int): Drawable {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val painter = androidx.compose.ui.graphics.vector.rememberVectorPainter(image)
+    val resources = LocalContext.current.resources
+    return remember(image, sizeDp, density) {
+        val sizePx = with(density) { sizeDp.dp.roundToPx() }
+        val imageBitmap = androidx.compose.ui.graphics.ImageBitmap(sizePx, sizePx)
+        val canvas = androidx.compose.ui.graphics.Canvas(imageBitmap)
+        androidx.compose.ui.graphics.drawscope.CanvasDrawScope().draw(
+            density = density,
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = canvas,
+            size = androidx.compose.ui.geometry.Size(sizePx.toFloat(), sizePx.toFloat())
+        ) {
+            with(painter) {
+                draw(androidx.compose.ui.geometry.Size(sizePx.toFloat(), sizePx.toFloat()))
+            }
+        }
+        android.graphics.drawable.BitmapDrawable(resources, imageBitmap.asAndroidBitmap())
+    }
+}
+
+private fun dpToPx(context: android.content.Context, dp: Int): Int =
+    (dp * context.resources.displayMetrics.density).toInt()
+
+private fun androidx.compose.ui.graphics.Color.toArgbCompat(): Int =
+    android.graphics.Color.argb(
+        (alpha * 255).toInt(), (red * 255).toInt(), (green * 255).toInt(), (blue * 255).toInt()
+    )
+
+private fun fetchImageBytes(context: android.content.Context, url: String, referer: String, userAgent: String): ByteArray? {
+    if (url.startsWith("data:")) {
+        val commaIdx = url.indexOf(",")
+        if (commaIdx < 0) return null
+        val header = url.substring(0, commaIdx)
+        val content = url.substring(commaIdx + 1)
+        return if (header.contains(";base64")) {
+            runCatching { android.util.Base64.decode(content, android.util.Base64.DEFAULT) }.getOrNull()
+        } else {
+            runCatching { URLDecoder.decode(content, "UTF-8").toByteArray(Charsets.UTF_8) }
+                .getOrElse { content.toByteArray(Charsets.UTF_8) }
+        }
+    }
+    return runCatching {
+        val client = OkHttpClient.Builder()
+            .connectTimeout(8, TimeUnit.SECONDS)
+            .readTimeout(8, TimeUnit.SECONDS)
+            .build()
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", userAgent)
+            .apply { if (referer.isNotEmpty()) header("Referer", referer) }
+            .build()
+        client.newCall(request).execute().body.bytes()
+    }.getOrNull()
+}
+
+private fun decodeThumbnailDrawable(bytes: ByteArray): Drawable? {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        runCatching {
+            val source = ImageDecoder.createSource(ByteBuffer.wrap(bytes))
+            return ImageDecoder.decodeDrawable(source)
+        }
+    } else {
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        if (bitmap != null) return android.graphics.drawable.BitmapDrawable(null, bitmap)
+    }
+    return decodeSvgDrawable(bytes)
+}
+
+private fun decodeSvgDrawable(bytes: ByteArray): Drawable? = runCatching {
+    val svg = SVG.getFromString(bytes.toString(Charsets.UTF_8))
+    val vb = svg.documentViewBox
+    val rawW = vb?.width()?.toInt()?.takeIf { it > 0 } ?: svg.documentWidth.toInt().takeIf { it > 0 } ?: 512
+    val rawH = vb?.height()?.toInt()?.takeIf { it > 0 } ?: svg.documentHeight.toInt().takeIf { it > 0 } ?: 512
+    val scale = 512f / maxOf(rawW, rawH).toFloat()
+    val bw = (rawW * scale).toInt().coerceAtLeast(1)
+    val bh = (rawH * scale).toInt().coerceAtLeast(1)
+    val bitmap = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
+    svg.renderToCanvas(Canvas(bitmap))
+    android.graphics.drawable.BitmapDrawable(null, bitmap)
+}.getOrNull()

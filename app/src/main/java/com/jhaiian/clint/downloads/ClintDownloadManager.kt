@@ -6,7 +6,7 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import com.jhaiian.clint.R
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -149,8 +149,8 @@ object ClintDownloadManager {
     internal fun concurrentLimit(context: Context): Int {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return prefs.getInt(
-            DownloadSettingsFragment.PREF_CONCURRENT_DOWNLOADS,
-            DownloadSettingsFragment.DEFAULT_CONCURRENT_DOWNLOADS
+            DownloadSettingsKeys.PREF_CONCURRENT_DOWNLOADS,
+            DownloadSettingsKeys.DEFAULT_CONCURRENT_DOWNLOADS
         )
     }
 

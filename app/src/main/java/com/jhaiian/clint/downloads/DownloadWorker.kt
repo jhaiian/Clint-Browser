@@ -8,7 +8,7 @@ import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import com.jhaiian.clint.R
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -145,11 +145,6 @@ internal object DownloadWorker {
 
             val effectiveResume = isResumingFile && serverAcceptedRange
             val body = response.body
-            if (body == null) {
-                response.close()
-                fail(context, item, context.getString(R.string.download_error_unknown))
-                return
-            }
             val rawStream = body.byteStream()
             var peekedBytes: ByteArray? = null
 
@@ -779,16 +774,6 @@ internal object DownloadWorker {
                 }
 
                 val body = response.body
-                if (body == null) {
-                    response.close()
-                    attempt++
-                    if (attempt >= MAX_PART_RETRIES) {
-                        firstError.compareAndSet(null, "Empty response on part $partIndex")
-                    } else {
-                        delay(attempt * 500L)
-                    }
-                    continue
-                }
 
                 try {
                     withContext(Dispatchers.IO) {
@@ -931,13 +916,13 @@ internal object DownloadWorker {
         val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
         val retryEnabled = ClintDownloadManager.withLiveSettings(item).retryEnabled
         val retryUnrecoverable = prefs.getBoolean(
-            DownloadSettingsFragment.PREF_RETRY_UNRECOVERABLE, DownloadSettingsFragment.DEFAULT_RETRY_UNRECOVERABLE
+            DownloadSettingsKeys.PREF_RETRY_UNRECOVERABLE, DownloadSettingsKeys.DEFAULT_RETRY_UNRECOVERABLE
         )
         val retryCount = prefs.getInt(
-            DownloadSettingsFragment.PREF_RETRY_COUNT, DownloadSettingsFragment.DEFAULT_RETRY_COUNT
+            DownloadSettingsKeys.PREF_RETRY_COUNT, DownloadSettingsKeys.DEFAULT_RETRY_COUNT
         )
         val retryInterval = prefs.getInt(
-            DownloadSettingsFragment.PREF_RETRY_INTERVAL, DownloadSettingsFragment.DEFAULT_RETRY_INTERVAL
+            DownloadSettingsKeys.PREF_RETRY_INTERVAL, DownloadSettingsKeys.DEFAULT_RETRY_INTERVAL
         ).toLong()
 
         val serverError = isServerError(msg)

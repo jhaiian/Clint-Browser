@@ -3,22 +3,16 @@ package com.jhaiian.clint.update
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.net.Uri
-import android.view.Gravity
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.ScrollView
-import android.widget.TextView
 import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.preference.PreferenceManager
 import com.jhaiian.clint.R
-import com.jhaiian.clint.base.ClintActivity
+import com.jhaiian.clint.ui.OverlayHostActivity
+import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.util.formatFileSize
-import io.noties.markwon.Markwon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -50,23 +44,53 @@ object UpdateChecker {
 
     private val client = OkHttpClient()
 
-    private fun getDialogTheme(context: Context): Int {
-        return if (context is ClintActivity) context.getDialogTheme()
-        else R.style.ThemeOverlay_ClintBrowser_Dialog
-    }
-
-    private fun resolveColor(context: Context, attr: Int): Int {
-        val tv = android.util.TypedValue()
-        context.theme.resolveAttribute(attr, tv, true)
-        return tv.data
-    }
-
     // Ties background work to the activity's own lifecycle when possible (so it is
     // cancelled automatically if the activity goes away), falling back to a
     // standalone main-dispatcher scope for the rare case the activity isn't a
     // LifecycleOwner.
     private fun scopeFor(activity: Activity): CoroutineScope =
         (activity as? LifecycleOwner)?.lifecycleScope ?: CoroutineScope(Dispatchers.Main.immediate)
+
+    // Renders the update flow inline in the host activity's own Compose tree via
+    // OverlayHostActivity.overlayContent, rather than mounting a separate ComposeView on the
+    // window's decor view. The same overlay moves between NoUpdate/CheckFailed/Available/
+    // Downloading as the user interacts with it, and tears itself down (state.step = None,
+    // overlayContent = null) once dismissed, cancelled, or the download finishes/fails.
+    private fun mountFlow(activity: Activity): UpdateFlowState {
+        val host = activity as? OverlayHostActivity
+            ?: return UpdateFlowState(hideStatusBar = false)
+        val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
+        val theme = prefs.getString("app_theme", "dark") ?: "dark"
+        val state = UpdateFlowState(hideStatusBar = prefs.getBoolean("hide_status_bar", false))
+
+        val dismiss: () -> Unit = {
+            state.step = UpdateFlowStep.None
+            host.overlayContent = null
+        }
+
+        host.overlayContent = {
+            ClintComposeTheme(theme = theme) {
+                UpdateFlowHost(
+                    state = state,
+                    onDismiss = dismiss,
+                    onSkip = { versionCode ->
+                        activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                            .edit().putLong(KEY_SKIPPED_VERSION_CODE, versionCode).apply()
+                        dismiss()
+                    },
+                    onDownload = { url, versionCode -> startDownload(activity, url, versionCode, state, dismiss) },
+                    onViewGithub = {
+                        activity.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/jhaiian/ClintBrowser/releases"))
+                        )
+                        dismiss()
+                    },
+                    onCancelDownload = { state.downloadJob?.cancel() }
+                )
+            }
+        }
+        return state
+    }
 
     fun check(activity: Activity, isBeta: Boolean, silent: Boolean) {
         scopeFor(activity).launch {
@@ -105,20 +129,26 @@ object UpdateChecker {
                 val isSkipped = silent && remoteVersionCode == skippedVersionCode
 
                 if (hasUpdate && !isSkipped) {
-                    showUpdateDialog(activity, remoteVersion, remoteVersionCode, changelog, downloadUrl, isSelectedBeta)
+                    val state = mountFlow(activity)
+                    state.step = UpdateFlowStep.Available(
+                        version = remoteVersion,
+                        versionCode = remoteVersionCode,
+                        changelog = changelog.trim(),
+                        downloadUrl = downloadUrl,
+                        isBeta = isSelectedBeta
+                    )
                 } else if (!silent) {
-                    showNoUpdateDialog(activity)
+                    mountFlow(activity).step = UpdateFlowStep.NoUpdate
                 }
             } catch (_: Throwable) {
-                if (!silent) showErrorDialog(activity)
+                if (!silent) mountFlow(activity).step = UpdateFlowStep.CheckFailed
             }
         }
     }
 
     private fun fetchJson(url: String): JSONObject {
         val request = Request.Builder().url(url).build()
-        val body = client.newCall(request).execute().body?.string()
-            ?: throw Exception("Empty response from $url")
+        val body = client.newCall(request).execute().body.string()
         return JSONObject(body)
     }
 
@@ -193,118 +223,13 @@ object UpdateChecker {
         }
     }
 
-    private fun showUpdateDialog(
+    private fun startDownload(
         activity: Activity,
-        version: String,
-        versionCode: Long,
-        rawChangelog: String,
-        downloadUrl: String?,
-        isBeta: Boolean
+        downloadUrl: String,
+        remoteVersionCode: Long,
+        state: UpdateFlowState,
+        dismiss: () -> Unit
     ) {
-        val channelLabel = if (isBeta) " (Beta)" else ""
-        val changelog = rawChangelog.trim()
-        val markwon = Markwon.create(activity)
-        val dialogTheme = getDialogTheme(activity)
-
-        val dp = activity.resources.displayMetrics.density
-
-        val colorOnSurface = resolveColor(activity, com.google.android.material.R.attr.colorOnSurface)
-        val colorOnSurfaceMedium = run {
-            val alpha = ((colorOnSurface ushr 24) * 0.6).toInt()
-            (colorOnSurface and 0x00FFFFFF) or (alpha shl 24)
-        }
-        val colorPrimary = resolveColor(activity, androidx.appcompat.R.attr.colorPrimary)
-        val dividerColor = resolveColor(activity, R.attr.clintDividerColor)
-
-        val changelogTv = TextView(activity).apply {
-            setPadding(64, 24, 64, 8)
-            setTextColor(colorOnSurface)
-            textSize = 13f
-        }
-        markwon.setMarkdown(changelogTv, changelog)
-
-        val divider = android.view.View(activity).apply {
-            setBackgroundColor(dividerColor)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 1
-            ).also { it.topMargin = (8 * dp).toInt() }
-        }
-
-        fun makeBtn(label: String, color: Int) = TextView(activity).apply {
-            text = label
-            setTextColor(color)
-            textSize = 14f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            val pad = (12 * dp).toInt()
-            setPadding(pad, pad, pad, pad)
-            background = android.util.TypedValue().let { tv2 ->
-                activity.theme.resolveAttribute(android.R.attr.selectableItemBackground, tv2, true)
-                androidx.core.content.ContextCompat.getDrawable(activity, tv2.resourceId)
-            }
-        }
-
-        val btnSkip = makeBtn(activity.getString(R.string.update_dialog_skip), colorOnSurfaceMedium)
-        val btnLater = makeBtn(activity.getString(R.string.action_later), colorPrimary)
-
-        val buttonRow = LinearLayout(activity).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.END or Gravity.CENTER_VERTICAL
-            val hPad = (8 * dp).toInt()
-            val vPad = (4 * dp).toInt()
-            setPadding(hPad, vPad, hPad, vPad)
-            addView(btnSkip, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            addView(btnLater)
-        }
-
-        val container = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            val scrollView = ScrollView(activity).apply {
-                addView(changelogTv)
-            }
-            addView(scrollView, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-            ))
-            addView(divider)
-            addView(buttonRow)
-        }
-
-        val dialog = MaterialAlertDialogBuilder(activity, dialogTheme)
-            .setTitle(activity.getString(R.string.update_dialog_title, version, channelLabel))
-            .setView(container)
-            .setCancelable(false)
-            .create()
-
-        btnSkip.setOnClickListener {
-            activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .edit().putLong(KEY_SKIPPED_VERSION_CODE, versionCode).apply()
-            dialog.dismiss()
-        }
-        btnLater.setOnClickListener { dialog.dismiss() }
-
-        val btnAction = makeBtn(
-            if (!downloadUrl.isNullOrEmpty()) activity.getString(R.string.update_dialog_download)
-            else activity.getString(R.string.update_dialog_view_github),
-            colorPrimary
-        )
-        buttonRow.addView(btnAction)
-        btnAction.setOnClickListener {
-            dialog.dismiss()
-            if (!downloadUrl.isNullOrEmpty()) {
-                startDownload(activity, downloadUrl, versionCode)
-            } else {
-                activity.startActivity(
-                    Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/jhaiian/ClintBrowser/releases"))
-                )
-            }
-        }
-
-        (activity as? ClintActivity)?.applyStatusBarFlagToDialog(dialog)
-        dialog.show()
-    }
-
-    private fun startDownload(activity: Activity, downloadUrl: String, remoteVersionCode: Long) {
         val apkFile = File(activity.cacheDir, "updates/update.apk").also {
             it.parentFile?.mkdirs()
         }
@@ -313,78 +238,21 @@ object UpdateChecker {
         val cachedVersionCode = prefs.getLong(KEY_CACHED_APK_VERSION_CODE, -1L)
 
         if (apkFile.exists() && apkFile.length() > 0 && cachedVersionCode == remoteVersionCode) {
+            dismiss()
             installApk(activity, apkFile)
             return
         }
 
         apkFile.delete()
 
-        val dialogTheme = getDialogTheme(activity)
-        val colorOnSurface = resolveColor(activity, com.google.android.material.R.attr.colorOnSurface)
-        val colorOnSurfaceMedium = run {
-            val alpha = ((colorOnSurface ushr 24) * 0.6).toInt()
-            (colorOnSurface and 0x00FFFFFF) or (alpha shl 24)
-        }
-        val colorPrimary = resolveColor(activity, androidx.appcompat.R.attr.colorPrimary)
+        state.download.statusText = activity.getString(R.string.update_download_preparing)
+        state.download.isIndeterminate = true
+        state.download.progressFraction = 0f
+        state.download.sizeText = ""
+        state.download.speedText = ""
+        state.step = UpdateFlowStep.Downloading
 
-        val statusText = TextView(activity).apply {
-            text = activity.getString(R.string.update_download_preparing)
-            setTextColor(colorOnSurface)
-            textSize = 14f
-        }
-
-        val progressBar = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100
-            progress = 0
-            isIndeterminate = false
-            progressTintList = ColorStateList.valueOf(colorPrimary)
-            indeterminateTintList = ColorStateList.valueOf(colorPrimary)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { lp -> lp.topMargin = 32; lp.bottomMargin = 8 }
-        }
-
-        val sizeText = TextView(activity).apply {
-            text = ""
-            setTextColor(colorOnSurfaceMedium)
-            textSize = 12f
-            gravity = Gravity.START
-        }
-
-        val speedText = TextView(activity).apply {
-            text = ""
-            setTextColor(colorOnSurfaceMedium)
-            textSize = 12f
-            gravity = Gravity.END
-        }
-
-        val detailRow = LinearLayout(activity).apply {
-            orientation = LinearLayout.HORIZONTAL
-            addView(sizeText, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            addView(speedText, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-        }
-
-        val layout = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(72, 48, 72, 24)
-            addView(statusText)
-            addView(progressBar)
-            addView(detailRow)
-        }
-
-        var downloadJob: Job? = null
-
-        val dialog = MaterialAlertDialogBuilder(activity, dialogTheme)
-            .setTitle(activity.getString(R.string.update_download_dialog_title))
-            .setView(layout)
-            .setCancelable(false)
-            .setNegativeButton(activity.getString(R.string.action_cancel)) { _, _ -> downloadJob?.cancel() }
-            .create()
-        (activity as? ClintActivity)?.applyStatusBarFlagToDialog(dialog)
-        dialog.show()
-
-        downloadJob = scopeFor(activity).launch {
+        state.downloadJob = scopeFor(activity).launch {
             try {
                 withContext(Dispatchers.IO) {
                     val request = Request.Builder().url(downloadUrl).build()
@@ -392,12 +260,12 @@ object UpdateChecker {
                     currentCoroutineContext()[Job]?.invokeOnCompletion { call.cancel() }
 
                     call.execute().use { response ->
-                        val body = response.body ?: throw Exception("Empty response")
+                        val body = response.body
                         val contentLength = body.contentLength()
 
                         withContext(Dispatchers.Main) {
-                            statusText.text = activity.getString(R.string.update_download_in_progress)
-                            progressBar.isIndeterminate = contentLength <= 0L
+                            state.download.statusText = activity.getString(R.string.update_download_in_progress)
+                            state.download.isIndeterminate = contentLength <= 0L
                         }
 
                         var downloaded = 0L
@@ -424,10 +292,7 @@ object UpdateChecker {
                                             lastSpeedBytes = downloaded
                                             lastSpeedTime = now
                                         }
-                                        updateDownloadProgress(
-                                            activity, progressBar, sizeText, speedText,
-                                            downloaded, contentLength, speedBps
-                                        )
+                                        updateDownloadProgress(activity, state.download, downloaded, contentLength, speedBps)
                                     }
                                 }
                             }
@@ -436,37 +301,35 @@ object UpdateChecker {
                 }
 
                 prefs.edit().putLong(KEY_CACHED_APK_VERSION_CODE, remoteVersionCode).apply()
-                if (dialog.isShowing) dialog.dismiss()
+                dismiss()
                 installApk(activity, apkFile)
             } catch (_: Exception) {
                 apkFile.delete()
-                if (dialog.isShowing) dialog.dismiss()
+                dismiss()
             }
         }
     }
 
     private suspend fun updateDownloadProgress(
         activity: Activity,
-        progressBar: ProgressBar,
-        sizeText: TextView,
-        speedText: TextView,
+        progress: DownloadProgressState,
         downloaded: Long,
         contentLength: Long,
         speedBps: Long
     ) = withContext(Dispatchers.Main) {
         if (contentLength > 0) {
             val pct = (downloaded * 100 / contentLength).toInt()
-            progressBar.progress = pct
-            sizeText.text = activity.getString(
+            progress.progressFraction = pct / 100f
+            progress.sizeText = activity.getString(
                 R.string.update_download_progress_size_known,
                 formatFileSize(downloaded), formatFileSize(contentLength), pct
             )
         } else {
-            sizeText.text = activity.getString(
+            progress.sizeText = activity.getString(
                 R.string.update_download_progress_size_unknown, formatFileSize(downloaded)
             )
         }
-        speedText.text = if (speedBps > 0) activity.getString(R.string.download_speed_only, formatFileSize(speedBps)) else ""
+        progress.speedText = if (speedBps > 0) activity.getString(R.string.download_speed_only, formatFileSize(speedBps)) else ""
     }
 
     private fun installApk(activity: Activity, apkFile: File) {
@@ -478,24 +341,6 @@ object UpdateChecker {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
         }
         activity.startActivity(intent)
-    }
-
-    private fun showNoUpdateDialog(activity: Activity) {
-        val dialogTheme = getDialogTheme(activity)
-        MaterialAlertDialogBuilder(activity, dialogTheme)
-            .setTitle(activity.getString(R.string.update_up_to_date_title))
-            .setMessage(activity.getString(R.string.update_up_to_date_message))
-            .setPositiveButton(activity.getString(R.string.action_ok), null)
-            .create().also { (activity as? ClintActivity)?.applyStatusBarFlagToDialog(it) }.show()
-    }
-
-    private fun showErrorDialog(activity: Activity) {
-        val dialogTheme = getDialogTheme(activity)
-        MaterialAlertDialogBuilder(activity, dialogTheme)
-            .setTitle(activity.getString(R.string.update_check_failed_title))
-            .setMessage(activity.getString(R.string.update_check_failed_message))
-            .setPositiveButton(activity.getString(R.string.action_ok), null)
-            .create().also { (activity as? ClintActivity)?.applyStatusBarFlagToDialog(it) }.show()
     }
 
     private fun extractLatestChangelog(raw: String): String {

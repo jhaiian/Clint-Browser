@@ -1,22 +1,17 @@
 package com.jhaiian.clint.browser.delegates
-import com.jhaiian.clint.browser.suggestions.*
-import com.jhaiian.clint.browser.menu.showMenu
-import com.jhaiian.clint.browser.MainActivity
+import com.jhaiian.clint.browser.*
+import com.jhaiian.clint.browser.suggestions.SuggestionFetcher
 import com.jhaiian.clint.browser.webview.loadJsAsset
 import android.content.Context
-import android.content.Intent
 import android.Manifest
 import android.util.TypedValue
-import android.view.View
-import android.view.inputmethod.InputMethodManager
-import android.widget.ImageButton
+import android.widget.Toast
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.webkit.WebViewFeature
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jhaiian.clint.R
 import com.jhaiian.clint.bookmarks.Bookmark
 import com.jhaiian.clint.bookmarks.BookmarkManager
+import com.jhaiian.clint.history.HistoryItem
 import com.jhaiian.clint.history.SearchHistoryManager
 
 private const val SUGGESTION_HISTORY_LIMIT = 20
@@ -24,271 +19,146 @@ private const val SUGGESTION_BOOKMARK_LIMIT = 10
 
 internal fun MainActivity.applyAddressBarPosition() {
     val position = prefs.getString("address_bar_position", "top") ?: "top"
-    when (position) {
-        "top" -> {
-            binding.toolbarTop.visibility = View.VISIBLE
-            binding.bottomBar.visibility = View.GONE
-            binding.toolbarBottom.visibility = View.GONE
-            restoreStatusBarInset()
-        }
-        "bottom" -> {
-            binding.toolbarTop.visibility = View.GONE
-            binding.bottomBar.visibility = View.GONE
-            binding.toolbarBottom.visibility = View.VISIBLE
-            statusBarInsetPx = 0
-            binding.toolbarTop.setPadding(0, 0, 0, 0)
-            val sbLp = binding.statusBarBackground.layoutParams
-            sbLp.height = 0
-            binding.statusBarBackground.layoutParams = sbLp
-        }
-        else -> {
-            binding.toolbarTop.visibility = View.VISIBLE
-            binding.bottomBar.visibility = View.VISIBLE
-            binding.toolbarBottom.visibility = View.GONE
-            restoreStatusBarInset()
-        }
+    uiState.addressBarPosition = when (position) {
+        "top" -> AddressBarPosition.TOP
+        "bottom" -> AddressBarPosition.BOTTOM
+        else -> AddressBarPosition.SPLIT
     }
-    topBarFraction = 0f
-    bottomBarFraction = 0f
-    topBarFullHeight = 0
-    bottomBarFullHeight = 0
-    binding.toolbarTop.translationY = 0f
-    binding.toolbarBottom.translationY = 0f
-    binding.bottomBar.translationY = 0f
-    ViewCompat.requestApplyInsets(binding.toolbarTop)
-    ViewCompat.requestApplyInsets(binding.bottomBar)
-    ViewCompat.requestApplyInsets(binding.toolbarBottom)
+    uiState.topBarFraction = 0f
+    uiState.bottomBarFraction = 0f
+    uiState.topBarFullHeightPx = 0
+    uiState.bottomBarFullHeightPx = 0
     updateMainContentInsets()
 }
 
-private fun MainActivity.restoreStatusBarInset() {
-    if (prefs.getBoolean("hide_status_bar", false)) return
-    if (cachedStatusBarInsetPx > 0) {
-        statusBarInsetPx = cachedStatusBarInsetPx
-        binding.toolbarTop.setPadding(0, cachedStatusBarInsetPx, 0, 0)
-        val sbLp = binding.statusBarBackground.layoutParams
-        sbLp.height = cachedStatusBarInsetPx
-        binding.statusBarBackground.layoutParams = sbLp
-    }
-}
-
+/** Sets up the shared suggestion fetcher/background thread backing [SearchOverlay]. */
 internal fun MainActivity.setupAddressBar() {
-    suggestionFetcherTop = SuggestionFetcher()
-    suggestionFetcherBottom = SuggestionFetcher()
-
+    suggestionFetcher = SuggestionFetcher()
     val bgThread = android.os.HandlerThread("ClintSuggestions").also { it.start() }
     suggestionsBgThread = bgThread
-    val bgHandler = android.os.Handler(bgThread.looper)
-    val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    suggestionsBgHandler = android.os.Handler(bgThread.looper)
+}
 
-    val buildAdapter = { searchBar: com.google.android.material.search.SearchBar,
-                         searchView: com.google.android.material.search.SearchView,
-                         fetcher: SuggestionFetcher,
-                         recyclerView: androidx.recyclerview.widget.RecyclerView ->
-
-        var adapterRef: SearchSuggestionsAdapter? = null
-        val adapter = SearchSuggestionsAdapter(
-            onItemClick = { item ->
-                val formatted = formatUrl(item)
-                searchBar.setText(formatted)
-                setSearchBarLockIcon(searchBar, formatted)
-                searchView.hide()
-                SearchHistoryManager.add(this, item)
-                loadUrl(item)
-            },
-            onItemFill = { item ->
-                searchView.editText.setText(item)
-                searchView.editText.setSelection(item.length)
-            },
-            onHistoryDelete = { item ->
-                bgHandler.post {
-                    SearchHistoryManager.delete(this, item)
-                    val query = searchView.editText.text?.toString() ?: ""
-                    val history = SearchHistoryManager.search(this, query).take(SUGGESTION_HISTORY_LIMIT)
-                    val bookmarks = BookmarkManager.search(this, query).take(SUGGESTION_BOOKMARK_LIMIT)
-                    mainHandler.post { adapterRef?.submitCombined(bookmarks, history, emptyList()) }
-                }
-            }
-        )
-        adapterRef = adapter
-        recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
-        recyclerView.adapter = adapter
-        adapter
+private fun combineSuggestions(
+    bookmarks: List<Bookmark>,
+    history: List<HistoryItem>,
+    suggestions: List<String>
+): List<SuggestionItem> {
+    val seenUrls = mutableSetOf<String>()
+    val items = mutableListOf<SuggestionItem>()
+    bookmarks.forEach {
+        seenUrls.add(it.url)
+        items.add(SuggestionItem(it.url, it.title.ifBlank { it.url }, SuggestionType.BOOKMARK))
     }
-
-    val adapterTop = buildAdapter(
-        binding.addressBar,
-        binding.addressBarSearch,
-        suggestionFetcherTop!!,
-        binding.suggestionsListTop
-    )
-    val adapterBottom = buildAdapter(
-        binding.addressBarBottom,
-        binding.addressBarSearchBottom,
-        suggestionFetcherBottom!!,
-        binding.suggestionsListBottom
-    )
-
-    val setupPair = { searchBar: com.google.android.material.search.SearchBar,
-                      searchView: com.google.android.material.search.SearchView,
-                      fetcher: SuggestionFetcher,
-                      adapter: SearchSuggestionsAdapter ->
-
-        searchBar.setOnClickListener { searchView.show() }
-
-        val relevantToolbar: View = if (searchBar === binding.addressBar) binding.toolbarTop else binding.toolbarBottom
-        var savedToolbarVisibility = View.VISIBLE
-
-        searchView.addTransitionListener { _, _, newState ->
-            if (newState == com.google.android.material.search.SearchView.TransitionState.SHOWN) {
-                savedToolbarVisibility = relevantToolbar.visibility
-                relevantToolbar.visibility = View.INVISIBLE
-                val current = tabManager.activeTab?.webView?.url ?: ""
-                searchView.editText.setText(current)
-                searchView.editText.selectAll()
-            } else if (newState == com.google.android.material.search.SearchView.TransitionState.HIDING) {
-                relevantToolbar.visibility = savedToolbarVisibility
-            } else if (newState == com.google.android.material.search.SearchView.TransitionState.HIDDEN) {
-                fetcher.cancel()
-                adapter.submitCombined(emptyList(), emptyList(), emptyList())
-                val current = tabManager.activeTab?.url ?: ""
-                setSearchBarLockIcon(searchBar, current)
-                searchBar.setText(current)
-            }
-        }
-
-        searchView.editText.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s?.toString() ?: ""
-                bgHandler.removeCallbacksAndMessages(null)
-                bgHandler.post {
-                    if (query.isBlank()) {
-                        fetcher.cancel()
-                        val history = SearchHistoryManager.getAll(this@setupAddressBar).take(SUGGESTION_HISTORY_LIMIT)
-                        val bookmarks = BookmarkManager.getAll(this@setupAddressBar).take(SUGGESTION_BOOKMARK_LIMIT)
-                        mainHandler.post { adapter.submitCombined(bookmarks, history, emptyList()) }
-                        return@post
-                    }
-                    val history = SearchHistoryManager.search(this@setupAddressBar, query).take(SUGGESTION_HISTORY_LIMIT)
-                    val bookmarks = BookmarkManager.search(this@setupAddressBar, query).take(SUGGESTION_BOOKMARK_LIMIT)
-                    mainHandler.post {
-                        adapter.submitCombined(bookmarks, history, emptyList())
-                        fetcher.fetch(query) { suggestions ->
-                            adapter.submitCombined(bookmarks, history, suggestions)
-                        }
-                    }
-                }
-            }
-        })
-
-        searchView.editText.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
-                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
-                (event?.keyCode == android.view.KeyEvent.KEYCODE_ENTER &&
-                    event.action == android.view.KeyEvent.ACTION_DOWN)) {
-                val input = searchView.editText.text?.toString()?.trim() ?: ""
-                if (input.isNotEmpty()) {
-                    val formatted = formatUrl(input)
-                    searchBar.setText(formatted)
-                    setSearchBarLockIcon(searchBar, formatted)
-                    searchView.hide()
-                    Thread { SearchHistoryManager.add(this, input) }.start()
-                    loadUrl(input)
-                }
-                true
-            } else false
-        }
-
-        searchView.post {
-            if (searchView.toolbar.menu.size() == 0) {
-                searchView.toolbar.inflateMenu(R.menu.search_view_actions)
-                val tintColor = getThemeColor(R.attr.clintIconTint)
-                val tintList = android.content.res.ColorStateList.valueOf(tintColor)
-                val micItem = searchView.toolbar.menu.findItem(R.id.action_voice_search)
-                micItem?.icon?.mutate()?.let { icon ->
-                    androidx.core.graphics.drawable.DrawableCompat.setTintList(icon, tintList)
-                    micItem.icon = icon
-                }
-                searchView.editText.addTextChangedListener(object : android.text.TextWatcher {
-                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                    override fun afterTextChanged(s: android.text.Editable?) {}
-                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                        micItem?.isVisible = s?.isEmpty() == true
-                    }
-                })
-                searchView.toolbar.setOnMenuItemClickListener { item ->
-                    when (item.itemId) {
-                        R.id.action_voice_search -> { handleVoiceSearchTap(searchView); true }
-                        else -> false
-                    }
-                }
-            }
+    history.forEach {
+        if (seenUrls.add(it.query)) {
+            items.add(SuggestionItem(it.query, it.title.ifBlank { it.query }, SuggestionType.HISTORY))
         }
     }
-
-    setupPair(binding.addressBar, binding.addressBarSearch, suggestionFetcherTop!!, adapterTop)
-    setupPair(binding.addressBarBottom, binding.addressBarSearchBottom, suggestionFetcherBottom!!, adapterBottom)
-    binding.addressBarSearch.setupWithSearchBar(binding.addressBar)
-    binding.addressBarSearchBottom.setupWithSearchBar(binding.addressBarBottom)
-    binding.addressBarSearchBottom.post {
-        var rootLinear: android.widget.LinearLayout? = null
-        for (i in 0 until binding.addressBarSearchBottom.childCount) {
-            val child = binding.addressBarSearchBottom.getChildAt(i)
-            if (child is android.widget.LinearLayout) {
-                rootLinear = child
-                break
-            }
+    suggestions.forEach {
+        if (seenUrls.add(it)) {
+            items.add(SuggestionItem(it, it, SuggestionType.SUGGESTION))
         }
-        val linear = rootLinear ?: return@post
-        if (linear.childCount < 2) return@post
-        val first = linear.getChildAt(0)
-        val second = linear.getChildAt(1)
-        linear.removeAllViews()
-        linear.addView(second)
-        linear.addView(first)
-        linear.gravity = android.view.Gravity.BOTTOM
     }
+    return items
+}
 
-    val tintColor = getThemeColor(R.attr.clintIconTint)
-    val tintList = android.content.res.ColorStateList.valueOf(tintColor)
-    listOf(binding.addressBarSearch, binding.addressBarSearchBottom).forEach { searchView ->
-        searchView.post {
-            val navIcon = ContextCompat.getDrawable(this, R.drawable.ic_arrow_back_24)?.mutate()
-            if (navIcon != null) {
-                androidx.core.graphics.drawable.DrawableCompat.setTintList(navIcon, tintList)
-                searchView.toolbar.navigationIcon = navIcon
-            }
+internal fun MainActivity.openSearchOverlay(isBottom: Boolean) {
+    uiState.searchOverlayIsBottom = isBottom
+    val current = tabManager.activeTab?.webView?.url ?: ""
+    uiState.searchOverlayOpen = true
+    onSearchQueryChanged(current)
+}
+
+internal fun MainActivity.closeSearchOverlay() {
+    uiState.searchOverlayOpen = false
+    suggestionFetcher?.cancel()
+    uiState.suggestions = emptyList()
+    updateAddressBar(tabManager.activeTab?.url ?: "")
+}
+
+internal fun MainActivity.onSearchQueryChanged(query: String) {
+    uiState.searchQuery = query
+    val bgHandler = suggestionsBgHandler ?: return
+    bgHandler.removeCallbacksAndMessages(null)
+    bgHandler.post {
+        if (query.isBlank()) {
+            suggestionFetcher?.cancel()
+            val history = SearchHistoryManager.getAll(this).take(SUGGESTION_HISTORY_LIMIT)
+            val bookmarks = BookmarkManager.getAll(this).take(SUGGESTION_BOOKMARK_LIMIT)
+            runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
+            return@post
+        }
+        val history = SearchHistoryManager.search(this, query).take(SUGGESTION_HISTORY_LIMIT)
+        val bookmarks = BookmarkManager.search(this, query).take(SUGGESTION_BOOKMARK_LIMIT)
+        runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
+        suggestionFetcher?.fetch(query) { suggestions ->
+            runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, suggestions) }
         }
     }
 }
 
-internal fun MainActivity.setupNavigationButtons() {
-    binding.btnBack.setOnClickListener { tabManager.activeTab?.webView?.let { if (it.canGoBack()) it.goBack() } }
-    binding.btnForward.setOnClickListener { tabManager.activeTab?.webView?.let { if (it.canGoForward()) it.goForward() } }
-    binding.btnRefresh.setOnClickListener {
-        tabManager.activeTab?.webView?.let { wv ->
-            if (binding.progressBar.visibility == View.VISIBLE) {
-                wv.stopLoading(); onPageFinished(wv.url ?: "")
-            } else { wv.reload() }
-        }
+internal fun MainActivity.onSuggestionHistoryDelete(query: String) {
+    val bgHandler = suggestionsBgHandler ?: return
+    bgHandler.post {
+        SearchHistoryManager.delete(this, query)
+        val currentQuery = uiState.searchQuery
+        val history = SearchHistoryManager.search(this, currentQuery).take(SUGGESTION_HISTORY_LIMIT)
+        val bookmarks = BookmarkManager.search(this, currentQuery).take(SUGGESTION_BOOKMARK_LIMIT)
+        runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
     }
-    binding.btnHome.setOnClickListener { loadUrl(getSearchEngineHomeUrl()) }
-    binding.btnTabCount.setOnClickListener { showTabSwitcher() }
-    binding.btnBookmark.setOnClickListener {
-        val url = tabManager.activeTab?.webView?.url ?: return@setOnClickListener
-        val title = tabManager.activeTab?.title ?: url
-        if (BookmarkManager.isBookmarked(this, url)) {
-            BookmarkManager.remove(this, url)
-        } else {
-            BookmarkManager.add(this, Bookmark(url = url, title = title))
-        }
-        updateBookmarkIcon()
+}
+
+internal fun MainActivity.onSearchSubmitted(input: String) {
+    val trimmed = input.trim()
+    if (trimmed.isEmpty()) return
+    val formatted = formatUrl(trimmed)
+    setAddressBarText(formatted, isBottom = uiState.searchOverlayIsBottom)
+    uiState.searchOverlayOpen = false
+    suggestionFetcher?.cancel()
+    uiState.suggestions = emptyList()
+    Thread { SearchHistoryManager.add(this, trimmed) }.start()
+    loadUrl(trimmed)
+}
+
+internal fun MainActivity.onSuggestionChosen(query: String) {
+    val formatted = formatUrl(query)
+    setAddressBarText(formatted, isBottom = uiState.searchOverlayIsBottom)
+    uiState.searchOverlayOpen = false
+    suggestionFetcher?.cancel()
+    uiState.suggestions = emptyList()
+    SearchHistoryManager.add(this, query)
+    loadUrl(query)
+}
+
+private fun MainActivity.setAddressBarText(formatted: String, isBottom: Boolean) {
+    val secure = formatted.startsWith("https://")
+    if (isBottom) {
+        uiState.addressBarTextBottom = formatted
+        uiState.addressBarSecureBottom = secure
+    } else {
+        uiState.addressBarTextTop = formatted
+        uiState.addressBarSecureTop = secure
     }
-    binding.btnMenu.setOnClickListener { anchor -> showMenu(anchor) }
-    binding.btnTabCountBottom.setOnClickListener { showTabSwitcher() }
-    binding.btnMenuBottom.setOnClickListener { anchor -> showMenu(anchor) }
+}
+
+internal fun MainActivity.navGoBack() { tabManager.activeTab?.webView?.let { if (it.canGoBack()) it.goBack() } }
+internal fun MainActivity.navGoForward() { tabManager.activeTab?.webView?.let { if (it.canGoForward()) it.goForward() } }
+internal fun MainActivity.navGoHome() { loadUrl(getSearchEngineHomeUrl()) }
+internal fun MainActivity.navRefreshOrStop() {
+    tabManager.activeTab?.webView?.let { wv ->
+        if (uiState.isPageLoading) { wv.stopLoading(); onPageFinished(wv.url ?: "") } else { wv.reload() }
+    }
+}
+internal fun MainActivity.navToggleBookmark() {
+    val url = tabManager.activeTab?.webView?.url ?: return
+    val title = tabManager.activeTab?.title ?: url
+    if (BookmarkManager.isBookmarked(this, url)) {
+        BookmarkManager.remove(this, url)
+    } else {
+        BookmarkManager.add(this, Bookmark(url = url, title = title))
+    }
+    updateBookmarkIcon()
 }
 
 internal fun MainActivity.loadUrl(input: String) {
@@ -297,16 +167,7 @@ internal fun MainActivity.loadUrl(input: String) {
     tabManager.activeTab?.url = url
     val headers = buildDesktopHeaders()
     if (headers != null) wv.loadUrl(url, headers) else wv.loadUrl(url)
-    val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-    imm.hideSoftInputFromWindow(binding.root.windowToken, 0)
-}
-
-private fun MainActivity.setSearchBarLockIcon(
-    searchBar: com.google.android.material.search.SearchBar,
-    url: String
-) {
-    val lockRes = if (url.startsWith("https://")) R.drawable.ic_lock_24 else R.drawable.ic_lock_open_24
-    searchBar.navigationIcon = androidx.core.content.ContextCompat.getDrawable(this, lockRes)
+    hideKeyboardOnly()
 }
 
 internal fun MainActivity.formatUrl(input: String): String {
@@ -323,30 +184,26 @@ internal fun MainActivity.formatUrl(input: String): String {
 }
 
 internal fun MainActivity.updateAddressBar(url: String) {
-    if (!binding.addressBarSearch.isShowing) {
-        setSearchBarLockIcon(binding.addressBar, url)
-        binding.addressBar.setText(url)
-    }
-    if (!binding.addressBarSearchBottom.isShowing) {
-        setSearchBarLockIcon(binding.addressBarBottom, url)
-        binding.addressBarBottom.setText(url)
-    }
+    if (uiState.searchOverlayOpen) return
+    val secure = url.startsWith("https://")
+    uiState.addressBarTextTop = url
+    uiState.addressBarSecureTop = secure
+    uiState.addressBarTextBottom = url
+    uiState.addressBarSecureBottom = secure
 }
 
 internal fun MainActivity.onTabUrlUpdated(webView: android.webkit.WebView, url: String) {
     tabManager.tabs.find { it.webView === webView }?.url = url
-    if (tabManager.activeTab?.webView === webView &&
-        !binding.addressBarSearch.isShowing && !binding.addressBarSearchBottom.isShowing) {
+    if (tabManager.activeTab?.webView === webView && !uiState.searchOverlayOpen) {
         updateAddressBar(url)
     }
 }
 
 internal fun MainActivity.onPageStarted(url: String) {
-    binding.swipeRefresh.isRefreshing = false
+    swipeRefreshView.isRefreshing = false
     updateAddressBar(url)
-    binding.btnRefresh.setImageResource(R.drawable.ic_close_24)
-    binding.progressBar.visibility = View.VISIBLE
-    binding.progressBarBottom.visibility = View.VISIBLE
+    uiState.isPageLoading = true
+    uiState.pageLoadProgress = 0
     updateNavigationState()
     if (hasWebBottomNav) {
         hasWebBottomNav = false
@@ -416,11 +273,9 @@ internal fun MainActivity.onPageStarted(url: String) {
 }
 
 internal fun MainActivity.onPageFinished(url: String) {
-    binding.swipeRefresh.isRefreshing = false
+    swipeRefreshView.isRefreshing = false
     updateAddressBar(url)
-    binding.progressBar.visibility = View.INVISIBLE
-    binding.progressBarBottom.visibility = View.INVISIBLE
-    binding.btnRefresh.setImageResource(R.drawable.ic_refresh_24)
+    uiState.isPageLoading = false
     updateNavigationState()
     tabManager.activeTab?.webView?.let { wv ->
         injectScrollTracker(wv)
@@ -456,63 +311,55 @@ internal fun MainActivity.onPageFinished(url: String) {
 }
 
 internal fun MainActivity.onProgressChanged(progress: Int) {
-    binding.progressBar.progress = progress
-    binding.progressBar.visibility = if (progress < 100) View.VISIBLE else View.INVISIBLE
-    binding.progressBarBottom.progress = progress
-    binding.progressBarBottom.visibility = if (progress < 100) View.VISIBLE else View.INVISIBLE
+    uiState.pageLoadProgress = progress
+    uiState.isPageLoading = progress < 100
 }
 
 internal fun MainActivity.resetProgressBar() {
-    binding.progressBar.progress = 0
-    binding.progressBar.visibility = View.INVISIBLE
-    binding.progressBarBottom.progress = 0
-    binding.progressBarBottom.visibility = View.INVISIBLE
+    uiState.pageLoadProgress = 0
+    uiState.isPageLoading = false
 }
 
 internal fun MainActivity.updateBookmarkIcon() {
     val url = tabManager.activeTab?.webView?.url ?: ""
-    val isBookmarked = url.isNotEmpty() && BookmarkManager.isBookmarked(this, url)
-    binding.btnBookmark.setImageResource(
-        if (isBookmarked) R.drawable.ic_bookmark_filled_24 else R.drawable.ic_bookmark_24
-    )
-    binding.btnBookmark.alpha = if (url.isEmpty()) 0.38f else 1.0f
+    uiState.hasActiveUrl = url.isNotEmpty()
+    uiState.isBookmarked = url.isNotEmpty() && BookmarkManager.isBookmarked(this, url)
 }
 
 internal fun MainActivity.updateNavigationState() {
     val wv = tabManager.activeTab?.webView
-    binding.btnBack.alpha = if (wv?.canGoBack() == true) 1.0f else 0.38f
-    binding.btnForward.alpha = if (wv?.canGoForward() == true) 1.0f else 0.38f
+    uiState.canGoBack = wv?.canGoBack() == true
+    uiState.canGoForward = wv?.canGoForward() == true
 }
 
 internal fun MainActivity.updateTabCount() {
     val count = tabManager.count
-    val text = if (count > 99) ":D" else count.toString()
-    binding.btnTabCount.text = text
-    binding.btnTabCountBottom.text = text
+    uiState.tabCountText = if (count > 99) ":D" else count.toString()
 }
 
 internal fun MainActivity.updateIncognitoState(isIncognito: Boolean) {
-    binding.incognitoIcon.visibility = if (isIncognito) View.VISIBLE else View.GONE
-    binding.incognitoIconBottom.visibility = if (isIncognito) View.VISIBLE else View.GONE
-    val color = getThemeColor(com.google.android.material.R.attr.colorSurface)
-    binding.toolbarTop.setBackgroundColor(color)
-    binding.toolbarBottom.setBackgroundColor(color)
-    binding.bottomBar.setBackgroundColor(color)
-    binding.statusBarBackground.setBackgroundColor(color)
+    // The toolbars are plain Compose Surfaces colored from LocalClintColors.surface, so unlike
+    // the old Views there's no separate "reapply the surface color" step needed here — this
+    // just flips the incognito icon/badge.
+    uiState.isIncognito = isIncognito
 }
 
 internal fun MainActivity.updateSwipeRefreshColors(isIncognito: Boolean) {
-    binding.swipeRefresh.setProgressBackgroundColorSchemeColor(
+    swipeRefreshView.setProgressBackgroundColorSchemeColor(
         getThemeColor(com.google.android.material.R.attr.colorSurface)
     )
-    binding.swipeRefresh.setColorSchemeColors(getThemeColor(androidx.appcompat.R.attr.colorPrimary))
+    swipeRefreshView.setColorSchemeColors(getThemeColor(androidx.appcompat.R.attr.colorPrimary))
 }
 
+/** Closes the search overlay (if open) and drops focus/IME, without touching the address bar text. */
 internal fun MainActivity.hideKeyboard() {
-    if (binding.addressBarSearch.isShowing) binding.addressBarSearch.hide()
-    if (binding.addressBarSearchBottom.isShowing) binding.addressBarSearchBottom.hide()
-    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    imm.hideSoftInputFromWindow(binding.root.windowToken, 0)
+    hideKeyboardOnly()
+}
+
+private fun MainActivity.hideKeyboardOnly() {
+    if (uiState.searchOverlayOpen) closeSearchOverlay()
+    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+    imm.hideSoftInputFromWindow(window.decorView.windowToken, 0)
 }
 
 internal fun MainActivity.getThemeColor(attrId: Int): Int {
@@ -521,21 +368,18 @@ internal fun MainActivity.getThemeColor(attrId: Int): Int {
     return typedValue.data
 }
 
-internal fun MainActivity.handleVoiceSearchTap(searchView: com.google.android.material.search.SearchView) {
+internal fun MainActivity.handleVoiceSearchTap() {
     if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
         == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-        pendingVoiceSearchEditText = searchView.editText
         launchVoiceSearch()
     } else {
-        pendingVoiceSearchEditText = searchView.editText
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.voice_search_permission_title))
-            .setMessage(getString(R.string.voice_search_permission_message))
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-            }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.voice_search_permission_title),
+            message = getString(R.string.voice_search_permission_message),
+            positiveLabel = getString(android.R.string.ok),
+            onPositive = { microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) },
+            negativeLabel = getString(android.R.string.cancel)
+        )
     }
 }
 
@@ -548,7 +392,6 @@ internal fun MainActivity.launchVoiceSearch() {
             android.speech.RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
     }
     runCatching { voiceSearchLauncher.launch(intent) }.onFailure {
-        pendingVoiceSearchEditText = null
-        com.jhaiian.clint.ui.ClintToast.show(this, getString(R.string.voice_search_not_available), R.drawable.ic_mic_24)
+        Toast.makeText(this, getString(R.string.voice_search_not_available), Toast.LENGTH_SHORT).show()
     }
 }

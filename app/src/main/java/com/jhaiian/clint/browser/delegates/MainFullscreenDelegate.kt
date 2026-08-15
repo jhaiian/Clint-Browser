@@ -4,7 +4,6 @@ import com.jhaiian.clint.browser.MainActivity
 
 import android.view.View
 import android.webkit.WebChromeClient
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
@@ -12,14 +11,11 @@ internal fun MainActivity.onShowCustomView(view: View, callback: WebChromeClient
     if (fullscreenView != null) { callback.onCustomViewHidden(); return }
     fullscreenCallback = callback
     fullscreenView = view
-    binding.fullscreenContainer.addView(view, android.view.ViewGroup.LayoutParams(
+    fullscreenContainerView.addView(view, android.view.ViewGroup.LayoutParams(
         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
         android.view.ViewGroup.LayoutParams.MATCH_PARENT
     ))
-    binding.fullscreenContainer.visibility = View.VISIBLE
-    binding.toolbarTop.visibility = View.GONE
-    binding.toolbarBottom.visibility = View.GONE
-    binding.bottomBar.visibility = View.GONE
+    uiState.isFullscreen = true
     val ctrl = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
     ctrl.hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
     ctrl.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -27,6 +23,10 @@ internal fun MainActivity.onShowCustomView(view: View, callback: WebChromeClient
         val parts = result?.trim('"')?.split(",")
         val vw = parts?.getOrNull(0)?.toIntOrNull() ?: 0
         val vh = parts?.getOrNull(1)?.toIntOrNull() ?: 0
+        // On large screens (sw > 600dp) Android 17 ignores orientation-lock requests like this
+        // one by design (see the Android 17 adaptive-app behavior change) — the video simply
+        // plays at whatever orientation the window already is, which is the correct outcome
+        // there, so no extra handling is needed for that case here.
         requestedOrientation = when {
             vw > 0 && vh > 0 && vw >= vh -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             vw > 0 && vh > 0 && vh > vw  -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
@@ -38,62 +38,38 @@ internal fun MainActivity.onShowCustomView(view: View, callback: WebChromeClient
 internal fun MainActivity.exitFullscreen() {
     fullscreenCallback?.onCustomViewHidden()
     fullscreenCallback = null
-    fullscreenView?.let { binding.fullscreenContainer.removeView(it) }
+    fullscreenView?.let { fullscreenContainerView.removeView(it) }
     fullscreenView = null
-    binding.fullscreenContainer.visibility = View.GONE
+    uiState.isFullscreen = false
     bottomBarAnimator2?.cancel()
-    topBarFraction = 0f
-    bottomBarFraction = 0f
+    uiState.topBarFraction = 0f
+    uiState.bottomBarFraction = 0f
     nestedScrollActive = false
     canvasTouchActive = false
     hasWebBottomNav = false
-    binding.toolbarTop.translationY = 0f
-    binding.bottomBar.translationY = 0f
     updateMainContentInsets()
-    val position = prefs.getString("address_bar_position", "top") ?: "top"
-    when (position) {
-        "bottom" -> {
-            binding.toolbarTop.visibility = View.GONE
-            binding.toolbarBottom.visibility = View.VISIBLE
-            binding.bottomBar.visibility = View.GONE
-        }
-        "split" -> {
-            binding.toolbarTop.visibility = View.VISIBLE
-            binding.toolbarBottom.visibility = View.GONE
-            binding.bottomBar.visibility = View.VISIBLE
-        }
-        else -> {
-            binding.toolbarTop.visibility = View.VISIBLE
-            binding.toolbarBottom.visibility = View.GONE
-            binding.bottomBar.visibility = View.GONE
-        }
-    }
-    binding.swipeRefresh.isEnabled = true
+    swipeRefreshView.isEnabled = true
     val ctrl = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
     ctrl.show(WindowInsetsCompat.Type.navigationBars())
     applyStatusBarVisibility()
-    binding.root.post {
+    window.decorView.post {
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        topBarFullHeight = 0
-        bottomBarFullHeight = 0
-        ViewCompat.requestApplyInsets(binding.toolbarTop)
-        ViewCompat.requestApplyInsets(binding.toolbarBottom)
-        ViewCompat.requestApplyInsets(binding.bottomBar)
+        uiState.topBarFullHeightPx = 0
+        uiState.bottomBarFullHeightPx = 0
     }
 }
 
-private fun MainActivity.applyStatusBarVisibility() {
+/**
+ * Applies the "hide_status_bar" preference to the real system status bar and to [MainUiState]
+ * (which drives the Compose toolbars' padding — see `MainScreen.kt`).
+ */
+internal fun MainActivity.applyStatusBarVisibility() {
     val hide = prefs.getBoolean("hide_status_bar", false)
+    uiState.hideStatusBar = hide
     val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
     if (hide) {
         controller.hide(WindowInsetsCompat.Type.statusBars())
-        statusBarInsetPx = 0
-        binding.toolbarTop.setPadding(0, 0, 0, 0)
     } else {
         controller.show(WindowInsetsCompat.Type.statusBars())
-        if (cachedStatusBarInsetPx > 0) {
-            statusBarInsetPx = cachedStatusBarInsetPx
-            binding.toolbarTop.setPadding(0, cachedStatusBarInsetPx, 0, 0)
-        }
     }
 }

@@ -1,0 +1,375 @@
+package com.jhaiian.clint.browser
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.jhaiian.clint.R
+import com.jhaiian.clint.ui.rememberClintFavicon
+import com.jhaiian.clint.ui.theme.LocalClintColors
+
+/**
+ * The pill-shaped, read-only address bar shown in the top or bottom toolbar. Tapping it opens
+ * [SearchOverlay]. Mirrors the old `Widget.Clint.SearchBar`-styled Material SearchBar (56dp
+ * stadium pill, lock/unlock navigation icon, tab-count badge, overflow menu).
+ */
+@Composable
+internal fun AddressBarRow(
+    activity: MainActivity,
+    isIncognito: Boolean,
+    addressBarText: String,
+    isSecure: Boolean,
+    tabCountText: String,
+    onAddressBarClick: () -> Unit,
+    onTabCountClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalClintColors.current
+    Row(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (isIncognito) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.Filled.VisibilityOff,
+                contentDescription = stringResource(R.string.incognito),
+                tint = colors.iconTint,
+                modifier = Modifier.padding(end = 8.dp).size(20.dp)
+            )
+        }
+        Surface(
+            color = colors.addressBarColor,
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.weight(1f).height(48.dp).clickable(onClick = onAddressBarClick)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                Icon(
+                    imageVector = if (isSecure) androidx.compose.material.icons.Icons.Filled.Lock else androidx.compose.material.icons.Icons.Filled.LockOpen,
+                    contentDescription = null,
+                    tint = colors.iconTint,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = addressBarText,
+                    color = colors.onSurface,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 12.dp).weight(1f)
+                )
+            }
+        }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .padding(start = 10.dp)
+                .size(width = 34.dp, height = 26.dp)
+                .border(2.dp, colors.primary, RoundedCornerShape(5.dp))
+                .clickable(onClick = onTabCountClick)
+        ) {
+            Text(
+                text = tabCountText,
+                color = colors.primary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
+        }
+        Box(modifier = Modifier.padding(start = 4.dp).size(40.dp), contentAlignment = Alignment.Center) {
+            com.jhaiian.clint.browser.menu.MenuTriggerButton(activity)
+        }
+    }
+}
+
+/**
+ * Full-screen replacement for the old Material `SearchView`: an editable field seeded with the
+ * active tab's URL (selected, ready to be typed over) plus a live bookmarks/history/suggestions
+ * list. When [isBottom] the field docks to the bottom of the screen and the list grows upward
+ * from it, matching where the bottom address bar sits; otherwise the field docks to the top.
+ * [hint] names the active search engine so an empty field reads "Search Brave or type URL".
+ */
+@Composable
+internal fun SearchOverlay(
+    initialText: String,
+    isBottom: Boolean,
+    hint: String,
+    suggestions: List<SuggestionItem>,
+    voiceResult: String?,
+    onVoiceResultConsumed: () -> Unit,
+    onQueryChange: (String) -> Unit,
+    onSubmit: (String) -> Unit,
+    onVoiceSearch: () -> Unit,
+    onClose: () -> Unit,
+    onSuggestionClick: (String) -> Unit,
+    onSuggestionDelete: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = LocalClintColors.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
+    var fieldValue by remember {
+        mutableStateOf(TextFieldValue(initialText, TextRange(0, initialText.length)))
+    }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
+
+    fun fill(text: String) {
+        fieldValue = TextFieldValue(text, TextRange(text.length))
+        onQueryChange(text)
+    }
+
+    LaunchedEffect(voiceResult) {
+        if (voiceResult != null) {
+            fill(voiceResult)
+            onVoiceResultConsumed()
+        }
+    }
+
+    val fieldRow = @Composable {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(colors.addressBarColor)
+                    .border(1.dp, colors.divider, RoundedCornerShape(24.dp))
+                    .padding(horizontal = 14.dp)
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = colors.secondaryText,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    if (fieldValue.text.isEmpty()) {
+                        Text(
+                            text = hint,
+                            color = colors.secondaryText,
+                            fontSize = 16.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    BasicTextField(
+                        value = fieldValue,
+                        onValueChange = {
+                            fieldValue = it
+                            onQueryChange(it.text)
+                        },
+                        singleLine = true,
+                        textStyle = TextStyle(color = colors.onSurface, fontSize = 16.sp),
+                        cursorBrush = SolidColor(colors.primary),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                        keyboardActions = KeyboardActions(onGo = { onSubmit(fieldValue.text.trim()) }),
+                        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
+                    )
+                }
+                if (fieldValue.text.isNotEmpty()) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.action_clear_search),
+                        tint = colors.secondaryText,
+                        modifier = Modifier.size(18.dp).clip(CircleShape).clickable { fill("") }
+                    )
+                } else {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Filled.Mic,
+                        contentDescription = stringResource(R.string.voice_search),
+                        tint = colors.secondaryText,
+                        modifier = Modifier.size(18.dp).clip(CircleShape).clickable(onClick = onVoiceSearch)
+                    )
+                }
+            }
+        }
+    }
+
+    val suggestionsList = @Composable {
+        LazyColumn(
+            reverseLayout = isBottom,
+            verticalArrangement = if (isBottom) Arrangement.Bottom else Arrangement.Top,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(suggestions, key = { it.type.name + it.query }) { item ->
+                SuggestionRow(
+                    item = item,
+                    onClick = { onSuggestionClick(item.query) },
+                    onFill = { fill(item.query) },
+                    onDelete = { onSuggestionDelete(item.query) }
+                )
+            }
+        }
+    }
+
+    Surface(color = colors.background, modifier = modifier.fillMaxSize().imePadding()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (isBottom) {
+                Box(modifier = Modifier.weight(1f, fill = true), contentAlignment = Alignment.BottomStart) { suggestionsList() }
+                fieldRow()
+            } else {
+                fieldRow()
+                Box(modifier = Modifier.weight(1f, fill = true), contentAlignment = Alignment.TopStart) { suggestionsList() }
+            }
+        }
+    }
+}
+
+/** One bookmark / history / raw-suggestion row inside [SearchOverlay]'s list. */
+@Composable
+private fun SuggestionRow(
+    item: SuggestionItem,
+    onClick: () -> Unit,
+    onFill: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    val isUrl = item.query.startsWith("http")
+    val showSubtitle = item.type != SuggestionType.SUGGESTION && isUrl && item.displayText != item.query
+    val favicon = if (isUrl) rememberClintFavicon(item.query) else null
+    val suggestionUrlDesc = stringResource(R.string.suggestion_url_desc)
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(start = 12.dp, end = 4.dp)
+            .height(58.dp)
+    ) {
+        Box(
+            modifier = Modifier.size(36.dp).clip(CircleShape).background(colors.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            if (favicon != null) {
+                androidx.compose.foundation.Image(
+                    bitmap = favicon.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp).clip(RoundedCornerShape(4.dp))
+                )
+            } else {
+                val fallbackIcon = when (item.type) {
+                    SuggestionType.BOOKMARK -> androidx.compose.material.icons.Icons.Filled.Bookmark
+                    SuggestionType.HISTORY -> androidx.compose.material.icons.Icons.Filled.History
+                    SuggestionType.SUGGESTION -> androidx.compose.material.icons.Icons.Filled.Search
+                }
+                Icon(
+                    imageVector = fallbackIcon,
+                    contentDescription = stringResource(R.string.suggestion_icon_desc),
+                    tint = if (item.type == SuggestionType.BOOKMARK) colors.primary else colors.iconTint,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f).padding(start = 14.dp)) {
+            Text(
+                item.displayText,
+                color = colors.onSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (showSubtitle) {
+                Text(
+                    item.query.removePrefix("https://").removePrefix("http://"),
+                    color = colors.secondaryText,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics {
+                        contentDescription = suggestionUrlDesc
+                    }
+                )
+            }
+        }
+
+        if (item.type == SuggestionType.HISTORY) {
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.history_delete_desc),
+                    tint = colors.secondaryText,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+        IconButton(onClick = onFill) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.suggestion_fill_desc),
+                tint = colors.secondaryText,
+                modifier = Modifier.size(18.dp).rotate(135f)
+            )
+        }
+    }
+}

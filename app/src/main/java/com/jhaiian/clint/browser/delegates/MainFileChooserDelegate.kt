@@ -16,20 +16,20 @@ internal fun MainActivity.onShowFileChooser(
         pendingFileChooserCallback = callback
         pendingFileChooserParams = params
         if (shouldShowRequestPermissionRationale(android.Manifest.permission.CAMERA)) {
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(this, getDialogTheme())
-                .setTitle(getString(com.jhaiian.clint.R.string.camera_permission_title))
-                .setMessage(getString(com.jhaiian.clint.R.string.camera_permission_message))
-                .setCancelable(false)
-                .setNegativeButton(getString(com.jhaiian.clint.R.string.action_not_now)) { _, _ ->
+            uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+                title = getString(com.jhaiian.clint.R.string.camera_permission_title),
+                message = getString(com.jhaiian.clint.R.string.camera_permission_message),
+                cancelable = false,
+                positiveLabel = getString(com.jhaiian.clint.R.string.action_allow),
+                onPositive = { cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA) },
+                negativeLabel = getString(com.jhaiian.clint.R.string.action_not_now),
+                onNegative = {
                     val cb = pendingFileChooserCallback
                     pendingFileChooserCallback = null
                     pendingFileChooserParams = null
                     cb?.onReceiveValue(null)
                 }
-                .setPositiveButton(getString(com.jhaiian.clint.R.string.action_allow)) { _, _ ->
-                    cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
-                }
-                .create().also { applyStatusBarFlagToDialog(it) }.show()
+            )
         } else {
             cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
         }

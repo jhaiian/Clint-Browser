@@ -1,151 +1,112 @@
 package com.jhaiian.clint.browser.sheets
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.ZoomIn
 
-import android.app.Dialog
-import android.content.Context
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
-import android.widget.ImageView
-import android.widget.TextView
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jhaiian.clint.R
+import com.jhaiian.clint.browser.MainActivity
 import com.jhaiian.clint.ui.FaviconCache
+import com.jhaiian.clint.ui.theme.LocalClintColors
 
-class LinkLongPressSheet : BottomSheetDialogFragment() {
+data class LinkLongPressRequest(val url: String, val linkText: String)
 
-    interface Listener {
-        fun onLinkOpenInNewTab(url: String)
-        fun onLinkOpenIncognito(url: String)
-        fun onLinkPreviewPage(url: String)
-        fun onLinkCopyAddress(url: String)
-        fun onLinkCopyText(url: String, text: String)
-        fun onLinkShare(url: String)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun LinkLongPressSheet(request: LinkLongPressRequest, activity: MainActivity, onDismiss: () -> Unit) {
+    val colors = LocalClintColors.current
+    val context = LocalContext.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var favicon by remember(request.url) { mutableStateOf<Bitmap?>(null) }
+    val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+
+    LaunchedEffect(request.url) {
+        val faviconUrl = FaviconCache.faviconUrlFor(request.url)
+        if (faviconUrl.isNotEmpty()) FaviconCache.load(context, faviconUrl) { bmp -> favicon = bmp }
     }
 
-    private var listener: Listener? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        listener = context as? Listener
+    fun dismissAnd(action: () -> Unit) {
+        onDismiss()
+        action()
     }
 
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
+    val hasLinkText = request.linkText.isNotEmpty() && request.linkText != request.url
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
-        val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        if (prefs.getBoolean("hide_status_bar", false)) {
-            @Suppress("DEPRECATION")
-            dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-        }
-        dialog.setOnShowListener {
-            val sheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-            sheet?.let {
-                val behavior = BottomSheetBehavior.from(it)
-                behavior.skipCollapsed = true
-                val isLandscape = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-                if (isLandscape) {
-                    val screenHeight = resources.displayMetrics.heightPixels
-                    it.layoutParams?.height = screenHeight
-                    behavior.isFitToContents = false
-                    behavior.peekHeight = 0
-                    behavior.maxHeight = screenHeight
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = colors.popupBackground) {
+        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
+        Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (favicon != null) {
+                    Image(favicon!!.asImageBitmap(), contentDescription = null, modifier = Modifier.size(20.dp))
                 } else {
-                    behavior.isFitToContents = true
+                    Icon(androidx.compose.material.icons.Icons.Filled.Link, contentDescription = null, tint = colors.iconTint, modifier = Modifier.size(20.dp))
                 }
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            }
-        }
-        return dialog
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return inflater.inflate(R.layout.bottom_sheet_link_actions, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        val url = arguments?.getString(ARG_URL) ?: ""
-        val linkText = arguments?.getString(ARG_LINK_TEXT) ?: ""
-
-        val faviconView = view.findViewById<ImageView>(R.id.link_favicon)
-        val faviconUrl = FaviconCache.faviconUrlFor(url)
-        FaviconCache.load(requireContext(), faviconUrl) { bmp ->
-            if (!isAdded) return@load
-            if (bmp != null) {
-                faviconView.setImageBitmap(bmp)
-                faviconView.imageTintList = null
-            } else {
-                faviconView.setImageResource(R.drawable.ic_link_24)
-            }
-        }
-
-        view.findViewById<TextView>(R.id.link_url_label).text = url
-
-        val linkTextLabel = view.findViewById<TextView>(R.id.link_text_label)
-        if (linkText.isNotEmpty() && linkText != url) {
-            linkTextLabel.text = linkText
-            linkTextLabel.visibility = View.VISIBLE
-        } else {
-            linkTextLabel.visibility = View.GONE
-        }
-
-        val copyTextAction = view.findViewById<View>(R.id.action_copy_text)
-        copyTextAction.visibility = if (linkText.isNotEmpty()) View.VISIBLE else View.GONE
-        val dividerBefore = copyTextAction.previousSibling()
-        dividerBefore?.visibility = if (linkText.isNotEmpty()) View.VISIBLE else View.GONE
-
-        view.findViewById<View>(R.id.action_open_in_new_tab).setOnClickListener {
-            dismiss()
-            listener?.onLinkOpenInNewTab(url)
-        }
-        view.findViewById<View>(R.id.action_open_incognito).setOnClickListener {
-            dismiss()
-            listener?.onLinkOpenIncognito(url)
-        }
-        view.findViewById<View>(R.id.action_preview_page).setOnClickListener {
-            dismiss()
-            listener?.onLinkPreviewPage(url)
-        }
-        view.findViewById<View>(R.id.action_copy_address).setOnClickListener {
-            dismiss()
-            listener?.onLinkCopyAddress(url)
-        }
-        copyTextAction.setOnClickListener {
-            dismiss()
-            listener?.onLinkCopyText(url, linkText)
-        }
-        view.findViewById<View>(R.id.action_share_link).setOnClickListener {
-            dismiss()
-            listener?.onLinkShare(url)
-        }
-    }
-
-    private fun View.previousSibling(): View? {
-        val parent = parent as? ViewGroup ?: return null
-        val idx = parent.indexOfChild(this)
-        return if (idx > 0) parent.getChildAt(idx - 1) else null
-    }
-
-    companion object {
-        private const val ARG_URL = "url"
-        private const val ARG_LINK_TEXT = "link_text"
-
-        fun newInstance(url: String, linkText: String): LinkLongPressSheet {
-            return LinkLongPressSheet().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_URL, url)
-                    putString(ARG_LINK_TEXT, linkText)
+                Column(Modifier.padding(start = 12.dp)) {
+                    if (hasLinkText) {
+                        Text(request.linkText, color = colors.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                    Text(request.url, color = colors.secondaryText, fontSize = 13.sp, maxLines = 2)
                 }
+            }
+
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.link_open_in_new_tab)) {
+                dismissAnd { activity.onLinkOpenInNewTab(request.url) }
+            }
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.VisibilityOff, stringResource(R.string.link_open_incognito)) {
+                dismissAnd { activity.onLinkOpenIncognito(request.url) }
+            }
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.ZoomIn, stringResource(R.string.link_preview_page)) {
+                dismissAnd { activity.onLinkPreviewPage(request.url) }
+            }
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.ContentCopy, stringResource(R.string.link_copy_address)) {
+                dismissAnd { activity.onLinkCopyAddress(request.url) }
+            }
+            if (hasLinkText) {
+                ActionSheetDivider()
+                ActionSheetRow(androidx.compose.material.icons.Icons.Filled.ContentCopy, stringResource(R.string.link_copy_text)) {
+                    dismissAnd { activity.onLinkCopyText(request.url, request.linkText) }
+                }
+            }
+            ActionSheetDivider()
+            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.Share, stringResource(R.string.link_share)) {
+                dismissAnd { activity.onLinkShare(request.url) }
             }
         }
     }

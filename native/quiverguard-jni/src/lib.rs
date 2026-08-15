@@ -10,7 +10,7 @@
 
 mod bundled_resources;
 
-use adblock::engine::Engine;
+use adblock::engine::{DeserializationError, Engine};
 use adblock::lists::{FilterSet, ParseOptions};
 use adblock::request::Request;
 use jni::objects::{JClass, JString};
@@ -193,6 +193,14 @@ pub extern "system" fn Java_com_jhaiian_clint_quiver_engine_QuiverGuardNative_na
 /// Loads a previously-compiled engine file from disk into an active `Engine`, re-registering
 /// the bundled resources (resource metadata is intentionally not part of the serialized bytes,
 /// so it must be re-added every time an engine is deserialized).
+///
+/// Returns 0 for a failure outside of deserialization (missing file, I/O error). Any failure
+/// from `Engine::deserialize` itself - meaning a file existed and was read, but couldn't be
+/// turned into an engine - gets its own negative sentinel so the Kotlin side can show a
+/// specific message instead of a generic one. None of these are fixable by retrying; all of
+/// them mean recompiling from the original filter list text. See `DeserializationError` in
+/// adblock-rust and `QuiverGuardEngine.PreloadResult` on the Kotlin side, which mirrors this
+/// mapping 1:1.
 #[no_mangle]
 pub extern "system" fn Java_com_jhaiian_clint_quiver_engine_QuiverGuardNative_nativeLoadEngine(
     mut env: JNIEnv,
@@ -207,8 +215,21 @@ pub extern "system" fn Java_com_jhaiian_clint_quiver_engine_QuiverGuardNative_na
         };
 
         let mut engine = Engine::default();
-        if engine.deserialize(&bytes).is_err() {
-            return 0;
+        match engine.deserialize(&bytes) {
+            Ok(()) => {}
+            // The file was compiled by an incompatible earlier/later version of adblock-rust.
+            Err(DeserializationError::VersionMismatch(_)) => return -1,
+            // Too short, or missing the fixed magic-byte sequence - not a compiled engine
+            // file at all (e.g. truncated write, or some other file entirely).
+            Err(DeserializationError::BadHeader) => return -2,
+            // Header looked right, but the payload's checksum doesn't match - the file was
+            // corrupted or partially overwritten after it was written.
+            Err(DeserializationError::BadChecksum { .. }) => return -3,
+            // Checksum passed, but the payload itself isn't valid flatbuffer data.
+            Err(DeserializationError::FlatBufferParsingError(_)) => return -4,
+            // Defensive: covers any variant adblock-rust adds in a future version that this
+            // match isn't already handling explicitly.
+            Err(_) => return -5,
         }
         engine.use_resources(bundled_resources::bundled_resources());
 

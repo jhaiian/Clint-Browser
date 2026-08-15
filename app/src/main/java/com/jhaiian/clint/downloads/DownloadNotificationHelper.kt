@@ -11,7 +11,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
 import com.jhaiian.clint.R
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 
 internal object DownloadNotificationHelper {
 
@@ -450,7 +450,7 @@ internal object DownloadNotificationHelper {
 
     private fun isPushEnabled(context: Context): Boolean =
         PreferenceManager.getDefaultSharedPreferences(context)
-            .getBoolean(DownloadSettingsFragment.PREF_PUSH_NOTIFICATIONS, DownloadSettingsFragment.DEFAULT_PUSH_NOTIFICATIONS)
+            .getBoolean(DownloadSettingsKeys.PREF_PUSH_NOTIFICATIONS, DownloadSettingsKeys.DEFAULT_PUSH_NOTIFICATIONS)
 
     private fun pausePendingIntent(context: Context, id: Int): PendingIntent =
         PendingIntent.getBroadcast(

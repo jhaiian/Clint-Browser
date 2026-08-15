@@ -1,0 +1,40 @@
+package com.jhaiian.clint.setup
+
+import androidx.compose.foundation.ScrollState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
+/** Hoisted state for the setup wizard. Lives as long as the Activity instance. */
+class SetupUiState(
+    initialPage: Int,
+    initialScrollY: Int,
+    initialTheme: String,
+    initialAccent: String,
+    initialIntensity: String,
+    initialAddressBarPosition: String,
+    initialMenuStyle: String,
+    initialScrollHideMode: String,
+    initialHideStatusBar: Boolean,
+    initialEngine: String
+) {
+    var currentPage by mutableStateOf(initialPage)
+    var consentChecked by mutableStateOf(false)
+
+    var theme by mutableStateOf(initialTheme)
+    var accent by mutableStateOf(initialAccent)
+    var intensity by mutableStateOf(initialIntensity)
+
+    var addressBarPosition by mutableStateOf(initialAddressBarPosition)
+    var menuStyle by mutableStateOf(initialMenuStyle)
+    var scrollHideMode by mutableStateOf(initialScrollHideMode)
+    var hideStatusBar by mutableStateOf(initialHideStatusBar)
+
+    var engine by mutableStateOf(initialEngine)
+
+    var isDefaultBrowser by mutableStateOf(false)
+
+    var confirmDialogConfig by mutableStateOf<com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig?>(null)
+
+    val themePageScrollState = ScrollState(initialScrollY)
+}

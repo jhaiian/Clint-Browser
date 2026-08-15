@@ -55,7 +55,7 @@ object PassthroughFetcher {
             }
 
             client.newCall(reqBuilder.build()).execute().use { resp ->
-                val body = resp.body ?: return null
+                val body = resp.body
                 val bytes = body.bytes()
 
                 val contentType = resp.header("Content-Type")

@@ -1,0 +1,132 @@
+package com.jhaiian.clint.setup
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
+import com.jhaiian.clint.ui.theme.ClintComposeTheme
+import com.jhaiian.clint.ui.theme.LocalClintColors
+
+/** Content wider than this is centered with a max width instead of stretching edge to edge
+ *  (tablets, unfolded foldables, desktop windowing). */
+private val WideScreenBreakpointDp = 600
+private val CenteredContentMaxWidth = 480.dp
+
+@Composable
+fun SetupScreen(
+    state: SetupUiState,
+    onPrivacyClick: () -> Unit,
+    onTermsClick: () -> Unit,
+    onHideStatusBarToggled: (Boolean) -> Unit,
+    onThemeSelected: (String) -> Unit,
+    onAccentSelected: (String) -> Unit,
+    onIntensitySelected: (String) -> Unit,
+    onAddressBarPositionSelected: (String) -> Unit,
+    onMenuStyleSelected: (String) -> Unit,
+    onScrollHideModeSelected: (String) -> Unit,
+    onEngineSelected: (String) -> Unit,
+    onContinueFromWelcome: () -> Unit,
+    onNextFromLayoutPage: () -> Unit,
+    onNextFromEnginePage: () -> Unit,
+    onSetDefaultBrowser: () -> Unit,
+    onSkipDefaultBrowser: () -> Unit
+) {
+    ClintComposeTheme(theme = state.theme) {
+        val colors = LocalClintColors.current
+        Surface(color = colors.background, modifier = Modifier.fillMaxSize()) {
+            val insets = WindowInsets.systemBars.asPaddingValues()
+            val layoutDirection = LocalLayoutDirection.current
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = insets.calculateStartPadding(layoutDirection),
+                        end = insets.calculateEndPadding(layoutDirection),
+                        top = if (state.hideStatusBar) 0.dp else insets.calculateTopPadding(),
+                        bottom = insets.calculateBottomPadding()
+                    )
+            ) {
+                val isWideScreen = LocalConfiguration.current.screenWidthDp >= WideScreenBreakpointDp
+
+                AnimatedContent(
+                    targetState = state.currentPage,
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        (slideInHorizontally(animationSpec = tween(300)) { width -> width })
+                            .togetherWith(slideOutHorizontally(animationSpec = tween(300)) { width -> -width })
+                    },
+                    label = "setupPage"
+                ) { page ->
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .then(if (isWideScreen) Modifier.widthIn(max = CenteredContentMaxWidth) else Modifier.fillMaxSize())
+                        ) {
+                            when (page) {
+                                0 -> SetupWelcomePage(
+                                    consentChecked = state.consentChecked,
+                                    onConsentCheckedChange = { state.consentChecked = it },
+                                    onPrivacyClick = onPrivacyClick,
+                                    onTermsClick = onTermsClick,
+                                    onContinue = onContinueFromWelcome
+                                )
+                                1 -> SetupThemePage(
+                                    scrollState = state.themePageScrollState,
+                                    theme = state.theme,
+                                    accent = state.accent,
+                                    intensity = state.intensity,
+                                    onThemeSelected = onThemeSelected,
+                                    onAccentSelected = onAccentSelected,
+                                    onIntensitySelected = onIntensitySelected,
+                                    onNext = { state.currentPage = 2 }
+                                )
+                                2 -> SetupLayoutPage(
+                                    addressBarPosition = state.addressBarPosition,
+                                    menuStyle = state.menuStyle,
+                                    scrollHideMode = state.scrollHideMode,
+                                    hideStatusBar = state.hideStatusBar,
+                                    theme = state.theme,
+                                    accent = state.accent,
+                                    onAddressBarPositionSelected = onAddressBarPositionSelected,
+                                    onMenuStyleSelected = onMenuStyleSelected,
+                                    onScrollHideModeSelected = onScrollHideModeSelected,
+                                    onHideStatusBarToggled = onHideStatusBarToggled,
+                                    onNext = onNextFromLayoutPage
+                                )
+                                3 -> SetupEnginePage(
+                                    engine = state.engine,
+                                    onEngineSelected = onEngineSelected,
+                                    onNext = onNextFromEnginePage
+                                )
+                                else -> SetupDefaultBrowserPage(
+                                    isDefaultBrowser = state.isDefaultBrowser,
+                                    onSetDefault = onSetDefaultBrowser,
+                                    onSkip = onSkipDefaultBrowser
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

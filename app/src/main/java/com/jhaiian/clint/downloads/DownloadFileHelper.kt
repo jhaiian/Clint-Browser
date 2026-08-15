@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import com.jhaiian.clint.BuildConfig
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import java.io.File
 
 internal object DownloadFileHelper {
@@ -19,23 +19,23 @@ internal object DownloadFileHelper {
     private var contentInfoUtil: com.j256.simplemagic.ContentInfoUtil? = null
 
     fun isSafCustomMode(context: Context, item: DownloadItem? = null): Boolean {
-        if (item != null) return item.locationMode == DownloadSettingsFragment.MODE_CUSTOM
+        if (item != null) return item.locationMode == DownloadSettingsKeys.MODE_CUSTOM
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val mode = prefs.getString(
-            DownloadSettingsFragment.PREF_DOWNLOAD_LOCATION_MODE,
-            DownloadSettingsFragment.MODE_DEFAULT
+            DownloadSettingsKeys.PREF_DOWNLOAD_LOCATION_MODE,
+            DownloadSettingsKeys.MODE_DEFAULT
         )
-        return mode == DownloadSettingsFragment.MODE_CUSTOM
+        return mode == DownloadSettingsKeys.MODE_CUSTOM
     }
 
     fun getSafTreeUri(context: Context, item: DownloadItem? = null): Uri? {
-        if (item != null && item.locationMode == DownloadSettingsFragment.MODE_CUSTOM) {
+        if (item != null && item.locationMode == DownloadSettingsKeys.MODE_CUSTOM) {
             val uriStr = item.customLocationUri ?: return null
             return Uri.parse(uriStr)
         }
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val uriStr = prefs.getString(
-            DownloadSettingsFragment.PREF_DOWNLOAD_CUSTOM_URI,
+            DownloadSettingsKeys.PREF_DOWNLOAD_CUSTOM_URI,
             null
         ) ?: return null
         return Uri.parse(uriStr)

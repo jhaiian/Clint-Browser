@@ -64,7 +64,7 @@
         <activity
             android:name=".setup.SetupActivity"
             android:exported="true"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -107,55 +107,55 @@
         <activity
             android:name=".settings.SettingsActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".browser.MainActivity" />
 
         <activity
             android:name=".downloads.DownloadsActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".browser.MainActivity" />
 
         <activity
             android:name=".bookmarks.BookmarksActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".browser.MainActivity" />
 
         <activity
             android:name=".history.HistoryActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".browser.MainActivity" />
 
         <activity
             android:name=".settings.sitepermissions.SitePermissionActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".settings.SettingsActivity" />
 
         <activity
             android:name=".settings.desktopmode.DesktopModeActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".settings.SettingsActivity" />
 
         <activity
             android:name=".settings.quiverguardexception.QuiverGuardExceptionActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".settings.SettingsActivity" />
 
         <activity
             android:name=".quiver.QuiverGuardActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".settings.SettingsActivity" />
 
         <activity
             android:name=".quiver.ManualFilterActivity"
             android:exported="false"
-            android:configChanges="uiMode"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".quiver.QuiverGuardActivity" />
 
         <provider

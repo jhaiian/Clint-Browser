@@ -1,12 +1,10 @@
 package com.jhaiian.clint.browser
 import com.jhaiian.clint.browser.delegates.*
-import com.jhaiian.clint.browser.menu.*
 import com.jhaiian.clint.browser.sheets.*
 import com.jhaiian.clint.browser.suggestions.*
 import com.jhaiian.clint.browser.webview.*
 
 import android.Manifest
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.os.Build
@@ -14,32 +12,35 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.webkit.WebChromeClient
-import android.webkit.WebView
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import kotlin.math.abs
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.preference.PreferenceManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jhaiian.clint.base.ClintActivity
 import com.jhaiian.clint.R
 import com.jhaiian.clint.BuildConfig
 import com.jhaiian.clint.crash.CrashHandler
-import com.jhaiian.clint.databinding.ActivityMainBinding
 import com.jhaiian.clint.downloads.ClintDownloadManager
 import com.jhaiian.clint.tabs.TabManager
-import com.jhaiian.clint.tabs.TabSwitcherSheet
+import com.jhaiian.clint.ui.OverlayHostActivity
+import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.update.UpdateChecker
-import com.jhaiian.clint.ui.ClintToast
 import androidx.webkit.ScriptHandler
 
-class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet.Listener, ImageLongPressSheet.Listener, LinkLongPressSheet.Listener, ContentPreviewSheet.Listener, PreviewLinkLongPressSheet.Listener {
+class MainActivity : ClintActivity(), OverlayHostActivity {
 
     companion object {
         const val EXTRA_REFRESH_LINK_MODE = "extra_refresh_link_mode"
@@ -59,7 +60,19 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
 
     internal var refreshLinkSession: RefreshLinkSession? = null
 
-    internal lateinit var binding: ActivityMainBinding
+    /** Compose-observed chrome state; see [MainUiState] and `MainScreen.kt`. */
+    internal val uiState = MainUiState()
+
+    /** Full-window Compose overlay (document viewer, download dialog, update flow) rendered
+     *  inline in this activity's own composition; see [OverlayHostActivity]. */
+    override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
+
+    // The WebView/pull-to-refresh island and the fullscreen-video host stay real Android Views
+    // (there's no Compose gain there) and are hosted into the Compose tree via `AndroidView`.
+    internal lateinit var webContainer: FrameLayout
+    internal lateinit var swipeRefreshView: ClintSwipeRefreshLayout
+    internal lateinit var fullscreenContainerView: FrameLayout
+
     internal lateinit var prefs: SharedPreferences
     internal val tabManager = TabManager()
     internal var isDesktopMode = false
@@ -70,14 +83,7 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
     internal val quiverGuardScriptHandlers = com.jhaiian.clint.quiver.engine.ScriptHandlerStore()
     internal val quiverGuardJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
 
-    internal var topBarFullHeight = 0
-    internal var bottomBarFullHeight = 0
-    internal var statusBarInsetPx = 0
-    internal var cachedStatusBarInsetPx = 0
-    internal var cachedNavBarInsetPx = 0
-    internal var topBarFraction: Float = 0f
-    internal var bottomBarAnimator2: ValueAnimator? = null
-    internal var bottomBarFraction: Float = 0f
+    internal var bottomBarAnimator2: android.animation.ValueAnimator? = null
     internal var hasWebBottomNav: Boolean = false
     internal var nestedScrollActive = false
     internal var canvasTouchActive = false
@@ -88,9 +94,9 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
     internal var fullscreenView: View? = null
     internal var fullscreenCallback: WebChromeClient.CustomViewCallback? = null
 
-    internal var suggestionFetcherTop: SuggestionFetcher? = null
-    internal var suggestionFetcherBottom: SuggestionFetcher? = null
+    internal var suggestionFetcher: SuggestionFetcher? = null
     internal var suggestionsBgThread: android.os.HandlerThread? = null
+    internal var suggestionsBgHandler: android.os.Handler? = null
 
     private var backPressedOnce = false
     private val backPressHandler = Handler(Looper.getMainLooper())
@@ -111,7 +117,6 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
 
     internal var pendingDownload: PendingDownload? = null
     internal var downloadDialogFolderPickerCallback: ((android.net.Uri) -> Unit)? = null
-    internal var pendingVoiceSearchEditText: android.widget.EditText? = null
     internal var pendingWebPermissionRequest: android.webkit.PermissionRequest? = null
     internal var pendingWebMicPermissionRequest: android.webkit.PermissionRequest? = null
     internal var pendingWebGeoOrigin: String? = null
@@ -152,7 +157,6 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) launchVoiceSearch()
-        else pendingVoiceSearchEditText = null
     }
 
     internal val webCameraPermissionLauncher = registerForActivityResult(
@@ -216,13 +220,8 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val matches = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
-            val text = matches?.firstOrNull() ?: return@registerForActivityResult
-            pendingVoiceSearchEditText?.let { editText ->
-                editText.setText(text)
-                editText.setSelection(text.length)
-            }
+            matches?.firstOrNull()?.let { uiState.voiceResult = it }
         }
-        pendingVoiceSearchEditText = null
     }
 
     internal val fileChooserLauncher = registerForActivityResult(
@@ -288,55 +287,25 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
         super.onCreate(savedInstanceState)
         CrashHandler.install(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+
+        webContainer = FrameLayout(this)
+        swipeRefreshView = ClintSwipeRefreshLayout(this).apply {
+            addView(webContainer, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        }
+        fullscreenContainerView = FrameLayout(this)
+
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
         prefs.registerOnSharedPreferenceChangeListener(prefsListener)
         applyStatusBarVisibility()
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbarTop) { v, insets ->
-            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            if (statusBars.top > 0) cachedStatusBarInsetPx = statusBars.top
-            val effectivePadding = if (prefs.getBoolean("hide_status_bar", false)) 0 else statusBars.top
-            statusBarInsetPx = effectivePadding
-            v.setPadding(0, effectivePadding, 0, 0)
-            val sbLp = binding.statusBarBackground.layoutParams
-            sbLp.height = effectivePadding
-            binding.statusBarBackground.layoutParams = sbLp
-            v.post {
-                if (topBarFullHeight == 0 && v.height > 0) {
-                    topBarFullHeight = v.height
-                    binding.swipeRefresh.setProgressViewOffset(false, v.height + 4, v.height + 72)
-                    updateMainContentInsets()
-                }
+
+        val startTheme = prefs.getString("app_theme", "dark") ?: "dark"
+        setContent {
+            ClintComposeTheme(theme = startTheme) {
+                MainScreen(activity = this, state = uiState)
+                overlayContent?.invoke()
             }
-            insets
         }
-        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomBar) { v, insets ->
-            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            cachedNavBarInsetPx = navBars.bottom
-            v.setPadding(0, 0, 0, navBars.bottom)
-            v.post {
-                if (v.height > 0 && bottomBarFullHeight != v.height) {
-                    bottomBarFullHeight = v.height
-                    setBottomBarFraction(bottomBarFraction)
-                }
-            }
-            insets
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbarBottom) { v, insets ->
-            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            cachedNavBarInsetPx = navBars.bottom
-            val bottomPad = if (ime.bottom > navBars.bottom) ime.bottom else navBars.bottom
-            v.setPadding(0, 0, 0, bottomPad)
-            v.post {
-                if (v.visibility == android.view.View.VISIBLE && v.height > 0 && bottomBarFullHeight != v.height) {
-                    bottomBarFullHeight = v.height
-                    updateMainContentInsets()
-                }
-            }
-            insets
-        }
+
         ClintDownloadManager.createNotificationChannel(this)
         ClintDownloadManager.init(this)
         initializeQuiverGuardEngine()
@@ -358,7 +327,6 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
         migrateScrollHideMode()
         setupSwipeRefresh()
         setupAddressBar()
-        setupNavigationButtons()
         applyAddressBarPosition()
         val isRefreshLinkMode = intent.getBooleanExtra(EXTRA_REFRESH_LINK_MODE, false)
         if (isRefreshLinkMode) {
@@ -413,21 +381,15 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
         super.onResume()
         if (isFinishing) return
         bottomBarAnimator2?.cancel()
-        bottomBarFraction = 0f
-        topBarFraction = 0f
+        uiState.topBarFraction = 0f
+        uiState.bottomBarFraction = 0f
         nestedScrollActive = false
         canvasTouchActive = false
         hasWebBottomNav = false
-        binding.bottomBar.translationY = 0f
-        binding.toolbarTop.translationY = 0f
-        binding.toolbarBottom.translationY = 0f
-        binding.mainContent.setPadding(0, 0, 0, 0)
-        binding.swipeRefresh.isEnabled = true
-        topBarFullHeight = 0
-        bottomBarFullHeight = 0
-        ViewCompat.requestApplyInsets(binding.toolbarTop)
-        ViewCompat.requestApplyInsets(binding.bottomBar)
-        ViewCompat.requestApplyInsets(binding.toolbarBottom)
+        uiState.topBarFullHeightPx = 0
+        uiState.bottomBarFullHeightPx = 0
+        swipeRefreshView.isEnabled = true
+        updateMainContentInsets()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -451,8 +413,7 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
             refreshLinkSession = null
         }
         tabManager.destroyAll()
-        suggestionFetcherTop?.cancel()
-        suggestionFetcherBottom?.cancel()
+        suggestionFetcher?.cancel()
         suggestionsBgThread?.quitSafely()
         quiverGuardJobs.clear()
         super.onDestroy()
@@ -469,7 +430,7 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
             MotionEvent.ACTION_POINTER_DOWN -> {
                 if (!swipeGuardBlocked) {
                     swipeGuardBlocked = true
-                    binding.swipeRefresh.isEnabled = false
+                    swipeRefreshView.isEnabled = false
                 }
             }
             MotionEvent.ACTION_MOVE -> {
@@ -498,12 +459,8 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
                     exitFullscreen()
                     return
                 }
-                if (binding.addressBarSearch.isShowing) {
-                    binding.addressBarSearch.hide()
-                    return
-                }
-                if (binding.addressBarSearchBottom.isShowing) {
-                    binding.addressBarSearchBottom.hide()
+                if (uiState.searchOverlayOpen) {
+                    closeSearchOverlay()
                     return
                 }
                 val activeTab = tabManager.activeTab
@@ -536,22 +493,23 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
             return
         }
         backPressedOnce = true
-        ClintToast.show(this, getString(R.string.exit_tap_again), R.drawable.ic_arrow_back_24)
+        Toast.makeText(this, getString(R.string.exit_tap_again), Toast.LENGTH_SHORT).show()
         backPressHandler.postDelayed({ backPressedOnce = false }, 2000L)
     }
 
     private fun showExitDialog() {
-        MaterialAlertDialogBuilder(this, getDialogTheme())
-            .setTitle(getString(R.string.exit_dialog_title))
-            .setMessage(getString(R.string.exit_dialog_message))
-            .setCancelable(false)
-            .setNegativeButton(getString(R.string.action_cancel), null)
-            .setPositiveButton(getString(R.string.exit_dialog_confirm)) { _, _ -> finish() }
-            .create().also { applyStatusBarFlagToDialog(it) }.show()
+        uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = getString(R.string.exit_dialog_title),
+            message = getString(R.string.exit_dialog_message),
+            cancelable = false,
+            positiveLabel = getString(R.string.exit_dialog_confirm),
+            onPositive = { finish() },
+            negativeLabel = getString(R.string.action_cancel)
+        )
     }
 
-    override fun onTabSelected(index: Int) { tabManager.switchTo(index); attachActiveWebView() }
-    override fun onTabClosed(index: Int) {
+    fun onTabSelected(index: Int) { tabManager.switchTo(index); attachActiveWebView() }
+    fun onTabClosed(index: Int) {
         val tab = tabManager.tabs.getOrNull(index)
         tab?.let {
             removeDesktopScript(it)
@@ -565,39 +523,24 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
         else if (wasActive) attachActiveWebView()
         else updateTabCount()
     }
-    override fun onNewTab() { openNewTab(false) }
-    override fun onNewIncognitoTab() { openNewTab(true) }
+    fun onNewTab() { openNewTab(false) }
+    fun onNewIncognitoTab() { openNewTab(true) }
 
-    override fun onMenuGoBack() { tabManager.activeTab?.webView?.let { if (it.canGoBack()) it.goBack() } }
-    override fun onMenuGoForward() { tabManager.activeTab?.webView?.let { if (it.canGoForward()) it.goForward() } }
-    override fun onMenuHome() { loadUrl(getSearchEngineHomeUrl()) }
-    override fun onMenuRefreshOrStop() {
-        tabManager.activeTab?.webView?.let { wv ->
-            val loading = binding.progressBar.visibility == View.VISIBLE ||
-                binding.progressBarBottom.visibility == View.VISIBLE
-            if (loading) { wv.stopLoading(); onPageFinished(wv.url ?: "") } else wv.reload()
-        }
-    }
-    override fun onMenuToggleBookmark() {
-        val url = tabManager.activeTab?.webView?.url ?: return
-        val title = tabManager.activeTab?.title ?: url
-        if (com.jhaiian.clint.bookmarks.BookmarkManager.isBookmarked(this, url)) {
-            com.jhaiian.clint.bookmarks.BookmarkManager.remove(this, url)
-        } else {
-            com.jhaiian.clint.bookmarks.BookmarkManager.add(this, com.jhaiian.clint.bookmarks.Bookmark(url = url, title = title))
-        }
-        updateBookmarkIcon()
-    }
-    override fun onMenuNewTab() { openNewTab(false) }
-    override fun onMenuIncognito() { openNewTab(true) }
-    override fun onMenuShare() {
+    fun onMenuGoBack() { navGoBack() }
+    fun onMenuGoForward() { navGoForward() }
+    fun onMenuHome() { navGoHome() }
+    fun onMenuRefreshOrStop() { navRefreshOrStop() }
+    fun onMenuToggleBookmark() { navToggleBookmark() }
+    fun onMenuNewTab() { openNewTab(false) }
+    fun onMenuIncognito() { openNewTab(true) }
+    fun onMenuShare() {
         val i = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(android.content.Intent.EXTRA_TEXT, tabManager.activeTab?.webView?.url)
         }
         startActivity(android.content.Intent.createChooser(i, getString(R.string.share_url)))
     }
-    override fun onMenuOpenInApp() {
+    fun onMenuOpenInApp() {
         val currentUrl = tabManager.activeTab?.webView?.url ?: return
         val currentUri = runCatching { android.net.Uri.parse(currentUrl) }.getOrNull() ?: return
         val webClient = tabManager.activeTab?.webView?.webViewClient as? com.jhaiian.clint.browser.webview.ClintWebViewClient ?: return
@@ -611,10 +554,10 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
             webClient.tryOpenInApp(tabManager.activeTab?.webView ?: return, currentUri)
         }
     }
-    override fun onMenuDownloads() { startActivity(android.content.Intent(this, com.jhaiian.clint.downloads.DownloadsActivity::class.java)) }
-    override fun onMenuBookmarks() { startActivity(android.content.Intent(this, com.jhaiian.clint.bookmarks.BookmarksActivity::class.java)) }
-    override fun onMenuHistory() { startActivity(android.content.Intent(this, com.jhaiian.clint.history.HistoryActivity::class.java)) }
-    override fun onMenuDesktopMode() {
+    fun onMenuDownloads() { startActivity(android.content.Intent(this, com.jhaiian.clint.downloads.DownloadsActivity::class.java)) }
+    fun onMenuBookmarks() { startActivity(android.content.Intent(this, com.jhaiian.clint.bookmarks.BookmarksActivity::class.java)) }
+    fun onMenuHistory() { startActivity(android.content.Intent(this, com.jhaiian.clint.history.HistoryActivity::class.java)) }
+    fun onMenuDesktopMode() {
         isDesktopMode = !isDesktopMode
 
         val wv = tabManager.activeTab?.webView
@@ -654,20 +597,20 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
             if (headers != null) wv.loadUrl(currentWebUrl, headers) else wv.reload()
         } else wv?.reload()
     }
-    override fun onMenuSettings() { startActivity(android.content.Intent(this, com.jhaiian.clint.settings.SettingsActivity::class.java)) }
-    override fun onMenuDataSaver() {
+    fun onMenuSettings() { startActivity(android.content.Intent(this, com.jhaiian.clint.settings.SettingsActivity::class.java)) }
+    fun onMenuDataSaver() {
         val enabled = !prefs.getBoolean("data_saver_enabled", false)
         prefs.edit().putBoolean("data_saver_enabled", enabled).apply()
     }
-    override fun onMenuOpenDataSaverSettings() {
+    fun onMenuOpenDataSaverSettings() {
         startActivity(android.content.Intent(this, com.jhaiian.clint.settings.SettingsActivity::class.java)
             .putExtra(com.jhaiian.clint.settings.SettingsActivity.EXTRA_OPEN_FRAGMENT, "data_saver"))
     }
-    override fun onMenuOpenDownloadSettings() {
+    fun onMenuOpenDownloadSettings() {
         startActivity(android.content.Intent(this, com.jhaiian.clint.settings.SettingsActivity::class.java)
             .putExtra(com.jhaiian.clint.settings.SettingsActivity.EXTRA_OPEN_FRAGMENT, "download_settings"))
     }
-    override fun onMenuQuiverGuard() {
+    fun onMenuQuiverGuard() {
         val enabled = !prefs.getBoolean("quiver_guard_enabled", false)
         if (enabled) {
             val filterListDb = com.jhaiian.clint.quiver.FilterListDatabase(this)
@@ -687,10 +630,10 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
         }
         prefs.edit().putBoolean("quiver_guard_enabled", enabled).apply()
     }
-    override fun onMenuOpenQuiverGuardSettings() {
+    fun onMenuOpenQuiverGuardSettings() {
         startActivity(android.content.Intent(this, com.jhaiian.clint.quiver.QuiverGuardActivity::class.java))
     }
-    override fun onMenuDisableQuiverGuardForSite() {
+    fun onMenuDisableQuiverGuardForSite() {
         val tab = tabManager.activeTab ?: return
         val wv = tab.webView
         val currentUrl = wv.url ?: return
@@ -714,7 +657,7 @@ class MainActivity : ClintActivity(), TabSwitcherSheet.Listener, MenuBottomSheet
         }
         wv.reload()
     }
-    override fun onMenuReaderMode() {
+    fun onMenuReaderMode() {
         val wv = tabManager.activeTab?.webView ?: return
         val pageUrl = wv.url ?: return
         val js = assets.open("JavaScript/reader_mode.js").bufferedReader().use { it.readText() }
@@ -763,8 +706,7 @@ td,th{border:1px solid $secondaryColor;padding:6px 8px;}
 <body>$content</body>
 </html>"""
             runOnUiThread {
-                val sheet = ContentPreviewSheet.newInstanceForReaderMode(pageUrl, title, html)
-                sheet.show(supportFragmentManager, "reader_mode_preview")
+                uiState.contentPreviewRequest = com.jhaiian.clint.browser.sheets.ContentPreviewRequest.forReaderMode(pageUrl, title, html)
             }
         }
     }
@@ -849,19 +791,19 @@ td,th{border:1px solid $secondaryColor;padding:6px 8px;}
                             pendingBridgeNotifWebView = webView
                             val needsRationale = shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)
                             if (needsRationale) {
-                                com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity, getDialogTheme())
-                                    .setTitle(getString(R.string.notification_permission_title))
-                                    .setMessage(getString(R.string.notification_permission_message))
-                                    .setNegativeButton(getString(R.string.action_deny)) { _, _ ->
+                                uiState.confirmDialogConfig = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+                                    title = getString(R.string.notification_permission_title),
+                                    message = getString(R.string.notification_permission_message),
+                                    positiveLabel = getString(R.string.action_allow),
+                                    onPositive = { webNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS) },
+                                    negativeLabel = getString(R.string.action_deny),
+                                    onNegative = {
                                         pendingBridgeNotifCallbackId = null
                                         pendingBridgeNotifOrigin = null
                                         pendingBridgeNotifWebView = null
                                         webView.evaluateJavascript("window._ClintResolvePermission('$safeId','denied')", null)
                                     }
-                                    .setPositiveButton(getString(R.string.action_allow)) { _, _ ->
-                                        webNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                    }
-                                    .create().also { applyStatusBarFlagToDialog(it) }.show()
+                                )
                             } else {
                                 webNotificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                             }
@@ -916,33 +858,32 @@ td,th{border:1px solid $secondaryColor;padding:6px 8px;}
         }
     }
 
-    override fun onImageOpenInNewTab(imageUrl: String) { handleImageOpenInNewTab(imageUrl) }
-    override fun onImageOpenIncognito(imageUrl: String) { openNewTab(isIncognito = true, url = imageUrl) }
-    override fun onImageOpenInCurrentTab(imageUrl: String) { dismissContentPreview(); loadUrl(imageUrl) }
-    override fun onImagePreview(imageUrl: String) { handleImagePreview(imageUrl) }
-    override fun onImageCopy(imageUrl: String) { handleImageCopy(imageUrl) }
-    override fun onImageDownload(imageUrl: String, altText: String) { handleImageDownload(imageUrl, altText) }
-    override fun onImageShare(imageUrl: String) { handleImageShare(imageUrl) }
+    fun onImageOpenInNewTab(imageUrl: String) { handleImageOpenInNewTab(imageUrl) }
+    fun onImageOpenIncognito(imageUrl: String) { openNewTab(isIncognito = true, url = imageUrl) }
+    fun onImageOpenInCurrentTab(imageUrl: String) { dismissContentPreview(); loadUrl(imageUrl) }
+    fun onImagePreview(imageUrl: String) { handleImagePreview(imageUrl) }
+    fun onImageCopy(imageUrl: String) { handleImageCopy(imageUrl) }
+    fun onImageDownload(imageUrl: String, altText: String) { handleImageDownload(imageUrl, altText) }
+    fun onImageShare(imageUrl: String) { handleImageShare(imageUrl) }
 
-    override fun onLinkOpenInNewTab(url: String) { handleLinkOpenInNewTab(url) }
-    override fun onLinkOpenIncognito(url: String) { handleLinkOpenIncognito(url) }
-    override fun onLinkPreviewPage(url: String) { handleLinkPreviewPage(url) }
-    override fun onLinkCopyAddress(url: String) { handleLinkCopyAddress(url) }
-    override fun onLinkCopyText(url: String, text: String) { handleLinkCopyText(text) }
-    override fun onLinkShare(url: String) { handleLinkShare(url) }
+    fun onLinkOpenInNewTab(url: String) { handleLinkOpenInNewTab(url) }
+    fun onLinkOpenIncognito(url: String) { handleLinkOpenIncognito(url) }
+    fun onLinkPreviewPage(url: String) { handleLinkPreviewPage(url) }
+    fun onLinkCopyAddress(url: String) { handleLinkCopyAddress(url) }
+    fun onLinkCopyText(url: String, text: String) { handleLinkCopyText(text) }
+    fun onLinkShare(url: String) { handleLinkShare(url) }
 
-    override fun onPreviewOpenInNewTab(url: String) { openNewTab(isIncognito = false, url = url) }
+    fun onPreviewOpenInNewTab(url: String) { openNewTab(isIncognito = false, url = url) }
 
-    override fun onPreviewLinkOpenInNewTab(url: String) { dismissContentPreview(); handleLinkOpenInNewTab(url) }
-    override fun onPreviewLinkOpenIncognito(url: String) { dismissContentPreview(); handleLinkOpenIncognito(url) }
-    override fun onPreviewLinkOpenInCurrentTab(url: String) { dismissContentPreview(); loadUrl(url) }
-    override fun onPreviewLinkCopyAddress(url: String) { handleLinkCopyAddress(url) }
-    override fun onPreviewLinkCopyText(url: String, text: String) { handleLinkCopyText(text) }
-    override fun onPreviewLinkShare(url: String) { handleLinkShare(url) }
+    fun onPreviewLinkOpenInNewTab(url: String) { dismissContentPreview(); handleLinkOpenInNewTab(url) }
+    fun onPreviewLinkOpenIncognito(url: String) { dismissContentPreview(); handleLinkOpenIncognito(url) }
+    fun onPreviewLinkOpenInCurrentTab(url: String) { dismissContentPreview(); loadUrl(url) }
+    fun onPreviewLinkCopyAddress(url: String) { handleLinkCopyAddress(url) }
+    fun onPreviewLinkCopyText(url: String, text: String) { handleLinkCopyText(text) }
+    fun onPreviewLinkShare(url: String) { handleLinkShare(url) }
 
     private fun dismissContentPreview() {
-        (supportFragmentManager.findFragmentByTag("link_preview") as? ContentPreviewSheet)?.dismiss()
-        (supportFragmentManager.findFragmentByTag("image_preview") as? ContentPreviewSheet)?.dismiss()
+        uiState.contentPreviewRequest = null
     }
 
     private fun getUrlFromIntent(intent: android.content.Intent?): String? {
@@ -950,28 +891,6 @@ td,th{border:1px solid $secondaryColor;padding:6px 8px;}
         return when (intent.action) {
             android.content.Intent.ACTION_SEND -> intent.getStringExtra(android.content.Intent.EXTRA_TEXT)
             else -> intent.data?.toString()
-        }
-    }
-
-    private fun applyStatusBarVisibility() {
-        val hide = prefs.getBoolean("hide_status_bar", false)
-        val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
-        if (hide) {
-            controller.hide(WindowInsetsCompat.Type.statusBars())
-            statusBarInsetPx = 0
-            binding.toolbarTop.setPadding(0, 0, 0, 0)
-            val sbLp = binding.statusBarBackground.layoutParams
-            sbLp.height = 0
-            binding.statusBarBackground.layoutParams = sbLp
-        } else {
-            controller.show(WindowInsetsCompat.Type.statusBars())
-            if (cachedStatusBarInsetPx > 0) {
-                statusBarInsetPx = cachedStatusBarInsetPx
-                binding.toolbarTop.setPadding(0, cachedStatusBarInsetPx, 0, 0)
-                val sbLp = binding.statusBarBackground.layoutParams
-                sbLp.height = cachedStatusBarInsetPx
-                binding.statusBarBackground.layoutParams = sbLp
-            }
         }
     }
 }

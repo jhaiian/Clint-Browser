@@ -8,7 +8,7 @@ import android.os.storage.StorageManager
 import android.widget.TextView
 import androidx.preference.PreferenceManager
 import com.jhaiian.clint.R
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import com.jhaiian.clint.util.DEFAULT_MEASUREMENT_SYSTEM
 import com.jhaiian.clint.util.MEASUREMENT_SYSTEM_DECIMAL
 import com.jhaiian.clint.util.PREF_MEASUREMENT_SYSTEM
@@ -62,23 +62,38 @@ internal fun resolveVolumePathFromUri(uri: Uri): String? {
     }
 }
 
-internal fun updateStorageInfo(context: Context, tvStorage: TextView, mode: String, customUri: Uri?) {
-    try {
-        val path = if (mode == DownloadSettingsFragment.MODE_CUSTOM) {
+/** Path shown for the default (non-SAF) download location, e.g. in the settings screen while no custom folder is set. */
+internal const val DEFAULT_DOWNLOAD_PATH = "/storage/emulated/0/Download/"
+
+/** Renders a SAF tree [Uri] as a human-readable filesystem path, best-effort. Shared by the download
+ *  settings screen (folder row) and anywhere else a chosen custom location needs to be displayed. */
+internal fun uriToDisplayPath(uri: Uri): String {
+    val path = uri.lastPathSegment ?: return uri.toString()
+    return when {
+        path.startsWith("primary:") -> "/storage/emulated/0/${path.removePrefix("primary:")}/"
+        path.contains(":") -> {
+            val parts = path.split(":", limit = 2)
+            "/storage/${parts[0]}/${parts[1]}/"
+        }
+        else -> uri.toString()
+    }
+}
+
+/** Pure form of [updateStorageInfo], usable from Compose without a TextView to write into. */
+internal fun resolveStorageInfoText(context: Context, mode: String, customUri: Uri?): String {
+    return try {
+        val path = if (mode == DownloadSettingsKeys.MODE_CUSTOM) {
             customUri?.let { resolveVolumePathFromUri(it) }
         } else {
             Environment.getExternalStorageDirectory().absolutePath
         }
-        if (path == null) {
-            tvStorage.text = context.getString(R.string.download_dialog_storage_unavailable)
-            return
-        }
+            ?: return context.getString(R.string.download_dialog_storage_unavailable)
         val stat = StatFs(path)
         val total = stat.blockCountLong * stat.blockSizeLong
         val free = stat.availableBlocksLong * stat.blockSizeLong
         val used = total - free
         val freePercent = if (total > 0L) free * 100.0 / total else 0.0
-        tvStorage.text = context.getString(
+        context.getString(
             R.string.download_dialog_storage_value,
             formatStorageBytes(used),
             formatStorageBytes(total),
@@ -86,8 +101,12 @@ internal fun updateStorageInfo(context: Context, tvStorage: TextView, mode: Stri
             String.format(Locale.US, "%.1f", freePercent)
         )
     } catch (_: Throwable) {
-        tvStorage.text = context.getString(R.string.download_dialog_storage_unavailable)
+        context.getString(R.string.download_dialog_storage_unavailable)
     }
+}
+
+internal fun updateStorageInfo(context: Context, tvStorage: TextView, mode: String, customUri: Uri?) {
+    tvStorage.text = resolveStorageInfoText(context, mode, customUri)
 }
 
 internal fun checkStorageAvailable(
@@ -102,7 +121,7 @@ internal fun checkStorageAvailable(
         stat.availableBlocksLong * stat.blockSizeLong
     } catch (_: Throwable) { return null }
 
-    if (mode != DownloadSettingsFragment.MODE_CUSTOM) {
+    if (mode != DownloadSettingsKeys.MODE_CUSTOM) {
         return if (emulatedFree < contentLength) {
             context.getString(
                 R.string.download_error_storage_direct,
@@ -180,7 +199,7 @@ internal fun checkFat32FileSizeLimit(
     customUri: Uri?
 ): String? {
     if (contentLength < FAT32_MAX_FILE_SIZE) return null
-    if (mode != DownloadSettingsFragment.MODE_CUSTOM) return null
+    if (mode != DownloadSettingsKeys.MODE_CUSTOM) return null
     val segment = customUri?.lastPathSegment ?: return null
     if (segment.startsWith("primary:")) return null
     val destPath = resolveVolumePathFromUri(customUri) ?: return null

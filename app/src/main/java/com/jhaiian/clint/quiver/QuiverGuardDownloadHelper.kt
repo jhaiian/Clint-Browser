@@ -1,68 +1,35 @@
 package com.jhaiian.clint.quiver
 
-import android.widget.TextView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.progressindicator.LinearProgressIndicator
+import android.widget.Toast
+
 import com.jhaiian.clint.R
-import com.jhaiian.clint.util.formatFileSize
-import com.jhaiian.clint.ui.ClintToast
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-// Launches a download coroutine for the given filter list, shows a progress
-// dialog with byte-level progress, and persists the result to the database on
-// success. The cancel button on the dialog cancels the coroutine, which in turn
-// cancels the OkHttp call and deletes the partial download file.
+// Launches a download coroutine for the given filter list, reflects byte-level progress
+// through uiState.downloadProgress, and persists the result to the database on success.
+// Cancelling the dialog cancels the coroutine, which in turn cancels the OkHttp call and
+// deletes the partial download file.
 internal fun QuiverGuardActivity.startFilterListDownload(filterList: FilterList) {
     // Prevent duplicate downloads if the user taps the download button twice.
     if (isDownloadInProgress(filterList.id)) return
     val activity = this
     markDownloading(filterList.id, true)
 
-    val progressView = layoutInflater.inflate(R.layout.dialog_quiver_guard_download_progress, null)
-    val progressBar = progressView.findViewById<LinearProgressIndicator>(R.id.quiver_download_progress_bar)
-    val progressText = progressView.findViewById<TextView>(R.id.quiver_download_progress_text)
-    // Start indeterminate until the content-length header is received.
-    progressBar.isIndeterminate = true
-    progressText.text = getString(R.string.quiver_guard_download_progress_starting)
+    uiState.downloadProgress = DownloadProgressUi(filterListName = filterList.name, indeterminate = true)
 
-    var downloadJob: Job? = null
-
-    val dialog = MaterialAlertDialogBuilder(activity, getDialogTheme())
-        .setTitle(getString(R.string.quiver_guard_download_dialog_title, filterList.name))
-        .setView(progressView)
-        .setCancelable(false)
-        .setNegativeButton(getString(R.string.action_cancel)) { _, _ -> downloadJob?.cancel() }
-        .create()
-        .also { applyStatusBarFlagToDialog(it) }
-    dialog.show()
-
-    downloadJob = activityScope.launch {
+    activeDownloadJob = activityScope.launch {
         var didSucceed = false
         try {
             FilterListDownloader.download(applicationContext, filterList).collect { progress ->
                 when (progress) {
                     is FilterListDownloadProgress.Progress -> {
-                        if (progress.totalBytes > 0) {
-                            // Switch the progress bar from indeterminate to determinate
-                            // once we know the content length.
-                            progressBar.isIndeterminate = false
-                            val percent = ((progress.bytesRead * 100) / progress.totalBytes).toInt()
-                            progressBar.progress = percent
-                            progressText.text = getString(
-                                R.string.quiver_guard_download_progress_known,
-                                formatFileSize(progress.bytesRead),
-                                formatFileSize(progress.totalBytes),
-                                percent
-                            )
-                        } else {
-                            progressBar.isIndeterminate = true
-                            progressText.text = getString(
-                                R.string.quiver_guard_download_progress_unknown,
-                                formatFileSize(progress.bytesRead)
-                            )
-                        }
+                        uiState.downloadProgress = DownloadProgressUi(
+                            filterListName = filterList.name,
+                            bytesRead = progress.bytesRead,
+                            totalBytes = progress.totalBytes,
+                            indeterminate = progress.totalBytes <= 0
+                        )
                     }
                     is FilterListDownloadProgress.Success -> {
                         didSucceed = true
@@ -80,34 +47,24 @@ internal fun QuiverGuardActivity.startFilterListDownload(filterList: FilterList)
                         )
                         // Auto-enable the list after a successful download so it is immediately
                         // available for the user to include in the next compile.
-                        onFilterListDownloaded(
-                            filterList.copy(
-                                localPath = progress.file.absolutePath,
-                                fileSizeBytes = progress.bytesTotal,
-                                downloadedAt = downloadedAt,
-                                ruleCount = progress.ruleCount,
-                                isEnabled = true,
-                                etag = progress.etag,
-                                lastModified = progress.lastModified
-                            )
-                        )
+                        onFilterListDownloaded(filterList.id)
+                        refreshFilterListDisplay()
                     }
                 }
             }
+            uiState.downloadProgress = null
             if (didSucceed) {
-                dialog.dismiss()
-                ClintToast.show(activity, getString(R.string.quiver_guard_download_success_toast, filterList.name), R.drawable.ic_check_24)
+                Toast.makeText(activity, getString(R.string.quiver_guard_download_success_toast, filterList.name), Toast.LENGTH_SHORT).show()
             } else {
-                dialog.dismiss()
-                ClintToast.show(activity, getString(R.string.quiver_guard_download_error_toast, filterList.name), R.drawable.ic_warning_24)
+                Toast.makeText(activity, getString(R.string.quiver_guard_download_error_toast, filterList.name), Toast.LENGTH_SHORT).show()
             }
         } catch (e: CancellationException) {
-            dialog.dismiss()
-            ClintToast.show(activity, getString(R.string.quiver_guard_download_cancelled_toast), R.drawable.ic_warning_24)
+            uiState.downloadProgress = null
+            Toast.makeText(activity, getString(R.string.quiver_guard_download_cancelled_toast), Toast.LENGTH_SHORT).show()
             throw e
         } catch (e: FilterListDownloadException) {
-            dialog.dismiss()
-            ClintToast.show(activity, e.message ?: getString(R.string.quiver_guard_download_error_toast, filterList.name), R.drawable.ic_warning_24)
+            uiState.downloadProgress = null
+            Toast.makeText(activity, e.message ?: getString(R.string.quiver_guard_download_error_toast, filterList.name), Toast.LENGTH_SHORT).show()
         } finally {
             markDownloading(filterList.id, false)
         }

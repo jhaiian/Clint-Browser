@@ -38,7 +38,14 @@ internal object QuiverGuardNative {
 
     // ---- Engine lifecycle ----
 
-    /** Returns 0 on failure (missing/corrupt file). */
+    /**
+     * Returns 0 for a failure outside of deserialization (missing/unreadable file). A failure
+     * from deserializing an existing file gets its own sentinel instead - see
+     * [com.jhaiian.clint.quiver.engine.QuiverGuardEngine.PreloadResult] for what each one means
+     * and the corresponding `DeserializationError` variant on the Rust side:
+     * -1 = version mismatch, -2 = bad header, -3 = bad checksum, -4 = flatbuffer parsing error,
+     * -5 = an unmapped/future variant.
+     */
     @JvmStatic
     external fun nativeLoadEngine(path: String): Long
 

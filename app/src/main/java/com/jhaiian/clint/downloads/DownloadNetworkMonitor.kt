@@ -5,7 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import androidx.preference.PreferenceManager
-import com.jhaiian.clint.settings.fragments.DownloadSettingsFragment
+import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -108,8 +108,8 @@ internal object DownloadNetworkMonitor {
     fun isUnmeteredOnlyEnabled(context: Context): Boolean {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return prefs.getBoolean(
-            DownloadSettingsFragment.PREF_UNMETERED_ONLY,
-            DownloadSettingsFragment.DEFAULT_UNMETERED_ONLY
+            DownloadSettingsKeys.PREF_UNMETERED_ONLY,
+            DownloadSettingsKeys.DEFAULT_UNMETERED_ONLY
         )
     }
 

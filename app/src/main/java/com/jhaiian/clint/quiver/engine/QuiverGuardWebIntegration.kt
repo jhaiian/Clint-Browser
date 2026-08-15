@@ -66,9 +66,10 @@ object QuiverGuardWebIntegration {
     // Quiver Guard is enabled so the first intercepted request does not incur
     // the cold-start latency of loading the database file. Safe to call from a
     // background thread, and callers should do so, since this can involve real
-    // disk I/O on first load.
-    fun initialize(context: Context) {
-        QuiverGuardEngine.preload(context)
+    // disk I/O on first load. Returns the outcome so callers can, for example,
+    // prompt the user to recompile on QuiverGuardEngine.PreloadResult.VERSION_MISMATCH.
+    fun initialize(context: Context): QuiverGuardEngine.PreloadResult {
+        return QuiverGuardEngine.preload(context)
     }
 
     // Called after a successful compile run to atomically replace the running

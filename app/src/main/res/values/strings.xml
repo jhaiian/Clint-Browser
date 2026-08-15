@@ -11,6 +11,7 @@
     <string name="tabs_section_normal">NORMAL TABS</string>
     <string name="tabs_section_incognito">INCOGNITO TABS</string>
     <string name="settings">Settings</string>
+    <string name="settings_select_category">Select a category to see its settings</string>
     <string name="share_url">Share URL</string>
     <string name="downloading">Downloading\u2026</string>
     <string name="privacy_settings">Privacy &amp; Security</string>
@@ -37,6 +38,7 @@
     <string name="engine_brave_desc">Independent index, privacy-first</string>
     <string name="engine_google">Google</string>
     <string name="engine_google_desc">Comprehensive results, data collection</string>
+    <string name="search_bar_hint">Search %1$s or type URL</string>
     <string name="default_label">Default</string>
     <string name="next">Next \u2192</string>
     <string name="get_started">Get Started</string>
@@ -243,6 +245,8 @@
 
     <string name="action_ok">OK</string>
     <string name="action_close">Close</string>
+    <string name="action_close_search">Close search</string>
+    <string name="action_clear_search">Clear search</string>
     <string name="download_icon_desc">Download</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_download">Download</string>
@@ -591,6 +595,7 @@
     <string name="setup_terms_continue">Agree &amp; Continue</string>
 
     <string name="bookmarks_title">Bookmarks</string>
+    <string name="content_desc_bookmark">Bookmark</string>
     <string name="bookmarks_empty">No bookmarks yet</string>
     <string name="bookmarks_search">Search</string>
     <string name="bookmarks_search_hint">Search bookmarks…</string>
@@ -733,6 +738,9 @@
     <string name="history_delete_confirm_title">Delete items</string>
     <string name="history_delete_confirm_message">Remove %d item(s) from history?</string>
     <string name="history_items_deleted">Removed from history</string>
+    <string name="history_actions_desc">History actions</string>
+    <string name="history_clear_all_confirm_message">Clear all browsing and search history? This can\'t be undone.</string>
+    <string name="history_all_cleared">History cleared</string>
 
     <string name="site_settings">Site Settings</string>
     <string name="site_settings_summary">Camera, microphone, location, notifications, and desktop mode</string>
@@ -916,6 +924,14 @@
     <string name="quiver_guard_experimental_title">Experimental Feature</string>
     <string name="quiver_guard_experimental_message">Quiver Guard is still in experimental testing. With your help, we are improving this feature. If you find any broken sites or bugs related to this feature, please report them immediately on GitHub. Thank you.</string>
     <string name="quiver_guard_experimental_ok_countdown">OK (%1$d)</string>
+
+    <string name="quiver_guard_recompile_required_title">Recompile Required</string>
+    <string name="quiver_guard_recompile_required_button">Recompile</string>
+    <string name="quiver_guard_recompile_reason_version_mismatch">Your compiled filter lists were built by an older version of Quiver Guard\'s filtering engine and can\'t be loaded. They need to be recompiled before Quiver Guard can filter pages again.</string>
+    <string name="quiver_guard_recompile_reason_bad_header">Your compiled filter database is missing or unreadable and needs to be rebuilt before Quiver Guard can filter pages again.</string>
+    <string name="quiver_guard_recompile_reason_bad_checksum">Your compiled filter database appears to be corrupted and needs to be rebuilt before Quiver Guard can filter pages again.</string>
+    <string name="quiver_guard_recompile_reason_flatbuffer_error">Your compiled filter database is damaged and needs to be rebuilt before Quiver Guard can filter pages again.</string>
+    <string name="quiver_guard_recompile_reason_unknown">Your compiled filter database couldn\'t be loaded and needs to be rebuilt before Quiver Guard can filter pages again.</string>
 
     <string name="quiver_guard_back_dialog_title">Compilation Required</string>
     <string name="quiver_guard_back_dialog_message">Your filter list configuration has changed but has not been compiled yet. These changes will not become active until you compile them.</string>

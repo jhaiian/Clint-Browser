@@ -14,9 +14,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jhaiian.clint.R
-import com.jhaiian.clint.base.ClintActivity
 import com.jhaiian.clint.quiver.engine.QuiverGuardWebIntegration
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionManager
@@ -170,21 +168,21 @@ class ClintWebViewClient(
 
                 activity.runOnUiThread {
                     view.pauseTimers()
-                    val builder = MaterialAlertDialogBuilder(
-                        activity, (activity as? ClintActivity)?.getDialogTheme() ?: R.style.ThemeOverlay_ClintBrowser_Dialog
-                    )
-                        .setTitle(activity.getString(R.string.open_in_app_dialog_title))
-                        .setMessage(activity.getString(R.string.open_in_app_dialog_message, sourceHost, appName))
-                        .setCancelable(false)
-                        .setNegativeButton(activity.getString(R.string.open_in_app_dialog_stay_here)) { _, _ -> }
-                        .setPositiveButton(activity.getString(R.string.open_in_app_dialog_confirm)) { _, _ ->
-                            try { activity.startActivity(intent) } catch (_: ActivityNotFoundException) {}
-                        }
-                    if (appIcon != null) builder.setIcon(appIcon)
-                    val d = builder.create()
-                    d.setOnDismissListener { view.resumeTimers() }
-                    (activity as? ClintActivity)?.applyStatusBarFlagToDialog(d)
-                    d.show()
+                    val mainActivity = activity as? com.jhaiian.clint.browser.MainActivity
+                    if (mainActivity == null) {
+                        try { activity.startActivity(intent) } catch (_: ActivityNotFoundException) {}
+                        view.resumeTimers()
+                    } else {
+                        mainActivity.uiState.openInAppRequest = com.jhaiian.clint.browser.webview.OpenInAppRequest(
+                            host = sourceHost,
+                            matches = listOf(com.jhaiian.clint.browser.webview.OpenInAppMatch(appName, appIcon, resolveInfo.activityInfo.packageName)),
+                            onStayHere = { view.resumeTimers() },
+                            onOpenApp = {
+                                view.resumeTimers()
+                                try { activity.startActivity(intent) } catch (_: ActivityNotFoundException) {}
+                            }
+                        )
+                    }
                 }
             } else {
                 val fallbackUrl = intent.getStringExtra("browser_fallback_url")
@@ -215,21 +213,21 @@ class ClintWebViewClient(
 
             activity.runOnUiThread {
                 view.pauseTimers()
-                val builder = MaterialAlertDialogBuilder(
-                    activity, (activity as? ClintActivity)?.getDialogTheme() ?: R.style.ThemeOverlay_ClintBrowser_Dialog
-                )
-                    .setTitle(activity.getString(R.string.open_in_app_dialog_title))
-                    .setMessage(activity.getString(R.string.open_in_app_dialog_message, sourceHost, appName))
-                    .setCancelable(false)
-                    .setNegativeButton(activity.getString(R.string.open_in_app_dialog_stay_here)) { _, _ -> }
-                    .setPositiveButton(activity.getString(R.string.open_in_app_dialog_confirm)) { _, _ ->
-                        try { context.startActivity(intent) } catch (_: ActivityNotFoundException) {}
-                    }
-                if (appIcon != null) builder.setIcon(appIcon)
-                val d = builder.create()
-                d.setOnDismissListener { view.resumeTimers() }
-                (activity as? ClintActivity)?.applyStatusBarFlagToDialog(d)
-                d.show()
+                val mainActivity = activity as? com.jhaiian.clint.browser.MainActivity
+                if (mainActivity == null) {
+                    try { context.startActivity(intent) } catch (_: ActivityNotFoundException) {}
+                    view.resumeTimers()
+                } else {
+                    mainActivity.uiState.openInAppRequest = com.jhaiian.clint.browser.webview.OpenInAppRequest(
+                        host = sourceHost,
+                        matches = listOf(com.jhaiian.clint.browser.webview.OpenInAppMatch(appName, appIcon, resolveInfo.activityInfo.packageName)),
+                        onStayHere = { view.resumeTimers() },
+                        onOpenApp = {
+                            view.resumeTimers()
+                            try { context.startActivity(intent) } catch (_: ActivityNotFoundException) {}
+                        }
+                    )
+                }
             }
             return true
         }
@@ -312,100 +310,31 @@ class ClintWebViewClient(
 
         if (appMatches.isEmpty()) return false
 
-        val activity = context as? android.app.Activity ?: return false
+        val activity = context as? com.jhaiian.clint.browser.MainActivity ?: return false
 
         activity.runOnUiThread {
-            val dp = context.resources.displayMetrics.density
-
-            if (appMatches.size == 1) {
-                val match = appMatches[0]
-                val appName = match.loadLabel(pm).toString()
-                val appIcon = runCatching { match.loadIcon(pm) }.getOrNull()
-                val specificIntent = Intent(Intent.ACTION_VIEW, uri)
-                    .setPackage(match.activityInfo.packageName)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-                val builder = MaterialAlertDialogBuilder(
-                    activity, (activity as? ClintActivity)?.getDialogTheme() ?: R.style.ThemeOverlay_ClintBrowser_Dialog
+            val matches = appMatches.map { ri ->
+                com.jhaiian.clint.browser.webview.OpenInAppMatch(
+                    label = ri.loadLabel(pm).toString(),
+                    icon = runCatching { ri.loadIcon(pm) }.getOrNull(),
+                    packageName = ri.activityInfo.packageName
                 )
-                    .setTitle(activity.getString(R.string.open_in_app_dialog_title))
-                    .setMessage(activity.getString(R.string.open_in_app_dialog_message, host, appName))
-                    .setCancelable(false)
-                    .setNegativeButton(activity.getString(R.string.open_in_app_dialog_stay_here)) { _, _ ->
-                        startCooldown(host)
-                        val h = getDesktopHeaders()
-                        if (h != null) view.loadUrl(uriStr, h) else view.loadUrl(uriStr)
-                    }
-                    .setPositiveButton(activity.getString(R.string.open_in_app_dialog_confirm)) { _, _ ->
-                        try { context.startActivity(specificIntent) } catch (_: ActivityNotFoundException) {}
-                    }
-                if (appIcon != null) builder.setIcon(appIcon)
-                val d = builder.create()
-                (activity as? ClintActivity)?.applyStatusBarFlagToDialog(d)
-                d.show()
-            } else {
-                val listLayout = android.widget.LinearLayout(context).apply {
-                    orientation = android.widget.LinearLayout.VERTICAL
-                    setPadding(0, (8 * dp).toInt(), 0, (8 * dp).toInt())
-                }
-
-                val dialog = MaterialAlertDialogBuilder(
-                    activity, (activity as? ClintActivity)?.getDialogTheme() ?: R.style.ThemeOverlay_ClintBrowser_Dialog
-                )
-                    .setTitle(activity.getString(R.string.open_in_app_chooser_title))
-                    .setMessage(activity.getString(R.string.open_in_app_chooser_message, host))
-                    .setView(android.widget.ScrollView(context).apply { addView(listLayout) })
-                    .setCancelable(false)
-                    .setNegativeButton(activity.getString(R.string.open_in_app_dialog_stay_here)) { _, _ ->
-                        startCooldown(host)
-                        val h = getDesktopHeaders()
-                        if (h != null) view.loadUrl(uriStr, h) else view.loadUrl(uriStr)
-                    }
-                    .create()
-                (activity as? ClintActivity)?.applyStatusBarFlagToDialog(dialog)
-                dialog.show()
-
-                appMatches.forEach { ri ->
-                    val appName = ri.loadLabel(pm).toString()
-                    val appIcon = runCatching { ri.loadIcon(pm) }.getOrNull()
-                    val specificIntent = Intent(Intent.ACTION_VIEW, uri)
-                        .setPackage(ri.activityInfo.packageName)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-                    val row = android.widget.LinearLayout(context).apply {
-                        orientation = android.widget.LinearLayout.HORIZONTAL
-                        gravity = android.view.Gravity.CENTER_VERTICAL
-                        setPadding(
-                            (20 * dp).toInt(), (12 * dp).toInt(),
-                            (20 * dp).toInt(), (12 * dp).toInt()
-                        )
-                        background = android.util.TypedValue().let { tv ->
-                            context.theme.resolveAttribute(
-                                android.R.attr.selectableItemBackground, tv, true
-                            )
-                            androidx.core.content.ContextCompat.getDrawable(context, tv.resourceId)
-                        }
-                    }
-                    if (appIcon != null) {
-                        val iconSize = (32 * dp).toInt()
-                        row.addView(android.widget.ImageView(context).apply {
-                            setImageDrawable(appIcon)
-                            layoutParams = android.widget.LinearLayout.LayoutParams(iconSize, iconSize)
-                                .also { it.marginEnd = (16 * dp).toInt() }
-                        })
-                    }
-                    row.addView(android.widget.TextView(context).apply {
-                        text = appName
-                        setTextColor(0xFFFFFFFF.toInt())
-                        textSize = 15f
-                    })
-                    row.setOnClickListener {
-                        dialog.dismiss()
-                        try { context.startActivity(specificIntent) } catch (_: ActivityNotFoundException) {}
-                    }
-                    listLayout.addView(row)
-                }
             }
+            activity.uiState.openInAppRequest = com.jhaiian.clint.browser.webview.OpenInAppRequest(
+                host = host,
+                matches = matches,
+                onStayHere = {
+                    startCooldown(host)
+                    val h = getDesktopHeaders()
+                    if (h != null) view.loadUrl(uriStr, h) else view.loadUrl(uriStr)
+                },
+                onOpenApp = { packageName ->
+                    val specificIntent = Intent(Intent.ACTION_VIEW, uri)
+                        .setPackage(packageName)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try { context.startActivity(specificIntent) } catch (_: ActivityNotFoundException) {}
+                }
+            )
         }
         return true
     }
