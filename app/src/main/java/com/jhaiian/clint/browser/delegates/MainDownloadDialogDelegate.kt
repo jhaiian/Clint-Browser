@@ -13,7 +13,9 @@ import com.jhaiian.clint.downloads.DownloadRequestDialog
 import com.jhaiian.clint.downloads.DownloadRequestSubmission
 import com.jhaiian.clint.downloads.estimateBase64DecodedSize
 import com.jhaiian.clint.downloads.ClintDownloadManager
+import com.jhaiian.clint.downloads.DownloadsActivity
 import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
+import com.jhaiian.clint.ui.showClintSnackbar
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 
 internal fun MainActivity.showDownloadDialog(
@@ -42,7 +44,11 @@ internal fun MainActivity.showDownloadDialog(
         initialSpeedLimitAmount = prefs.getInt(DownloadSettingsKeys.PREF_SPEED_LIMIT_AMOUNT, DownloadSettingsKeys.DEFAULT_SPEED_LIMIT_AMOUNT),
         initialSpeedLimitUnit = prefs.getString(DownloadSettingsKeys.PREF_SPEED_LIMIT_UNIT, DEFAULT_SPEED_LIMIT_UNIT) ?: DEFAULT_SPEED_LIMIT_UNIT,
         onSubmit = { submission, dismiss, onRename ->
-            Toast.makeText(this, getString(R.string.toast_downloading, submission.filename), Toast.LENGTH_SHORT).show()
+            showClintSnackbar(
+                message = getString(R.string.toast_downloading, submission.filename),
+                actionLabel = getString(R.string.download_started_view_action),
+                onAction = { DownloadsActivity.open(this) }
+            )
             initiateDownload(
                 url, submission.filename, userAgent, referer, cookies,
                 submission.retryEnabled, submission.unmeteredOnly, submission.splitParts, submission.multithreadingParts, submission.speedLimitBytesPerSec,
@@ -74,7 +80,11 @@ internal fun MainActivity.showDownloadDialogForBlob(
         initialCustomUri = PreferenceManager.getDefaultSharedPreferences(this)
             .getString(DownloadSettingsKeys.PREF_DOWNLOAD_CUSTOM_URI, null)?.let { Uri.parse(it) },
         onSubmit = { submission, dismiss, _ ->
-            Toast.makeText(this, getString(R.string.toast_downloading, submission.filename), Toast.LENGTH_SHORT).show()
+            showClintSnackbar(
+                message = getString(R.string.toast_downloading, submission.filename),
+                actionLabel = getString(R.string.download_started_view_action),
+                onAction = { DownloadsActivity.open(this) }
+            )
             dismiss()
             ClintDownloadManager.enqueueBlob(this, base64, submission.filename, mimeType)
         }

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Clint</string>
-    <string name="address_bar_hint">Search or enter address</string>
     <string name="back">Back</string>
     <string name="forward">Forward</string>
     <string name="refresh">Refresh</string>
@@ -20,9 +19,8 @@
     <string name="pref_category_appearance">Appearance</string>
     <string name="pref_category_layout">Layout</string>
     <string name="pref_category_search">Search</string>
-    <string name="pref_category_app">App</string>
     <string name="pref_category_navigation">Navigation</string>
-    <string name="pref_category_setup">Setup</string>
+    <string name="pref_category_language">Language</string>
     <string name="privacy_settings_summary">Cookies, User-Agent, HTTPS, and history</string>
     <string name="javascript_enabled">Enable JavaScript</string>
     <string name="javascript_enabled_summary">Allow websites to execute JavaScript</string>
@@ -56,7 +54,6 @@
     <string name="close_tab">Close tab</string>
     <string name="incognito">Incognito</string>
     <string name="no_tabs">No tabs</string>
-    <string name="connection_secure">Connection security</string>
     <string name="about">About</string>
     <string name="about_summary">Version %1$s</string>
     <string name="about_acronym">Customizable Layered Internet Navigation Tool</string>
@@ -80,6 +77,10 @@
     <string name="default_browser_none">None</string>
     <string name="look_and_feel">Look &amp; Feel</string>
     <string name="look_and_feel_summary">Themes, colors, display, and exit behavior</string>
+    <string name="pref_language_title">Language</string>
+    <string name="language_system">System</string>
+    <string name="language_system_desc">Match your device\'s language, falling back to English if it\'s not supported</string>
+    <string name="language_base_desc">Original language</string>
     <string name="pref_app_theme_title">App Theme</string>
     <string name="pref_app_theme_summary">Choose the app&#8217;s visual theme</string>
     <string name="theme_light">Light</string>
@@ -91,7 +92,6 @@
     <string name="hide_status_bar">Hide status bar</string>
     <string name="hide_status_bar_summary">Hide the system status bar for a more immersive browsing experience</string>
     <string name="pref_menu_style_title">Menu Style</string>
-    <string name="pref_menu_style_summary">How the browser menu is displayed</string>
     <string name="menu_style_popup">Pop-up Menu</string>
     <string name="menu_style_popup_desc">Compact menu floating near the toolbar</string>
     <string name="menu_style_bottom_sheet">Bottom Sheet</string>
@@ -138,12 +138,10 @@
     <string name="download_retry_interval_value">%1$d seconds</string>
     <string name="download_retry_count_dialog_title">Retry count</string>
     <string name="download_retry_interval_dialog_title">Retry interval (seconds)</string>
-    <string name="download_retry_dialog_hint">Enter a value</string>
     <string name="download_retry_count_dialog_hint">Count</string>
     <string name="download_retry_interval_dialog_hint">Seconds</string>
     <string name="download_retry_count_dialog_message">Enter 0 for unlimited retries</string>
     <string name="download_retry_interval_dialog_message">Minimum: 1 second</string>
-    <string name="download_retry_action">Retry download</string>
     <string name="download_section_permissions">PERMISSIONS</string>
     <string name="download_ignore_battery_opt_title">Ignore Battery Optimization</string>
     <string name="download_ignore_battery_opt_summary">Allow downloads to continue running in the background without being throttled by the system</string>
@@ -267,9 +265,7 @@
     <string name="download_schedule_this_title">Schedule This Download</string>
     <string name="download_schedule_this_summary">Start at a specific date and time. Overrides the global download schedule for this download only.</string>
     <string name="download_schedule_date_title">Date</string>
-    <string name="download_schedule_date_placeholder">Select a date</string>
     <string name="download_schedule_time_title">Time</string>
-    <string name="download_schedule_time_placeholder">Select a time</string>
     <string name="download_schedule_date_picker_title">Select download date</string>
     <string name="download_schedule_time_picker_title">Select download time</string>
     <string name="download_schedule_past_time_error">Pick a date and time in the future</string>
@@ -302,9 +298,6 @@
     <string name="download_menu_update_link">Update download link</string>
     <string name="download_menu_update_link_in_browser">Update download link in browser</string>
     <string name="download_update_link_dialog_title">Update download link</string>
-    <string name="download_update_link_dialog_hint">New download link</string>
-    <string name="download_update_link_dialog_empty_error">Link cannot be empty</string>
-    <string name="download_update_link_dialog_fetching">Fetching…</string>
     <string name="download_update_link_dialog_fetch_failed">Failed to fetch link</string>
     <string name="download_update_link_dialog_size_unverifiable">File size could not be verified</string>
     <string name="download_update_link_dialog_size_mismatch">File size does not match (%1$s vs %2$s bytes)</string>
@@ -369,8 +362,6 @@
     <string name="action_yes">Yes</string>
     <string name="popup_alert_title">Popup Alert!</string>
     <string name="popup_alert_message">The page &lt;b&gt;%1$s&lt;/b&gt; is trying to open a new window. Do you want to open it?</string>
-    <string name="popup_alert_open_background">Open in background tab</string>
-    <string name="popup_alert_close_current_tab">Close current tab after opening new tab</string>
     <string name="popup_alert_source_unknown">this page</string>
     <string name="popup_alert_opens_label">Opens</string>
     <string name="action_deny">Deny</string>
@@ -387,8 +378,6 @@
     <string name="camera_web_request_title">Camera access requested</string>
     <string name="camera_web_request_message">%s wants to use your camera.</string>
     <string name="camera_web_request_remember">Don\'t ask me again</string>
-    <string name="camera_web_request_allow_always">Always allow</string>
-    <string name="camera_web_request_deny_always">Always deny</string>
     <string name="mic_web_request_title">Microphone access requested</string>
     <string name="mic_web_request_message">%s wants to use your microphone.</string>
     <string name="mic_web_request_origin_unknown">This website</string>
@@ -413,6 +402,7 @@
     <string name="voice_search_not_available">Voice search is not available on this device</string>
 
     <string name="toast_downloading">Downloading %1$s</string>
+    <string name="download_started_view_action">View</string>
 
     <string name="install_apk_dialog_title">Install APK</string>
     <string name="install_apk_dialog_message">Do you want to install \"%1$s\"?\n\nOnly install APKs from sources you trust.</string>
@@ -445,9 +435,7 @@
     <string name="download_status_progress">%1$d%%  \u2022  %2$s / %3$s</string>
     <string name="download_status_progress_unknown_total">%1$d%%  \u2022  %2$s / ?</string>
     <string name="download_status_progress_indeterminate">%1$s / ?</string>
-    <string name="download_status_complete">Complete  \u2022  %1$s</string>
     <string name="download_status_complete_label">Complete</string>
-    <string name="download_status_failed">Failed: %1$s</string>
     <string name="download_status_failed_label">Failed</string>
     <string name="download_info_with_time">%1$s  \u2022  %2$s</string>
     <string name="download_error_unknown">Unknown error</string>
@@ -457,7 +445,6 @@
     <string name="download_error_saf_no_stream">Cannot open output stream for download folder</string>
     <string name="download_error_blob_expired">Embedded image data is no longer available</string>
     <string name="download_status_allocating">Allocating&#8230; %1$d%%</string>
-    <string name="download_allocating_notification">Allocating file&#8230; %1$d%%</string>
     <string name="download_status_copying_temp">Copying temp files&#8230; %1$d%%</string>
     <string name="download_copying_temp_notification">Copying temp files&#8230; %1$d%%</string>
     <string name="download_status_deleting_temp">Deleting temp files&#8230;</string>
@@ -523,7 +510,6 @@
     <string name="setup_theme_subtitle">Pick a look that suits you. You can always change this later in Settings.</string>
 
     <string name="pref_accent_color_title">Accent Color</string>
-    <string name="pref_accent_color_summary">Color style for Dark and Light themes</string>
     <string name="accent_default">Monochrome</string>
     <string name="accent_default_desc">Neutral grayscale tones across the UI</string>
     <string name="accent_material_you">Material You</string>
@@ -549,7 +535,6 @@
     <string name="accent_orange">Orange</string>
     <string name="accent_orange_desc">Warm sunset tones across the UI</string>
     <string name="pref_surface_intensity_title">Surface Intensity</string>
-    <string name="pref_surface_intensity_summary">Background color intensity and tint level</string>
     <string name="pref_surface_intensity_disabled_summary">Only available with an accent color on Dark or Light theme</string>
     <string name="surface_intensity_soft">Soft Tint</string>
     <string name="surface_intensity_soft_desc">Subtle background with a gentle tint</string>
@@ -566,7 +551,6 @@
     <string name="rerun_setup_confirm_message">The setup wizard will restart. Your current settings will be preserved.</string>
     <string name="action_rerun">Rerun</string>
     <string name="pref_nested_scroll_title">Nested Scroll</string>
-    <string name="pref_nested_scroll_summary">Choose which bars slide away when scrolling</string>
     <string name="nested_scroll_off">Off</string>
     <string name="nested_scroll_off_desc">Bars always stay visible</string>
     <string name="nested_scroll_search_bar">Search Bar</string>
@@ -579,7 +563,6 @@
     <string name="nested_scroll_warning_message">Nested scroll feature may cause visual glitches with WebView. This is a known limitation of Android WebView based apps.\n\nDo you still want to enable this?</string>
     <string name="action_enable_anyway">Enable anyway</string>
     <string name="pref_address_bar_position_title">Address Bar Position</string>
-    <string name="pref_address_bar_position_summary">Choose where the address bar is displayed</string>
     <string name="address_bar_position_top">Top</string>
     <string name="address_bar_position_top_desc">Only the address bar, navigation moves to menu</string>
     <string name="address_bar_position_bottom">Bottom</string>
@@ -613,10 +596,6 @@
     <string name="downloads_tab_finished">FINISHED</string>
     <string name="downloads_tab_error">ERROR</string>
     <string name="downloads_tab_label_format">%1$s (%2$d)</string>
-    <string name="downloads_tab_empty_downloading">No active downloads</string>
-    <string name="downloads_tab_empty_finished">No finished downloads</string>
-    <string name="downloads_tab_empty_error">No failed downloads</string>
-    <string name="downloads_clear_done">Clear done</string>
     <string name="downloads_empty">No downloads yet</string>
     <string name="downloads_search">Search</string>
     <string name="downloads_search_hint">Search downloads…</string>
@@ -627,11 +606,7 @@
     <string name="downloads_sort_by_size">Size</string>
     <string name="downloads_sort_by_status">Status</string>
     <string name="downloads_selected_count">%d selected</string>
-    <string name="downloads_select_all">Select All</string>
-    <string name="downloads_invert_selection">Invert</string>
-    <string name="downloads_deselect_all">Deselect All</string>
     <string name="downloads_delete_selected_desc">Remove selected downloads</string>
-    <string name="downloads_cancel_selection_desc">Cancel selection</string>
     <string name="downloads_delete_confirm_title">Remove downloads</string>
     <string name="downloads_delete_confirm_message">Remove %d download(s)?</string>
     <string name="downloads_delete_also_from_storage">Delete file from storage as well</string>
@@ -652,7 +627,6 @@
     <string name="about_donate_paypal_label">PayPal</string>
     <string name="about_contact_email_label">Email</string>
 
-    <string name="update_download_percent">%1$d%%</string>
 
     <string name="exit_confirmation_title">Exit Confirmation</string>
     <string name="exit_confirmation_off">Off</string>
@@ -690,7 +664,6 @@
     <string name="https_only">HTTPS-Only Mode</string>
     <string name="https_only_summary">Redirect HTTP connections to HTTPS and block sites that don\u2019t support it</string>
 
-    <string name="data_saver_category">Data Saver</string>
     <string name="data_saver_title">Data Saver</string>
     <string name="data_saver_summary">Reduce data usage with smarter loading</string>
     <string name="data_saver_settings_summary">Disable Images and autoplay controls</string>
@@ -708,18 +681,10 @@
     <string name="suggestion_fill_desc">Fill into search bar</string>
     <string name="history_delete_desc">Remove from history</string>
     <string name="suggestion_url_desc">Page URL</string>
-    <string name="suggestion_bookmark_icon_desc">Bookmark</string>
-    <string name="clear_search_history">Clear search history</string>
-    <string name="clear_search_history_summary">Delete all saved search and URL history</string>
-    <string name="clear_search_history_confirm">Clear history</string>
-    <string name="clear_search_history_message">All search history will be permanently deleted.</string>
-    <string name="search_history_cleared">Search history cleared</string>
     <string name="history_title">History</string>
     <string name="history_summary">View and manage browsing and search history</string>
     <string name="history_empty">No history yet</string>
     <string name="history_clear_all">Clear all</string>
-    <string name="history_clear_all_desc">Clear all history</string>
-    <string name="history_item_delete_desc">Remove from history</string>
     <string name="history_selected_count">%d selected</string>
     <string name="history_select_all">Select All</string>
     <string name="history_invert_selection">Invert</string>
@@ -745,15 +710,10 @@
     <string name="site_settings">Site Settings</string>
     <string name="site_settings_summary">Camera, microphone, location, notifications, and desktop mode</string>
     <string name="site_settings_camera">Camera</string>
-    <string name="site_settings_camera_summary">Control camera access for websites</string>
     <string name="site_settings_mic">Microphone</string>
-    <string name="site_settings_mic_summary">Control microphone access for websites</string>
     <string name="site_settings_location">Location</string>
-    <string name="site_settings_location_summary">Control location access for websites</string>
     <string name="site_settings_notifications">Notifications</string>
-    <string name="site_settings_notifications_summary">Control notification access for websites</string>
     <string name="site_settings_desktop_mode">Desktop Mode</string>
-    <string name="site_settings_desktop_mode_summary">Save State</string>
     <string name="desktop_mode_save_state">Save State</string>
     <string name="desktop_mode_save_state_desc">Remember Desktop Mode for this site and apply it automatically on future visits</string>
     <string name="desktop_mode_do_not_save_state">Do Not Save State</string>
@@ -769,7 +729,6 @@
 
     <string name="site_settings_quiver_guard">Quiver Guard</string>
     <string name="site_settings_quiver_guard_summary">Saved sites</string>
-    <string name="quiver_guard_exception_saved_sites">Saved sites</string>
     <string name="quiver_guard_exception_no_saved_sites">No sites saved</string>
     <string name="quiver_guard_exception_search_hint">Search saved sites…</string>
     <string name="quiver_guard_exception_add_site">Add site</string>
@@ -789,18 +748,15 @@
     <string name="site_permission_state_denied">Denied</string>
     <string name="site_permission_add_exception">Add exception</string>
     <string name="site_permission_website_hint">Website (e.g. example.com)</string>
-    <string name="site_permission_delete_desc">Remove site exception</string>
     <string name="site_permission_add">Add</string>
 
     <string name="site_permission_ask_first_desc">Show a prompt when a site requests access</string>
     <string name="site_permission_always_deny_desc">Block all site requests without prompting</string>
     <string name="site_permission_always_allow_desc">Grant all site requests without prompting</string>
     <string name="site_permission_search_hint">Search exceptions…</string>
-    <string name="site_permission_selection_options">Selection options</string>
     <string name="site_permission_delete_confirm_title">Delete exceptions</string>
     <string name="site_permission_delete_confirm_message">Remove %d exception(s)?</string>
     <string name="site_permission_items_deleted">Exceptions removed</string>
-    <string name="site_permission_sort">Sort exceptions</string>
 
     <string name="battery_opt_rationale_title">Allow background downloads</string>
     <string name="battery_opt_rationale_message">For downloads to keep running when you switch to another app, allow Clint to ignore battery optimization. Without this, the system may pause or cancel active downloads while the app is in the background.</string>
@@ -855,11 +811,9 @@
 
     <string name="quiver_guard_master_switch_title">Enable Quiver Guard</string>
     <string name="quiver_guard_description">Block ads, trackers, and annoyances using filter lists</string>
-    <string name="quiver_guard_section_general">QUIVER GUARD</string>
     <string name="quiver_guard_section_filter_lists">FILTER LISTS</string>
     <string name="filter_list_status_not_downloaded">Not Downloaded</string>
     <string name="filter_list_status_downloading">Downloading…</string>
-    <string name="filter_list_status_downloaded">%1$s • %2$s</string>
     <string name="filter_list_status_downloaded_with_rules">%1$s rules • %2$s • %3$s</string>
     <string name="quiver_guard_download_dialog_title">Downloading %1$s</string>
     <string name="quiver_guard_download_progress_starting">Connecting…</string>
@@ -869,11 +823,9 @@
     <string name="quiver_guard_download_error_toast">Failed to download %1$s</string>
     <string name="quiver_guard_download_cancelled_toast">Download cancelled</string>
     <string name="quiver_guard_download_error_http">Server returned an error (code %1$d)</string>
-    <string name="quiver_guard_download_error_empty">The server returned an empty response</string>
     <string name="quiver_guard_download_error_network">Could not reach the URL. Check your connection and try again.</string>
 
     <string name="filter_list_add_fab_desc">Add custom filter list</string>
-    <string name="filter_list_add_menu_close_desc">Close menu</string>
     <string name="filter_list_add_menu_from_link">Add from link</string>
     <string name="filter_list_add_menu_from_file">Add from file</string>
     <string name="filter_list_add_dialog_title">Add Filter List</string>
@@ -883,18 +835,13 @@
     <string name="filter_list_add_action_add">Add</string>
     <string name="filter_list_add_error_invalid_url">Enter a valid URL</string>
     <string name="filter_list_add_error_invalid_format">This doesn\'t look like a valid filter list</string>
-    <string name="filter_list_add_error_save">Couldn\'t save the filter list. Try again.</string>
-    <string name="filter_list_add_success_toast">%1$s added</string>
     <string name="filter_list_add_file_dialog_title">Add Filter List From File</string>
     <string name="filter_list_add_file_summary">%1$d rules • %2$s</string>
     <string name="filter_list_add_file_error_read">Couldn\'t read the selected file. Try again.</string>
-    <string name="filter_list_add_file_picker_unavailable">No file picker app available</string>
     <string name="filter_list_item_local_no_update">Local filter lists don\'t have updates to check</string>
     <string name="filter_list_search_hint">Search filter lists…</string>
-    <string name="filter_list_sort_by_date_downloaded">Date Downloaded</string>
     <string name="filter_list_delete_confirm_title">Delete filter lists</string>
     <string name="filter_list_delete_confirm_message">Remove %d filter list(s)?</string>
-    <string name="filter_list_items_deleted">Filter lists removed</string>
     <string name="filter_list_update_check_title">Check for Updates</string>
     <string name="filter_list_update_check_message">Check %1$d downloaded filter list(s) for available updates?</string>
     <string name="filter_list_update_no_lists_message">No downloaded filter lists to update. Download a filter list first.</string>
@@ -917,13 +864,11 @@
     <string name="quiver_guard_compile_fab_desc">Compile filter lists</string>
 
     <string name="quiver_guard_banner_no_database">No compiled filter database found.</string>
-    <string name="quiver_guard_banner_recompile_needed">Compilation required. Current changes are not active.</string>
     <string name="quiver_guard_no_active_lists_title">No Active Filter Lists</string>
     <string name="quiver_guard_no_active_lists_message">Quiver Guard needs at least one active filter list to work. To get started:\n\n1. Tap a filter list below to download it.\n2. Once downloaded, tap the save button to compile your filter lists.\n3. After compiling, enable Quiver Guard using the switch above.</string>
 
     <string name="quiver_guard_experimental_title">Experimental Feature</string>
     <string name="quiver_guard_experimental_message">Quiver Guard is still in experimental testing. With your help, we are improving this feature. If you find any broken sites or bugs related to this feature, please report them immediately on GitHub. Thank you.</string>
-    <string name="quiver_guard_experimental_ok_countdown">OK (%1$d)</string>
 
     <string name="quiver_guard_recompile_required_title">Recompile Required</string>
     <string name="quiver_guard_recompile_required_button">Recompile</string>
@@ -963,7 +908,6 @@
     <string name="quiver_guard_compile_action_dismiss">Dismiss</string>
 
     <!-- Filter list actions overflow menu -->
-    <string name="filter_list_actions_menu_desc">Filter list actions</string>
     <string name="filter_list_check_update_active">Check for updates (active list)</string>
     <string name="filter_list_check_update_all">Check for updates (all lists)</string>
     <string name="filter_list_force_update_active">Force update (active list)</string>
@@ -987,14 +931,12 @@
 
     <!-- Force update progress dialogs -->
     <string name="filter_list_force_update_progress_title">Force Updating Filter Lists</string>
-    <string name="filter_list_force_update_active_progress_title">Force Updating Active Lists</string>
 
     <!-- Recompile confirmation dialog -->
     <string name="filter_list_recompile_confirm_title">Recompile Filter Lists</string>
     <string name="filter_list_recompile_confirm_message">Recompile all enabled filter lists now?</string>
 
     <!-- Per-row overflow menu (ellipsis on each filter list item) -->
-    <string name="filter_list_item_options_desc">Filter list options</string>
     <string name="filter_list_menu_check_update">Check for Updates</string>
     <string name="filter_list_menu_force_update">Force Update</string>
     <string name="filter_list_menu_remove">Remove</string>
@@ -1019,7 +961,6 @@
     <!-- Selection (multi-item) overflow menu: shown in the toolbar once one or more
          filter lists are selected, reusing the per-row item options layout but
          scoped to every selected list instead of a single row. -->
-    <string name="filter_list_selection_options_menu_desc">More options for selected filter lists</string>
     <string name="filter_list_check_update_selected_message">%1$d selected filter list(s) will be checked for updates.</string>
     <string name="filter_list_force_update_selected_confirm_title">Force Update Selected Lists</string>
     <string name="filter_list_force_update_selected_confirm_message">%1$d selected filter list(s) will be re-downloaded unconditionally. Proceed?</string>
@@ -1036,24 +977,22 @@
 
     <string name="quiver_guard_manual_filter_master_switch_title">Enable Manual Filter</string>
     <string name="quiver_guard_manual_filter_master_switch_summary">Apply your custom rules alongside your filter lists</string>
-    <string name="quiver_guard_manual_filter_section_rules">YOUR RULES</string>
     <string name="quiver_guard_manual_filter_empty_state">No custom rules yet. Tap + to add your first one.</string>
 
     <string name="quiver_guard_manual_filter_add_fab_desc">Add rule</string>
-    <string name="quiver_guard_manual_filter_delete_rule_desc">Delete rule</string>
 
     <string name="quiver_guard_manual_filter_rule_hint">e.g. ||example.com^</string>
     <string name="quiver_guard_manual_filter_add_dialog_title">Add Rule</string>
-    <string name="quiver_guard_manual_filter_add_dialog_helper">One rule per line, in standard AdBlock/uBlock syntax. Lines that don\'t match a rule\'s syntax are ignored when compiling.</string>
     <string name="quiver_guard_manual_filter_edit_dialog_title">Edit Rule</string>
     <string name="quiver_guard_manual_filter_edit_action_save">Save</string>
-    <string name="quiver_guard_manual_filter_error_empty">Enter at least one rule</string>
 
-    <string name="quiver_guard_manual_filter_added_toast">%1$d rule(s) added</string>
-    <string name="quiver_guard_manual_filter_no_new_rules_toast">No new rules added (already in your list)</string>
 
     <string name="quiver_guard_manual_filter_delete_confirm_title">Delete rule</string>
     <string name="quiver_guard_manual_filter_delete_confirm_message">Remove this rule from your manual filter?\n\n%1$s</string>
-    <string name="quiver_guard_manual_filter_rule_deleted_toast">Rule deleted</string>
+
+    <string name="quiver_guard_manual_filter_search_hint">Search rules…</string>
+    <string name="quiver_guard_manual_filter_no_results">No rules match your search</string>
+    <string name="quiver_guard_manual_filter_delete_selected_confirm_title">Delete rules</string>
+    <string name="quiver_guard_manual_filter_delete_selected_confirm_message">Remove %1$d rule(s) from your manual filter?</string>
 
 </resources>

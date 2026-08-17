@@ -1,11 +1,18 @@
 package com.jhaiian.clint.quiver
 
 import android.os.Bundle
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.preference.PreferenceManager
+import com.jhaiian.clint.R
 import com.jhaiian.clint.base.ClintActivity
+import com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig
+import com.jhaiian.clint.ui.listscreen.ConfirmDialogHost
 import com.jhaiian.clint.ui.rememberMaxContentWidth
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 
@@ -13,6 +20,7 @@ class ManualFilterActivity : ClintActivity() {
 
     private lateinit var db: ManualFilterDatabase
     private lateinit var uiState: ManualFilterUiState
+    private var deleteConfirm by mutableStateOf<ConfirmDialogConfig?>(null)
 
     private fun reload() {
         uiState.rules = db.getAllRules()
@@ -21,6 +29,14 @@ class ManualFilterActivity : ClintActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        onBackPressedDispatcher.addCallback(this) {
+            when {
+                uiState.isSearchMode -> { uiState.isSearchMode = false; uiState.searchQuery = "" }
+                uiState.isInSelectionMode -> uiState.exitSelectionMode()
+                else -> { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+            }
+        }
 
         db = ManualFilterDatabase(this)
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -45,7 +61,8 @@ class ManualFilterActivity : ClintActivity() {
                         },
                         onAddClick = { uiState.ruleDialogMode = ManualFilterRuleDialogMode.Add },
                         onEditClick = { rule -> uiState.ruleDialogMode = ManualFilterRuleDialogMode.Edit(rule) },
-                        onDeleteClick = { rule -> uiState.deleteTarget = rule }
+                        onDeleteClick = { rule -> showDeleteConfirm(rule) },
+                        onDeleteSelectedClick = { showDeleteSelectedConfirm() }
                     )
 
                     uiState.ruleDialogMode?.let { mode ->
@@ -67,18 +84,38 @@ class ManualFilterActivity : ClintActivity() {
                         )
                     }
 
-                    ManualFilterDeleteConfirmDialog(
-                        rule = uiState.deleteTarget,
-                        hideStatusBar = hideStatusBar,
-                        onConfirm = {
-                            uiState.deleteTarget?.let { db.deleteRule(it.id) }
-                            reload()
-                            uiState.deleteTarget = null
-                        },
-                        onDismiss = { uiState.deleteTarget = null }
-                    )
+                    ConfirmDialogHost(deleteConfirm, hideStatusBar) { deleteConfirm = null }
                 }
             }
         }
+    }
+
+    /** Captures the rule's id and text directly in the closure rather than reading them back
+     *  out of [uiState] when the dialog confirms, since the dialog always dismisses (clearing
+     *  any "current target" state) before running its confirm action. */
+    private fun showDeleteConfirm(rule: ManualFilterRule) {
+        deleteConfirm = ConfirmDialogConfig(
+            title = getString(R.string.quiver_guard_manual_filter_delete_confirm_title),
+            message = getString(R.string.quiver_guard_manual_filter_delete_confirm_message, rule.ruleText),
+            negativeLabel = getString(R.string.action_cancel),
+            positiveLabel = getString(R.string.history_delete_selected),
+            onPositive = { db.deleteRule(rule.id); reload() }
+        )
+    }
+
+    private fun showDeleteSelectedConfirm() {
+        val ids = uiState.selectedIds
+        if (ids.isEmpty()) return
+        deleteConfirm = ConfirmDialogConfig(
+            title = getString(R.string.quiver_guard_manual_filter_delete_selected_confirm_title),
+            message = getString(R.string.quiver_guard_manual_filter_delete_selected_confirm_message, ids.size),
+            negativeLabel = getString(R.string.action_cancel),
+            positiveLabel = getString(R.string.history_delete_selected),
+            onPositive = {
+                for (id in ids) db.deleteRule(id)
+                uiState.exitSelectionMode()
+                reload()
+            }
+        )
     }
 }

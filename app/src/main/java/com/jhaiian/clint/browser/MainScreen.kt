@@ -61,6 +61,7 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 @Composable
 internal fun MainScreen(activity: MainActivity, state: MainUiState) {
     val density = LocalDensity.current
+    val colors = LocalClintColors.current
     var tabSwitcherOpen by remember { mutableStateOf(false) }
     val hideStatusBar = state.hideStatusBar
     val rawStatusBarPx = WindowInsets.statusBars.getTop(density)
@@ -83,7 +84,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
         activity.updateMainContentInsets()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(colors.surface)) {
         // WebView + pull-to-refresh island. The View itself is created once by MainActivity;
         // Compose only positions it and keeps its content padding in sync with the toolbars.
         AndroidView(
@@ -193,7 +194,6 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
         }
 
         if (!state.isFullscreen && effectiveStatusBarPx > 0) {
-            val colors = LocalClintColors.current
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)

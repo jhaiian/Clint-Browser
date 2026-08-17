@@ -3,6 +3,7 @@ package com.jhaiian.clint.base
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Bundle
@@ -18,6 +19,7 @@ import com.google.android.material.color.DynamicColors
 import com.jhaiian.clint.R
 import com.jhaiian.clint.ui.ThemeRevealHolder
 import com.jhaiian.clint.ui.ThemeRevealOverlay
+import com.jhaiian.clint.util.LocaleHelper
 import kotlin.math.hypot
 import kotlin.math.max
 
@@ -26,12 +28,18 @@ abstract class ClintActivity : AppCompatActivity() {
     private var appliedTheme: String? = null
     private var appliedAccent: String? = null
     private var appliedIntensity: String? = null
+    private var appliedLanguage: String? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrapContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         appliedTheme = prefs.getString("app_theme", "dark") ?: "dark"
         appliedAccent = prefs.getString("accent_color", "purple") ?: "purple"
         appliedIntensity = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint"
+        appliedLanguage = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
         applyThemeResource()
         super.onCreate(savedInstanceState)
     }
@@ -43,7 +51,8 @@ abstract class ClintActivity : AppCompatActivity() {
         val currentTheme = prefs.getString("app_theme", "dark") ?: "dark"
         val currentAccent = prefs.getString("accent_color", "purple") ?: "purple"
         val currentIntensity = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint"
-        if (currentTheme != appliedTheme || currentAccent != appliedAccent || currentIntensity != appliedIntensity) {
+        val currentLanguage = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
+        if (currentTheme != appliedTheme || currentAccent != appliedAccent || currentIntensity != appliedIntensity || currentLanguage != appliedLanguage) {
             window.setWindowAnimations(0)
             recreate()
             return
@@ -347,6 +356,16 @@ abstract class ClintActivity : AppCompatActivity() {
         if (current == newIntensity) return
         captureScreenBitmap()
         prefs.edit().putString("surface_intensity", newIntensity).commit()
+        window.setWindowAnimations(0)
+        recreate()
+    }
+
+    fun captureAndApplyLanguage(newLanguage: String) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val current = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
+        if (current == newLanguage) return
+        captureScreenBitmap()
+        prefs.edit().putString(LocaleHelper.PREF_APP_LANGUAGE, newLanguage).commit()
         window.setWindowAnimations(0)
         recreate()
     }

@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,8 +24,11 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.jhaiian.clint.base.ClintActivity
+import com.jhaiian.clint.ui.ClintSnackbarHost
 import com.jhaiian.clint.ui.OverlayHostActivity
+import com.jhaiian.clint.ui.SnackbarHostActivity
 import com.jhaiian.clint.ui.rememberMaxContentWidth
+import com.jhaiian.clint.ui.showClintSnackbar
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -42,14 +46,27 @@ import kotlinx.coroutines.withContext
  * search/selection state, and bulk-delete flow were coupled to that architecture and needed
  * rewriting.
  */
-class DownloadsActivity : ClintActivity(), OverlayHostActivity {
+class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity {
 
     /** Full-window Compose overlay (e.g. the redownload dialog) rendered inline in this
      *  activity's own composition; see [OverlayHostActivity]. */
     override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
 
+    /** Backs the "downloading started" Snackbar; see [SnackbarHostActivity]. */
+    override val snackbarHostState = SnackbarHostState()
+
     companion object {
         const val EXTRA_OPEN_ID = "open_download_id"
+
+        /** Opens (or, if already the foreground Activity, refocuses) the downloads screen. Used
+         *  by the "downloading started" Snackbar's View action, wherever it's shown from. */
+        fun open(context: android.content.Context) {
+            context.startActivity(
+                Intent(context, DownloadsActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+            )
+        }
     }
 
     internal lateinit var uiState: DownloadsUiState
@@ -114,7 +131,11 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity {
             customLocationUri = submission.customLocationUri,
             scheduledStartAtMillis = submission.scheduledStartAtMillis,
             onDismiss = {
-                Toast.makeText(this, getString(R.string.toast_downloading, submission.filename), Toast.LENGTH_SHORT).show()
+                showClintSnackbar(
+                    message = getString(R.string.toast_downloading, submission.filename),
+                    actionLabel = getString(R.string.download_started_view_action),
+                    onAction = { DownloadsActivity.open(this) }
+                )
                 onDismiss()
             },
             onRename = onRename
@@ -193,6 +214,7 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity {
                         DownloadConflictDialog(req, hideStatusBar) { uiState.conflictDialogRequest = null }
                     }
                     overlayContent?.invoke()
+                    ClintSnackbarHost(hostState = snackbarHostState)
                 }
             }
         }

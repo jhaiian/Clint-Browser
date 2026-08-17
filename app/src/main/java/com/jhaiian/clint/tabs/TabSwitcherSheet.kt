@@ -14,10 +14,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -34,6 +35,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,10 +43,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
@@ -69,6 +75,27 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
     val activeIndex = remember { activity.tabManager.activeIndex }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+    val listState = rememberLazyListState()
+    // Consumes whatever fling velocity is left over once the list itself has scrolled as far as
+    // it can, so a fast fling at either edge of the list never reaches the sheet's own drag
+    // gesture and closes it. Dragging the handle, tapping the scrim, or pressing back still
+    // dismiss normally since none of those go through this connection.
+    val flingBoundaryConnection = remember {
+        object : NestedScrollConnection {
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
+        }
+    }
+    val configuration = LocalConfiguration.current
+    // In portrait the sheet is capped at half the screen height so it never covers the toolbar
+    // above it; a long list scrolls internally past that point instead of growing further. In
+    // landscape, where half height would be too cramped for the tab list, it keeps a smaller
+    // scrim gap at the top instead.
+    val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val maxSheetHeight = if (isPortrait) {
+        (configuration.screenHeightDp.dp * 0.5f).coerceAtLeast(320.dp)
+    } else {
+        (configuration.screenHeightDp.dp - 96.dp).coerceAtLeast(320.dp)
+    }
 
     fun closeTabAt(index: Int) {
         activity.onTabClosed(index)
@@ -83,66 +110,74 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
         dragHandle = { BottomSheetDefaults.DragHandle(color = colors.divider) }
     ) {
         com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
-        Column(Modifier.fillMaxWidth()) {
-            val regularCount = tabs.count { !it.isIncognito }
-            val incognitoCount = tabs.count { it.isIncognito }
-            val headerParts = buildList {
-                if (regularCount > 0) add("$regularCount tab${if (regularCount != 1) "s" else ""}")
-                if (incognitoCount > 0) add("$incognitoCount incognito")
-            }
-            val headerText = if (tabs.isEmpty()) stringResource(R.string.no_tabs) else headerParts.joinToString("  ·  ")
+        LazyColumn(
+            Modifier.fillMaxWidth().heightIn(max = maxSheetHeight).nestedScroll(flingBoundaryConnection),
+            state = listState
+        ) {
+            item {
+                Column(Modifier.fillMaxWidth()) {
+                    val regularCount = tabs.count { !it.isIncognito }
+                    val incognitoCount = tabs.count { it.isIncognito }
+                    val headerParts = buildList {
+                        if (regularCount > 0) add("$regularCount tab${if (regularCount != 1) "s" else ""}")
+                        if (incognitoCount > 0) add("$incognitoCount incognito")
+                    }
+                    val headerText = if (tabs.isEmpty()) stringResource(R.string.no_tabs) else headerParts.joinToString("  ·  ")
 
-            Row(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(headerText, color = colors.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-            }
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(headerText, color = colors.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                    }
 
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
-                NewTabButton(
-                    text = stringResource(R.string.new_tab),
-                    iconRes = androidx.compose.material.icons.Icons.Filled.Add,
-                    modifier = Modifier.weight(1f).padding(end = 6.dp),
-                    onClick = { activity.onNewTab(); onDismiss() }
-                )
-                NewTabButton(
-                    text = stringResource(R.string.new_incognito_tab),
-                    iconRes = androidx.compose.material.icons.Icons.Filled.VisibilityOff,
-                    modifier = Modifier.weight(1f).padding(start = 6.dp),
-                    onClick = { activity.onNewIncognitoTab(); onDismiss() }
-                )
-            }
-
-            HorizontalDivider(color = colors.divider, thickness = 1.dp)
-
-            val normalTabs = tabs.withIndex().filter { !it.value.isIncognito }
-            val incognitoTabs = tabs.withIndex().filter { it.value.isIncognito }
-
-            LazyColumn(
-                Modifier.fillMaxWidth().weight(1f, fill = false).padding(horizontal = 12.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.dp, bottom = 24.dp)
-            ) {
-                if (normalTabs.isNotEmpty()) {
-                    item(key = "header_normal") { TabSectionHeader(isIncognito = false) }
-                    items(normalTabs, key = { it.value.id }) { (index, tab) ->
-                        TabRow(
-                            tab = tab,
-                            isActive = index == activeIndex,
-                            onClick = { activity.onTabSelected(index); onDismiss() },
-                            onClose = { closeTabAt(index) }
+                    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
+                        NewTabButton(
+                            text = stringResource(R.string.new_tab),
+                            iconRes = androidx.compose.material.icons.Icons.Filled.Add,
+                            modifier = Modifier.weight(1f).padding(end = 6.dp),
+                            onClick = { activity.onNewTab(); onDismiss() }
+                        )
+                        NewTabButton(
+                            text = stringResource(R.string.new_incognito_tab),
+                            iconRes = androidx.compose.material.icons.Icons.Filled.VisibilityOff,
+                            modifier = Modifier.weight(1f).padding(start = 6.dp),
+                            onClick = { activity.onNewIncognitoTab(); onDismiss() }
                         )
                     }
-                }
-                if (incognitoTabs.isNotEmpty()) {
-                    item(key = "header_incognito") { TabSectionHeader(isIncognito = true) }
-                    items(incognitoTabs, key = { it.value.id }) { (index, tab) ->
-                        TabRow(
-                            tab = tab,
-                            isActive = index == activeIndex,
-                            onClick = { activity.onTabSelected(index); onDismiss() },
-                            onClose = { closeTabAt(index) }
-                        )
+
+                    HorizontalDivider(color = colors.divider, thickness = 1.dp)
+
+                    val normalTabs = tabs.withIndex().filter { !it.value.isIncognito }
+                    val incognitoTabs = tabs.withIndex().filter { it.value.isIncognito }
+
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(top = 8.dp, bottom = 24.dp)) {
+                        if (normalTabs.isNotEmpty()) {
+                            TabSectionHeader(isIncognito = false)
+                            normalTabs.forEach { (index, tab) ->
+                                key(tab.id) {
+                                    TabRow(
+                                        tab = tab,
+                                        isActive = index == activeIndex,
+                                        onClick = { activity.onTabSelected(index); onDismiss() },
+                                        onClose = { closeTabAt(index) }
+                                    )
+                                }
+                            }
+                        }
+                        if (incognitoTabs.isNotEmpty()) {
+                            TabSectionHeader(isIncognito = true)
+                            incognitoTabs.forEach { (index, tab) ->
+                                key(tab.id) {
+                                    TabRow(
+                                        tab = tab,
+                                        isActive = index == activeIndex,
+                                        onClick = { activity.onTabSelected(index); onDismiss() },
+                                        onClose = { closeTabAt(index) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

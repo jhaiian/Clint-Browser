@@ -4,6 +4,29 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.0.9
+
+---
+
+## What's New
+
+- Added multi-selection, removal, search, and fast scroller to Manual Filter in Quiver Guard.
+- Redesigned the Menu, LinkLongPressSheet, and ImageLongPressSheet.
+- Added language support. You can help translate Clint Browser into your language by downloading the `strings.xml` file and editing the translations yourself.
+- Added Filipino translation. Thanks to my friend **Reneil** for helping me out!
+- Replaced download notification toasts with snackbars, including a View button.
+
+---
+
+## Bug Fixes
+
+- Fixed an issue where entries couldn't be deleted from Manual Filter.
+- Fixed scrolling issues in the LinkLongPressSheet and ImageLongPressSheet content previews on landscape mode, foldables, tablets, and other large-screen devices.
+- Fixed the web progress bar remaining visible even when the page was no longer loading.
+- Fixed search suggestions and visited pages being recorded during Incognito mode.
+
+---
+
 # v1.0.8
 
 > This update focuses on Clint Browser's transition from XML-based Views to Jetpack Compose.

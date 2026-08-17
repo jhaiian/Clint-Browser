@@ -12,6 +12,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -30,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -206,156 +209,173 @@ private fun PreviewWebView(
     onImageLongPress: (ImageLongPressRequest) -> Unit,
     onPreviewLinkLongPress: (PreviewLinkLongPressRequest) -> Unit
 ) {
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { ctx ->
-            val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-            val dataSaverEnabled = prefs.getBoolean("data_saver_enabled", false)
-            val disableImages = dataSaverEnabled && prefs.getBoolean("data_saver_disable_images", true)
-            val disableAutoplay = dataSaverEnabled && prefs.getBoolean("data_saver_disable_autoplay", true)
-            val quiverGuardEnabled = prefs.getBoolean("quiver_guard_enabled", false)
+    // Wrapped in a single-item LazyColumn instead of a bare Box so the WebView participates
+    // in Compose's nested-scroll negotiation with the enclosing ModalBottomSheet. A raw
+    // AndroidView never dispatches nested-scroll events, so without this wrapper the sheet's
+    // drag-to-dismiss gesture claims any vertical drag before the WebView can consume it,
+    // leaving its content unscrollable.
+    //
+    // The overscroll/stretch effect is disabled because this LazyColumn always has exactly
+    // one item sized to fill the viewport: any stretch at its edges has nothing to reveal but
+    // empty space, showing up as a gap above or below the WebView instead of an intentional
+    // visual effect.
+    CompositionLocalProvider(LocalOverscrollFactory provides null) {
+    LazyColumn(Modifier.fillMaxSize()) {
+        item {
+            AndroidView(
+                modifier = Modifier.fillParentMaxSize(),
+                factory = { ctx ->
+                    val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+                    val dataSaverEnabled = prefs.getBoolean("data_saver_enabled", false)
+                    val disableImages = dataSaverEnabled && prefs.getBoolean("data_saver_disable_images", true)
+                    val disableAutoplay = dataSaverEnabled && prefs.getBoolean("data_saver_disable_autoplay", true)
+                    val quiverGuardEnabled = prefs.getBoolean("quiver_guard_enabled", false)
 
-            val wv = WebView(ctx)
-            onWebViewCreated(wv)
+                    val wv = WebView(ctx)
+                    onWebViewCreated(wv)
 
-            // Quiver Guard's cosmetic-filter bootstrap must be registered before this WebView's
-            // first navigation (addDocumentStartJavaScript only affects navigations *after* it's
-            // called). Every preview WebView's one and only page load *is* that first navigation,
-            // so this early call is required here even though a real tab gets it for free from
-            // MainActivity.createWebView. See QuiverGuardWebIntegration.installEarly's kdoc.
-            if (quiverGuardEnabled) QuiverGuardWebIntegration.installEarly(ctx, wv)
+                    // Quiver Guard's cosmetic-filter bootstrap must be registered before this WebView's
+                    // first navigation (addDocumentStartJavaScript only affects navigations *after* it's
+                    // called). Every preview WebView's one and only page load *is* that first navigation,
+                    // so this early call is required here even though a real tab gets it for free from
+                    // MainActivity.createWebView. See QuiverGuardWebIntegration.installEarly's kdoc.
+                    if (quiverGuardEnabled) QuiverGuardWebIntegration.installEarly(ctx, wv)
 
-            wv.settings.apply {
-                javaScriptEnabled = request.isPage
-                builtInZoomControls = true
-                displayZoomControls = false
-                loadWithOverviewMode = true
-                useWideViewPort = true
-                userAgentString = buildPreviewUserAgent(ctx, request.isDesktop)
-                loadsImagesAutomatically = !disableImages
-                mediaPlaybackRequiresUserGesture = disableAutoplay
-                cacheMode = WebSettings.LOAD_DEFAULT
-            }
+                    wv.settings.apply {
+                        javaScriptEnabled = request.isPage
+                        builtInZoomControls = true
+                        displayZoomControls = false
+                        loadWithOverviewMode = true
+                        useWideViewPort = true
+                        userAgentString = buildPreviewUserAgent(ctx, request.isDesktop)
+                        loadsImagesAutomatically = !disableImages
+                        mediaPlaybackRequiresUserGesture = disableAutoplay
+                        cacheMode = WebSettings.LOAD_DEFAULT
+                    }
 
-            if (request.isPage && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                WebViewCompat.addDocumentStartJavaScript(wv, activity.loadJsAsset("link_touch_tracker.js"), setOf("*"))
-            }
-            if (request.isDesktop && request.isPage && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                WebViewCompat.addDocumentStartJavaScript(wv, activity.loadJsAsset("desktop_mode.js"), setOf("*"))
-            }
-            if (disableAutoplay && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                WebViewCompat.addDocumentStartJavaScript(wv, activity.loadJsAsset("disable_autoplay.js"), setOf("*"))
-            }
+                    if (request.isPage && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                        WebViewCompat.addDocumentStartJavaScript(wv, activity.loadJsAsset("link_touch_tracker.js"), setOf("*"))
+                    }
+                    if (request.isDesktop && request.isPage && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                        WebViewCompat.addDocumentStartJavaScript(wv, activity.loadJsAsset("desktop_mode.js"), setOf("*"))
+                    }
+                    if (disableAutoplay && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                        WebViewCompat.addDocumentStartJavaScript(wv, activity.loadJsAsset("disable_autoplay.js"), setOf("*"))
+                    }
 
-            // Quiver Guard's document-start bootstrap script was already registered above via
-            // installEarly() — that script looks up the current page's host at runtime (inside
-            // the JS itself) since a document-start registration happens once, before this
-            // WebView's first navigation, and so can't know in advance which site is about to
-            // load or whether that site is on the exception list. So there's nothing further to
-            // register here for the DOCUMENT_START_SCRIPT-supported path; only the fallback path
-            // below (for WebView versions without that API) needs its own registration, done
-            // after the page has actually loaded and its real host is known.
+                    // Quiver Guard's document-start bootstrap script was already registered above via
+                    // installEarly() — that script looks up the current page's host at runtime (inside
+                    // the JS itself) since a document-start registration happens once, before this
+                    // WebView's first navigation, and so can't know in advance which site is about to
+                    // load or whether that site is on the exception list. So there's nothing further to
+                    // register here for the DOCUMENT_START_SCRIPT-supported path; only the fallback path
+                    // below (for WebView versions without that API) needs its own registration, done
+                    // after the page has actually loaded and its real host is known.
 
-            if (!request.isReaderMode) applyPreviewDarkMode(ctx, wv)
+                    if (!request.isReaderMode) applyPreviewDarkMode(ctx, wv)
 
-            wv.setOnScrollChangeListener { _, _, scrollY, _, _ -> onScrollYChanged(scrollY) }
+                    wv.setOnScrollChangeListener { _, _, scrollY, _, _ -> onScrollYChanged(scrollY) }
+                    wv.setOnTouchListener { view, _ -> view.parent?.requestDisallowInterceptTouchEvent(true); false }
 
-            // ClintWebViewClient already implements the Quiver Guard network-blocking check
-            // (including the exception-list lookup), https-only upgrading, tracker-host blocking,
-            // and external-app intent handling — reusing it keeps this preview identical to a
-            // real tab instead of duplicating that logic.
-            wv.webViewClient = ClintWebViewClient(
-                prefs = prefs,
-                isActive = { true },
-                onPageFinishedCallback = { pageUrl ->
+                    // ClintWebViewClient already implements the Quiver Guard network-blocking check
+                    // (including the exception-list lookup), https-only upgrading, tracker-host blocking,
+                    // and external-app intent handling — reusing it keeps this preview identical to a
+                    // real tab instead of duplicating that logic.
+                    wv.webViewClient = ClintWebViewClient(
+                        prefs = prefs,
+                        isActive = { true },
+                        onPageFinishedCallback = { pageUrl ->
+                            if (request.isPage) {
+                                val pageTitle = wv.title
+                                val pageHost = runCatching { java.net.URL(pageUrl).host }.getOrElse { "" }
+                                if (!pageTitle.isNullOrEmpty()) onTitleChanged(pageTitle)
+                                if (pageHost.isNotEmpty()) onUrlChanged(pageHost)
+                            }
+                            // Fallback cosmetic-filter injection for WebView versions without
+                            // WebViewFeature.DOCUMENT_START_SCRIPT; the document-start path above
+                            // already handles everything else.
+                            if (request.isPage && quiverGuardEnabled && !WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                                scope.launch {
+                                    val pageHost = runCatching { android.net.Uri.parse(pageUrl).host }.getOrNull()
+                                    val isExcepted = withContext(Dispatchers.IO) {
+                                        pageHost != null && SitePermissionManager.getState(ctx, pageHost, SitePermissionDatabase.TYPE_QUIVER_GUARD_EXCEPTION) != null
+                                    }
+                                    if (isExcepted) return@launch
+                                    val script = withContext(Dispatchers.IO) {
+                                        QuiverGuardWebIntegration.buildCosmeticFilterScript(ctx, pageUrl, true)
+                                    } ?: return@launch
+                                    QuiverGuardWebIntegration.applyCosmeticFilterScript(wv, script)
+                                }
+                            }
+                        },
+                        getDesktopHeaders = { if (request.isDesktop && request.isPage) buildDesktopHeaders(wv) else null },
+                        getTabId = { quiverGuardPreviewTabId }
+                    )
+
                     if (request.isPage) {
-                        val pageTitle = wv.title
-                        val pageHost = runCatching { java.net.URL(pageUrl).host }.getOrElse { "" }
-                        if (!pageTitle.isNullOrEmpty()) onTitleChanged(pageTitle)
-                        if (pageHost.isNotEmpty()) onUrlChanged(pageHost)
-                    }
-                    // Fallback cosmetic-filter injection for WebView versions without
-                    // WebViewFeature.DOCUMENT_START_SCRIPT; the document-start path above
-                    // already handles everything else.
-                    if (request.isPage && quiverGuardEnabled && !WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                        scope.launch {
-                            val pageHost = runCatching { android.net.Uri.parse(pageUrl).host }.getOrNull()
-                            val isExcepted = withContext(Dispatchers.IO) {
-                                pageHost != null && SitePermissionManager.getState(ctx, pageHost, SitePermissionDatabase.TYPE_QUIVER_GUARD_EXCEPTION) != null
+                        wv.webChromeClient = object : WebChromeClient() {
+                            override fun onReceivedTitle(view: WebView, title: String) {
+                                if (title.isNotEmpty()) onTitleChanged(title)
                             }
-                            if (isExcepted) return@launch
-                            val script = withContext(Dispatchers.IO) {
-                                QuiverGuardWebIntegration.buildCosmeticFilterScript(ctx, pageUrl, true)
-                            } ?: return@launch
-                            QuiverGuardWebIntegration.applyCosmeticFilterScript(wv, script)
                         }
-                    }
-                },
-                getDesktopHeaders = { if (request.isDesktop && request.isPage) buildDesktopHeaders(wv) else null },
-                getTabId = { quiverGuardPreviewTabId }
-            )
-
-            if (request.isPage) {
-                wv.webChromeClient = object : WebChromeClient() {
-                    override fun onReceivedTitle(view: WebView, title: String) {
-                        if (title.isNotEmpty()) onTitleChanged(title)
-                    }
-                }
-                wv.setOnLongClickListener {
-                    val result = wv.hitTestResult
-                    when (result.type) {
-                        WebView.HitTestResult.IMAGE_TYPE -> {
-                            val hitUrl = result.extra ?: return@setOnLongClickListener false
-                            onImageLongPress(ImageLongPressRequest(hitUrl, "", isStandalone = false, isPreviewContext = true))
-                            true
-                        }
-                        WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
-                            val linkUrl = result.extra ?: return@setOnLongClickListener false
-                            showPreviewLinkFromWebView(wv, linkUrl, onPreviewLinkLongPress)
-                            true
-                        }
-                        WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
-                            // HitTestResult.extra returns the <img> src rather than the enclosing
-                            // anchor's href for this hit type, so the href must be requested
-                            // asynchronously via requestFocusNodeHref, letting a linked icon
-                            // resolve to the link sheet instead of the image sheet.
-                            val hrefHandler = Handler(Looper.getMainLooper()) { message ->
-                                val linkUrl = message.data.getString("url")
-                                if (!linkUrl.isNullOrEmpty()) showPreviewLinkFromWebView(wv, linkUrl, onPreviewLinkLongPress)
-                                true
+                        wv.setOnLongClickListener {
+                            val result = wv.hitTestResult
+                            when (result.type) {
+                                WebView.HitTestResult.IMAGE_TYPE -> {
+                                    val hitUrl = result.extra ?: return@setOnLongClickListener false
+                                    onImageLongPress(ImageLongPressRequest(hitUrl, "", isStandalone = false, isPreviewContext = true))
+                                    true
+                                }
+                                WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
+                                    val linkUrl = result.extra ?: return@setOnLongClickListener false
+                                    showPreviewLinkFromWebView(wv, linkUrl, onPreviewLinkLongPress)
+                                    true
+                                }
+                                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                                    // HitTestResult.extra returns the <img> src rather than the enclosing
+                                    // anchor's href for this hit type, so the href must be requested
+                                    // asynchronously via requestFocusNodeHref, letting a linked icon
+                                    // resolve to the link sheet instead of the image sheet.
+                                    val hrefHandler = Handler(Looper.getMainLooper()) { message ->
+                                        val linkUrl = message.data.getString("url")
+                                        if (!linkUrl.isNullOrEmpty()) showPreviewLinkFromWebView(wv, linkUrl, onPreviewLinkLongPress)
+                                        true
+                                    }
+                                    wv.requestFocusNodeHref(hrefHandler.obtainMessage())
+                                    true
+                                }
+                                else -> false
                             }
-                            wv.requestFocusNodeHref(hrefHandler.obtainMessage())
-                            true
                         }
-                        else -> false
-                    }
-                }
-            } else {
-                wv.setOnLongClickListener {
-                    val result = wv.hitTestResult
-                    if (result.type == WebView.HitTestResult.IMAGE_TYPE || result.type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
-                        val hitUrl = result.extra ?: request.url
-                        onImageLongPress(ImageLongPressRequest(hitUrl, "", isStandalone = false, isPreviewContext = true))
-                        true
                     } else {
-                        false
+                        wv.setOnLongClickListener {
+                            val result = wv.hitTestResult
+                            if (result.type == WebView.HitTestResult.IMAGE_TYPE || result.type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
+                                val hitUrl = result.extra ?: request.url
+                                onImageLongPress(ImageLongPressRequest(hitUrl, "", isStandalone = false, isPreviewContext = true))
+                                true
+                            } else {
+                                false
+                            }
+                        }
                     }
-                }
-            }
 
-            if (request.isReaderMode) {
-                wv.loadDataWithBaseURL(request.url.ifEmpty { null }, request.readerHtml, "text/html", "UTF-8", null)
-            } else if (request.url.isNotEmpty()) {
-                if (request.isDesktop && request.isPage) {
-                    wv.loadUrl(request.url, buildDesktopHeaders(wv))
-                } else {
-                    wv.loadUrl(request.url)
-                }
-            }
+                    if (request.isReaderMode) {
+                        wv.loadDataWithBaseURL(request.url.ifEmpty { null }, request.readerHtml, "text/html", "UTF-8", null)
+                    } else if (request.url.isNotEmpty()) {
+                        if (request.isDesktop && request.isPage) {
+                            wv.loadUrl(request.url, buildDesktopHeaders(wv))
+                        } else {
+                            wv.loadUrl(request.url)
+                        }
+                    }
 
-            wv
+                    wv
+                }
+            )
         }
-    )
+    }
+    }
 }
 
 private fun showPreviewLinkFromWebView(webView: WebView, linkUrl: String, onPreviewLinkLongPress: (PreviewLinkLongPressRequest) -> Unit) {

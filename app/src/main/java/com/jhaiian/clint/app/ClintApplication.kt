@@ -2,9 +2,11 @@ package com.jhaiian.clint.app
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
+import com.jhaiian.clint.util.LocaleHelper
 import com.jhaiian.clint.util.loadMeasurementSystemPreference
 import java.lang.ref.WeakReference
 
@@ -12,6 +14,10 @@ class ClintApplication : Application() {
 
     private var _currentActivity: WeakReference<Activity>? = null
     val currentActivity: Activity? get() = _currentActivity?.get()
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(LocaleHelper.wrapContext(base))
+    }
 
     override fun onCreate() {
         super.onCreate()

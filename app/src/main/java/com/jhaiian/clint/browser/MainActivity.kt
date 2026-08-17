@@ -24,6 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import kotlin.math.abs
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
@@ -35,12 +36,14 @@ import com.jhaiian.clint.BuildConfig
 import com.jhaiian.clint.crash.CrashHandler
 import com.jhaiian.clint.downloads.ClintDownloadManager
 import com.jhaiian.clint.tabs.TabManager
+import com.jhaiian.clint.ui.ClintSnackbarHost
 import com.jhaiian.clint.ui.OverlayHostActivity
+import com.jhaiian.clint.ui.SnackbarHostActivity
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.update.UpdateChecker
 import androidx.webkit.ScriptHandler
 
-class MainActivity : ClintActivity(), OverlayHostActivity {
+class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity {
 
     companion object {
         const val EXTRA_REFRESH_LINK_MODE = "extra_refresh_link_mode"
@@ -66,6 +69,9 @@ class MainActivity : ClintActivity(), OverlayHostActivity {
     /** Full-window Compose overlay (document viewer, download dialog, update flow) rendered
      *  inline in this activity's own composition; see [OverlayHostActivity]. */
     override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
+
+    /** Backs the "downloading started" Snackbar; see [SnackbarHostActivity]. */
+    override val snackbarHostState = SnackbarHostState()
 
     // The WebView/pull-to-refresh island and the fullscreen-video host stay real Android Views
     // (there's no Compose gain there) and are hosted into the Compose tree via `AndroidView`.
@@ -303,6 +309,7 @@ class MainActivity : ClintActivity(), OverlayHostActivity {
             ClintComposeTheme(theme = startTheme) {
                 MainScreen(activity = this, state = uiState)
                 overlayContent?.invoke()
+                ClintSnackbarHost(hostState = snackbarHostState)
             }
         }
 

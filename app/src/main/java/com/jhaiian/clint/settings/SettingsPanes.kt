@@ -66,6 +66,7 @@ import com.jhaiian.clint.ui.DocumentViewer
 import com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig
 import com.jhaiian.clint.ui.listscreen.ConfirmDialogHost
 import com.jhaiian.clint.util.DEFAULT_MEASUREMENT_SYSTEM
+import com.jhaiian.clint.util.LocaleHelper
 import com.jhaiian.clint.util.MEASUREMENT_SYSTEM_BINARY
 import com.jhaiian.clint.util.MEASUREMENT_SYSTEM_DECIMAL
 import com.jhaiian.clint.util.PREF_MEASUREMENT_SYSTEM
@@ -122,6 +123,7 @@ fun LookAndFeelPane(activity: SettingsActivity) {
             initialAccent = prefs.getString("accent_color", "purple") ?: "purple",
             initialIntensity = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint",
             initialForceDarkWeb = prefs.getBoolean("force_dark_web", false),
+            initialLanguage = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM,
             initialScrollHideMode = prefs.getString("scroll_hide_mode", "off") ?: "off",
             initialAddressBarPosition = prefs.getString("address_bar_position", "top") ?: "top",
             initialMenuStyle = prefs.getString("menu_style", "popup") ?: "popup",
@@ -138,6 +140,7 @@ fun LookAndFeelPane(activity: SettingsActivity) {
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
         uiState.exitConfirmation = prefs.getString("exit_confirmation", "toast") ?: "toast"
         uiState.forceDarkWeb = prefs.getBoolean("force_dark_web", false)
+        uiState.language = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
     }
 
     fun applyScrollHideMode(mode: String) {
@@ -243,6 +246,7 @@ fun LookAndFeelPane(activity: SettingsActivity) {
             prefs.edit().putBoolean("force_dark_web", newValue).apply()
             uiState.forceDarkWeb = newValue
         },
+        onLanguageSelected = { newLanguage -> uiState.openDialog = null; activity.captureAndApplyLanguage(newLanguage) },
         onAddressBarPositionSelected = ::selectAddressBarPosition,
         onMenuStyleSelected = { style ->
             prefs.edit().putString("menu_style", style).apply()

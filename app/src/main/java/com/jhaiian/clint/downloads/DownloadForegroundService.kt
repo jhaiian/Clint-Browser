@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.jhaiian.clint.R
+import com.jhaiian.clint.util.LocaleHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -34,6 +35,10 @@ class DownloadForegroundService : LifecycleService() {
             val intent = Intent(context, DownloadForegroundService::class.java)
             androidx.core.content.ContextCompat.startForegroundService(context, intent)
         }
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrapContext(newBase))
     }
 
     override fun onCreate() {

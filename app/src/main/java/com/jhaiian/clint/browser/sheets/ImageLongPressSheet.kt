@@ -17,10 +17,19 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.widget.ImageView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -31,9 +40,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -93,61 +109,86 @@ internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainA
     }
 
     val showTabActions = !request.isStandalone || request.isPreviewContext
+    val listState = rememberLazyListState()
+    val flingBoundaryConnection = remember {
+        object : NestedScrollConnection {
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
+        }
+    }
+    val configuration = LocalConfiguration.current
+    // In portrait the sheet is capped at half the screen height so it never covers the toolbar
+    // above it; a long menu scrolls internally past that point instead of growing further. In
+    // landscape, where half height would be too cramped for the item list, it keeps a smaller
+    // scrim gap at the top instead.
+    val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val maxSheetHeight = if (isPortrait) {
+        (configuration.screenHeightDp.dp * 0.5f).coerceAtLeast(320.dp)
+    } else {
+        (configuration.screenHeightDp.dp - 96.dp).coerceAtLeast(320.dp)
+    }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = colors.popupBackground) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colors.popupBackground,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = colors.divider) }
+    ) {
         com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
-        Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        LazyColumn(Modifier.fillMaxWidth().heightIn(max = maxSheetHeight).nestedScroll(flingBoundaryConnection), state = listState) {
+        item {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.fillMaxWidth().widthIn(max = LongPressContentMaxWidth).padding(bottom = 8.dp)) {
             ImageThumbnail(request.imageUrl, request.referer)
 
             Text(
                 displayTitle,
                 color = colors.secondaryText,
                 fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
                 maxLines = 2,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)
             )
 
+            LongPressSheetDivider()
+
             if (showTabActions) {
-                ActionSheetDivider()
-                ActionSheetRow(androidx.compose.material.icons.Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.image_open_in_new_tab)) {
+                LongPressActionRow(androidx.compose.material.icons.Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.image_open_in_new_tab)) {
                     dismissAnd { activity.onImageOpenInNewTab(request.imageUrl) }
                 }
-                ActionSheetDivider()
-                ActionSheetRow(androidx.compose.material.icons.Icons.Filled.VisibilityOff, stringResource(R.string.image_open_incognito)) {
+                LongPressActionRow(androidx.compose.material.icons.Icons.Filled.VisibilityOff, stringResource(R.string.image_open_incognito)) {
                     dismissAnd { activity.onImageOpenIncognito(request.imageUrl) }
                 }
             }
             if (request.isPreviewContext) {
-                ActionSheetDivider()
-                ActionSheetRow(androidx.compose.material.icons.Icons.Filled.Tab, stringResource(R.string.image_open_in_current_tab)) {
+                LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Tab, stringResource(R.string.image_open_in_current_tab)) {
                     dismissAnd { activity.onImageOpenInCurrentTab(request.imageUrl) }
                 }
             }
             if (showTabActions && !request.isPreviewContext) {
-                ActionSheetDivider()
-                ActionSheetRow(androidx.compose.material.icons.Icons.Filled.ZoomIn, stringResource(R.string.image_preview)) {
+                LongPressActionRow(androidx.compose.material.icons.Icons.Filled.ZoomIn, stringResource(R.string.image_preview)) {
                     dismissAnd { activity.onImagePreview(request.imageUrl) }
                 }
             }
-            ActionSheetDivider()
-            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.ContentCopy, stringResource(R.string.image_copy)) {
+            LongPressActionRow(androidx.compose.material.icons.Icons.Filled.ContentCopy, stringResource(R.string.image_copy)) {
                 dismissAnd { activity.onImageCopy(request.imageUrl) }
             }
-            ActionSheetDivider()
-            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.Download, stringResource(R.string.image_download)) {
+            LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Download, stringResource(R.string.image_download)) {
                 dismissAnd { activity.onImageDownload(request.imageUrl, request.pageTitle) }
             }
-            ActionSheetDivider()
-            ActionSheetRow(androidx.compose.material.icons.Icons.Filled.Share, stringResource(R.string.image_share)) {
+            LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Share, stringResource(R.string.image_share)) {
                 dismissAnd { activity.onImageShare(request.imageUrl) }
             }
+        }
+        }
+        }
         }
     }
 }
 
 /** Hosts a plain [ImageView] via interop rather than Compose's Image()/AsyncImage, since this is
  *  the one spot in the app that needs to keep an [AnimatedImageDrawable] (animated GIF/WebP)
- *  actually animating — Compose has no built-in equivalent for that. */
+ *  actually animating — Compose has no built-in equivalent for that. Clipped and framed like a
+ *  card so the thumbnail reads as a distinct preview rather than a bare, edge-to-edge bitmap. */
 @Composable
 private fun ImageThumbnail(imageUrl: String, referer: String) {
     val context = LocalContext.current
@@ -162,6 +203,7 @@ private fun ImageThumbnail(imageUrl: String, referer: String) {
     }
 
     val placeholderDrawable = rememberVectorDrawable(androidx.compose.material.icons.Icons.Filled.Public, 48)
+    val cardShape = RoundedCornerShape(LongPressCardCorner)
 
     AndroidView(
         factory = { ctx ->
@@ -181,7 +223,13 @@ private fun ImageThumbnail(imageUrl: String, referer: String) {
                 (d as? AnimatedImageDrawable)?.start()
             }
         },
-        modifier = Modifier.fillMaxWidth().height(160.dp).padding(horizontal = 16.dp, vertical = 0.dp).padding(top = 16.dp)
+        modifier = Modifier.fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 16.dp)
+            .height(180.dp)
+            .clip(cardShape)
+            .background(colors.surfaceVariant)
+            .border(1.dp, colors.popupStroke, cardShape)
     )
 }
 

@@ -18,18 +18,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.layout.AnimatedPane
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
-import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +52,6 @@ import com.jhaiian.clint.ui.DocumentViewer
 import com.jhaiian.clint.ui.OverlayHostActivity
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.ui.theme.LocalClintColors
-import kotlinx.coroutines.launch
 
 private const val DEST_LOOK_AND_FEEL = "look_and_feel"
 private const val DEST_BROWSER = "browser"
@@ -63,13 +65,13 @@ private const val DEST_DEBUG = "debug"
 private const val DEST_ABOUT = "about"
 
 /**
- * Hosts every settings screen as Compose content behind a single adaptive list-detail scaffold:
- * on a phone-width window only one pane shows at a time (list, then the chosen detail screen,
- * matching the old Fragment back-stack UX); once the window is Medium/Expanded (tablet, unfolded
- * foldable, split-screen, desktop freeform window) both panes show side by side, per Android 17's
- * adaptive-app guidance. [NavigableListDetailPaneScaffold] owns the pane transitions and back
- * navigation; each individual settings screen's logic lives in the `*Pane` composables in
- * SettingsPanes.kt, ported 1:1 from the old fragments (same SharedPreferences keys/behavior).
+ * Hosts every settings screen as Compose content behind a list-detail split driven by
+ * [SettingsNavHost]: on a phone-width window only one pane shows at a time (list, then the chosen
+ * detail screen, matching the old Fragment back-stack UX); once the window is Medium/Expanded
+ * (tablet, unfolded foldable, split-screen, desktop freeform window) both panes show side by side,
+ * per Android 17's adaptive-app guidance. Each individual settings screen's logic lives in the
+ * `*Pane` composables in SettingsPanes.kt, ported 1:1 from the old fragments (same SharedPreferences
+ * keys/behavior).
  */
 class SettingsActivity : ClintActivity(), OverlayHostActivity {
 
@@ -145,41 +147,48 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+/**
+ * Drives the list/detail split off the window's own [WindowWidthSizeClass] on every recomposition,
+ * instead of NavigableListDetailPaneScaffold's built-in pane collapsing, which was found to keep
+ * both panes on screen (each squeezed into half the width) after the window dropped back to a
+ * single-pane size. Compact stays single-pane with the list/detail swap the old fragments used;
+ * Medium and Expanded show both panes side by side, matching Android's list-detail guidance.
+ */
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun SettingsNavHost(activity: SettingsActivity, initialDestination: String?) {
-    val navigator = rememberListDetailPaneScaffoldNavigator<String>()
-    val scope = rememberCoroutineScope()
+    var selectedDestination by rememberSaveable { mutableStateOf(initialDestination) }
+    val isTwoPane = calculateWindowSizeClass(activity).widthSizeClass != WindowWidthSizeClass.Compact
 
-    LaunchedEffect(Unit) {
-        if (initialDestination != null) {
-            navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, initialDestination)
-        }
-    }
-
-    NavigableListDetailPaneScaffold(
-        navigator = navigator,
-        listPane = {
-            AnimatedPane {
-                SettingsListPane(activity = activity) { destination ->
-                    scope.launch { navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, destination) }
-                }
+    if (isTwoPane) {
+        Row(Modifier.fillMaxSize()) {
+            Box(Modifier.width(360.dp).fillMaxHeight()) {
+                SettingsListPane(activity = activity) { destination -> selectedDestination = destination }
             }
-        },
-        detailPane = {
-            AnimatedPane {
+            Box(Modifier.weight(1f).fillMaxHeight()) {
                 SettingsDetailPane(
                     activity = activity,
-                    destination = navigator.currentDestination?.contentKey,
-                    onBack = {
-                        if (navigator.canNavigateBack(BackNavigationBehavior.PopUntilContentChange)) {
-                            scope.launch { navigator.navigateBack(BackNavigationBehavior.PopUntilContentChange) }
-                        }
-                    }
+                    destination = selectedDestination,
+                    onBack = { selectedDestination = null }
                 )
             }
         }
-    )
+    } else {
+        if (selectedDestination != null) {
+            BackHandler { selectedDestination = null }
+        }
+        AnimatedContent(
+            targetState = selectedDestination,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "settings_pane"
+        ) { destination ->
+            if (destination == null) {
+                SettingsListPane(activity = activity) { newDestination -> selectedDestination = newDestination }
+            } else {
+                SettingsDetailPane(activity = activity, destination = destination, onBack = { selectedDestination = null })
+            }
+        }
+    }
 }
 
 @Composable

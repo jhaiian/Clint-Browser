@@ -8,6 +8,52 @@ Contributions, bug reports, and feature requests are welcome.
 
 To report a crash, use the built-in **Debug & Crash Reports** screen in Settings. It generates a pre-filled GitHub issue template with your device info and crash log.
 
+### Translating the App
+
+Want to help translate the app into your language? We’d love your help!
+
+1. **Fork the project**  
+   First, fork the project to your own GitHub account.
+
+2. **Copy `strings.xml`**  
+   Download or make a copy of this file:  
+   `app/src/main/res/values/strings.xml`  
+   You can edit it directly if you're using GitHub or another editor.  
+   There are some placeholders and Unicode escape sequences in the file, so please be careful not to modify or remove them. Using an XML editor can help prevent formatting or syntax issues.
+
+3. **Translate the strings**  
+   Translate the text inside the `<string>` elements into your language.  
+   Please keep the following unchanged:
+   - String names/IDs
+   - XML structure
+   - Placeholders such as `%s`, `%1$d`, `{name}`, etc.
+   - Unicode escape sequences such as `\uXXXX`
+   - Comments and formatting, whenever possible
+
+4. **Create your language folder**  
+   Once you've finished or made enough progress, create a new folder inside:  
+   `app/src/main/res/`  
+   The folder should follow this format:  
+   `values-XX`  
+   Replace `XX` with your language code. For example:  
+   - `values-fil` – Filipino  
+   - `values-es` – Spanish  
+   - `values-ja` – Japanese  
+   - `values-fr` – French  
+   - `values-de` – German  
+   You can search Google for the appropriate ISO 639 language code for your language.
+
+5. **Add your translated file**  
+   Place your translated `strings.xml` inside your new language folder:  
+   `app/src/main/res/values-XX/strings.xml`  
+   For example, a Filipino translation would be:  
+   `app/src/main/res/values-fil/strings.xml`
+
+6. **Submit your contribution**  
+   Commit your changes, push them to your fork, and create a Pull Request to the main project.
+
+Thank you for helping make the app available in more languages!
+
 ---
 
 ## Building from Source
@@ -15,7 +61,7 @@ To report a crash, use the built-in **Debug & Crash Reports** screen in Settings
 ### Prerequisites
 - Android Studio or JDK 17
 - Android SDK (API 37)
-- Gradle 9.6.1
+- Gradle 9.7.0
 
 ### Steps
 

@@ -117,7 +117,9 @@ internal fun MainActivity.onSearchSubmitted(input: String) {
     uiState.searchOverlayOpen = false
     suggestionFetcher?.cancel()
     uiState.suggestions = emptyList()
-    Thread { SearchHistoryManager.add(this, trimmed) }.start()
+    if (tabManager.activeTab?.isIncognito != true) {
+        Thread { SearchHistoryManager.add(this, trimmed) }.start()
+    }
     loadUrl(trimmed)
 }
 
@@ -127,7 +129,9 @@ internal fun MainActivity.onSuggestionChosen(query: String) {
     uiState.searchOverlayOpen = false
     suggestionFetcher?.cancel()
     uiState.suggestions = emptyList()
-    SearchHistoryManager.add(this, query)
+    if (tabManager.activeTab?.isIncognito != true) {
+        SearchHistoryManager.add(this, query)
+    }
     loadUrl(query)
 }
 
@@ -299,8 +303,9 @@ internal fun MainActivity.onPageFinished(url: String) {
         onQuiverGuardPageFinished(tab, url)
     }
 
-    if (url.startsWith("http") && !SearchHistoryManager.isSearchEngineUrl(url)) {
-        val title = tabManager.activeTab?.webView?.title ?: ""
+    val activeTab = tabManager.activeTab
+    if (activeTab?.isIncognito != true && url.startsWith("http") && !SearchHistoryManager.isSearchEngineUrl(url)) {
+        val title = activeTab?.webView?.title ?: ""
         Thread {
             SearchHistoryManager.add(applicationContext, url, title)
             if (com.jhaiian.clint.bookmarks.BookmarkManager.isBookmarked(applicationContext, url)) {

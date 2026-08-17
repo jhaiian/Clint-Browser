@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.preference.PreferenceManager
 import com.jhaiian.clint.R
 import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
+import com.jhaiian.clint.ui.showClintSnackbar
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 
 internal fun DownloadsActivity.showRedownloadDialog(item: DownloadItem) {
@@ -53,7 +54,11 @@ internal fun DownloadsActivity.showRedownloadDialog(item: DownloadItem) {
                         locationMode = submission.locationMode,
                         customLocationUri = submission.customLocationUri,
                         onDismiss = {
-                            Toast.makeText(this@showRedownloadDialog, getString(R.string.toast_downloading, submission.filename), Toast.LENGTH_SHORT).show()
+                            this@showRedownloadDialog.showClintSnackbar(
+                                message = getString(R.string.toast_downloading, submission.filename),
+                                actionLabel = getString(R.string.download_started_view_action),
+                                onAction = { DownloadsActivity.open(this@showRedownloadDialog) }
+                            )
                             dismiss()
                             ClintDownloadManager.remove(this@showRedownloadDialog, item.id, true)
                             lastRefreshMs = 0L

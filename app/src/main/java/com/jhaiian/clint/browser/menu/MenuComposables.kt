@@ -1,4 +1,5 @@
 package com.jhaiian.clint.browser.menu
+import android.content.res.Configuration
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -34,9 +35,12 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.DropdownMenu
@@ -58,6 +62,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -73,7 +78,10 @@ import androidx.preference.PreferenceManager
 import com.jhaiian.clint.R
 import com.jhaiian.clint.bookmarks.BookmarkManager
 import com.jhaiian.clint.browser.MainActivity
+import com.jhaiian.clint.browser.sheets.LongPressContentMaxWidth
 import com.jhaiian.clint.browser.webview.ClintWebViewClient
+import com.jhaiian.clint.downloads.ClintDownloadManager
+import com.jhaiian.clint.downloads.DownloadStatus
 import com.jhaiian.clint.quiver.engine.BlockedRequestCounter
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionManager
@@ -92,6 +100,7 @@ internal data class BrowserMenuSnapshot(
     val isLoading: Boolean,
     val isDesktopMode: Boolean,
     val isDataSaverEnabled: Boolean,
+    val pendingDownloadCount: Long,
     val isQuiverGuardEnabled: Boolean,
     val quiverGuardBlockedCount: Long,
     val isQuiverGuardExceptionForSite: Boolean,
@@ -154,6 +163,8 @@ internal fun MainActivity.buildMenuSnapshot(): BrowserMenuSnapshot {
         isLoading = uiState.isPageLoading,
         isDesktopMode = isDesktopMode,
         isDataSaverEnabled = prefs.getBoolean("data_saver_enabled", false),
+        pendingDownloadCount = ClintDownloadManager.downloadsFlow.value
+            .count { it.status in DownloadStatus.NOT_FINISHED }.toLong(),
         isQuiverGuardEnabled = prefs.getBoolean("quiver_guard_enabled", false),
         quiverGuardBlockedCount = tabManager.activeTab?.id?.let { BlockedRequestCounter.getTabCount(it) } ?: 0L,
         isQuiverGuardExceptionForSite = exceptionForSite,
@@ -238,6 +249,7 @@ private fun BrowserMenuBottomSheet(
 ) {
     val colors = LocalClintColors.current
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val hideStatusBar = remember {
         PreferenceManager.getDefaultSharedPreferences(context).getBoolean("hide_status_bar", false)
     }
@@ -251,6 +263,16 @@ private fun BrowserMenuBottomSheet(
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
         }
     }
+    // In portrait the sheet is capped at half the screen height so it never covers the toolbar
+    // above it; a long menu scrolls internally past that point instead of growing further. In
+    // landscape, where half height would be too cramped for the item list, it keeps a smaller
+    // scrim gap at the top instead.
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+    val maxSheetHeight = if (isPortrait) {
+        (configuration.screenHeightDp.dp * 0.5f).coerceAtLeast(320.dp)
+    } else {
+        (configuration.screenHeightDp.dp - 96.dp).coerceAtLeast(320.dp)
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -260,10 +282,14 @@ private fun BrowserMenuBottomSheet(
     ) {
         ClintDialogStatusBarEffect(hideStatusBar)
         LazyColumn(
-            Modifier.fillMaxWidth().nestedScroll(flingBoundaryConnection),
+            Modifier.fillMaxWidth().heightIn(max = maxSheetHeight).nestedScroll(flingBoundaryConnection),
             state = listState
         ) {
-            item { BrowserMenuContent(snapshot, actions, modifier = Modifier.fillMaxWidth()) }
+            item {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                    BrowserMenuContent(snapshot, actions, modifier = Modifier.fillMaxWidth().widthIn(max = LongPressContentMaxWidth))
+                }
+            }
         }
     }
 }
@@ -283,7 +309,11 @@ private fun BrowserMenuContent(
     ) {
         if (snapshot.showNavRow) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp),
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.surfaceVariant)
+                    .height(52.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 MenuNavIcon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), snapshot.canGoBack, actions.onGoBack)
@@ -310,7 +340,13 @@ private fun BrowserMenuContent(
             onClick = actions.onOpenInApp
         )
         MenuDivider()
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.Download, stringResource(R.string.menu_downloads), onClick = actions.onDownloads, onLongClick = actions.onOpenDownloadSettings)
+        MenuItemRow(
+            androidx.compose.material.icons.Icons.Filled.Download,
+            stringResource(R.string.menu_downloads),
+            badge = if (snapshot.pendingDownloadCount > 0L) BlockedRequestCounter.formatCount(snapshot.pendingDownloadCount) else null,
+            onClick = actions.onDownloads,
+            onLongClick = actions.onOpenDownloadSettings
+        )
         MenuItemRow(
             androidx.compose.material.icons.Icons.Filled.Shield,
             stringResource(R.string.menu_quiver_guard),
@@ -382,28 +418,40 @@ private fun MenuItemRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(56.dp)
             .let { if (enabled) it.combinedClickable(onClick = onClick, onLongClick = onLongClick) else it }
             .alpha(if (enabled) 1f else 0.38f)
             .padding(horizontal = 16.dp)
     ) {
-        Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.BottomStart) {
-            Icon(
-                imageVector = iconRes,
-                contentDescription = null,
-                tint = colors.primary,
-                modifier = Modifier.size(20.dp).alpha(0.85f)
-            )
+        Box(modifier = Modifier.size(34.dp)) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(colors.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = iconRes,
+                    contentDescription = null,
+                    tint = colors.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             if (badge != null) {
+                // Deliberately a sibling of the clipped icon background above, not a child of
+                // it: the rounded-corner clip on that box was cutting this badge off since its
+                // offset pushes it partially outside the icon container's bounds.
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .defaultMinSize(minWidth = 12.dp)
-                        .height(12.dp)
-                        .clip(RoundedCornerShape(6.dp))
+                        .offset(x = 5.dp, y = (-5).dp)
+                        .defaultMinSize(minWidth = 13.dp)
+                        .height(13.dp)
+                        .clip(RoundedCornerShape(6.5.dp))
                         .background(colors.primary)
-                        .padding(horizontal = 2.dp)
+                        .padding(horizontal = 3.dp)
                 ) {
                     Text(
                         text = badge,
@@ -423,6 +471,7 @@ private fun MenuItemRow(
             text = label,
             color = colors.popupText,
             fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f).padding(start = 14.dp)
         )
         if (checked == true) {

@@ -7,11 +7,13 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.WebAsset
 
 import androidx.compose.foundation.layout.padding
 import com.jhaiian.clint.ui.ClintSwitch
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -23,6 +25,8 @@ import com.jhaiian.clint.settings.common.SettingsSection
 import com.jhaiian.clint.setup.SectionLabel
 import com.jhaiian.clint.ui.ThemeSwatchUtils
 import com.jhaiian.clint.ui.theme.LocalClintColors
+import com.jhaiian.clint.util.LocaleHelper
+import java.util.Locale
 
 @Composable
 fun LookAndFeelScreen(
@@ -31,6 +35,7 @@ fun LookAndFeelScreen(
     onAccentSelected: (String) -> Unit,
     onIntensitySelected: (String) -> Unit,
     onForceDarkWebToggled: () -> Unit,
+    onLanguageSelected: (String) -> Unit,
     onAddressBarPositionSelected: (String) -> Unit,
     onMenuStyleSelected: (String) -> Unit,
     onScrollHideModeSelected: (String) -> Unit,
@@ -72,10 +77,25 @@ fun LookAndFeelScreen(
                     current = state.exitConfirmation, hideStatusBar = state.hideStatusBar,
                     onConfirm = onExitConfirmationConfirmed, onDismiss = { state.openDialog = null }
                 )
+                LookAndFeelDialog.LANGUAGE -> LanguageSelectorDialog(
+                    current = state.language, hideStatusBar = state.hideStatusBar,
+                    onSelect = onLanguageSelected, onDismiss = { state.openDialog = null }
+                )
                 null -> {}
             }
         }
     ) {
+        SectionLabel(stringResource(R.string.pref_category_language).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
+        SettingsSection(colors.cardBackground) {
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.Translate,
+                title = stringResource(R.string.pref_language_title),
+                summary = languageSummaryText(state.language),
+                colors = colors,
+                onClick = { state.openDialog = LookAndFeelDialog.LANGUAGE }
+            )
+        }
+
         SectionLabel(stringResource(R.string.pref_category_appearance).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
         SettingsSection(colors.cardBackground) {
             SettingsRow(
@@ -208,4 +228,14 @@ private fun exitConfirmationSummaryRes(value: String): Int = when (value) {
     "off" -> R.string.exit_confirmation_off
     "dialog" -> R.string.exit_confirmation_dialog
     else -> R.string.exit_confirmation_toast
+}
+
+/** Shows the selected language's own demonym (e.g. "Filipino"), or the localized "System" label. */
+@Composable
+private fun languageSummaryText(language: String): String {
+    if (language == LocaleHelper.LANGUAGE_SYSTEM) return stringResource(R.string.language_system)
+    return remember(language) {
+        val locale = Locale.forLanguageTag(language)
+        locale.getDisplayName(locale).replaceFirstChar { it.titlecase(locale) }
+    }
 }

@@ -10,6 +10,7 @@ import com.jhaiian.clint.ui.ClintRadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,9 @@ import com.jhaiian.clint.setup.rememberIntensitySwatchColors
 import com.jhaiian.clint.setup.scrollCardVisible
 import com.jhaiian.clint.ui.ThemeSwatchUtils
 import com.jhaiian.clint.ui.theme.LocalClintColors
+import com.jhaiian.clint.util.LocaleHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val OptionContentPadding = SettingsPickerOptionContentPadding
 private val OptionBottomSpacing = SettingsPickerOptionBottomSpacing
@@ -357,6 +361,56 @@ fun ExitConfirmationDialog(
                     Text(stringResource(option.descRes), color = colors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
                 }
                 if (option.showDefault) DefaultChip(stringResource(R.string.default_label), colors.primary)
+            }
+        }
+    }
+}
+
+@Composable
+fun LanguageSelectorDialog(current: String, hideStatusBar: Boolean, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    val colors = LocalClintColors.current
+    val context = LocalContext.current
+    var options by remember { mutableStateOf(emptyList<LanguageOption>()) }
+
+    // Scanning every string resource across every shipped locale is too slow for the main thread,
+    // so the dialog opens immediately with just System and the rest populate once ready.
+    LaunchedEffect(Unit) {
+        options = withContext(Dispatchers.Default) { collectLanguageOptions(context) }
+    }
+
+    ClintDialog(title = stringResource(R.string.pref_language_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+        val systemSelected = current == LocaleHelper.LANGUAGE_SYSTEM
+        SelectableCard(
+            selected = systemSelected, onClick = { onSelect(LocaleHelper.LANGUAGE_SYSTEM) },
+            cardBackground = colors.surfaceVariant, primary = colors.primary,
+            contentPadding = OptionContentPadding, bottomSpacing = OptionBottomSpacing
+        ) {
+            Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                Text(stringResource(R.string.language_system), color = colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.language_system_desc), color = colors.secondaryText, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+            }
+            CheckSlot(systemSelected, colors.primary)
+        }
+        options.forEach { option ->
+            val selected = current == option.tag
+            SelectableCard(
+                selected = selected, onClick = { onSelect(option.tag) },
+                cardBackground = colors.surfaceVariant, primary = colors.primary,
+                contentPadding = OptionContentPadding, bottomSpacing = OptionBottomSpacing
+            ) {
+                Column(Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(
+                        option.locale.getDisplayName(option.locale).replaceFirstChar { it.titlecase(option.locale) },
+                        color = colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium
+                    )
+                    if (option.tag == LocaleHelper.BASE_LANGUAGE_TAG) {
+                        Text(
+                            stringResource(R.string.language_base_desc),
+                            color = colors.secondaryText, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+                CheckSlot(selected, colors.primary)
             }
         }
     }

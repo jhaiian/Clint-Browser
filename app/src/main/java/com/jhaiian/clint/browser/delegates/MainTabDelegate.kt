@@ -145,6 +145,8 @@ internal fun MainActivity.attachActiveWebView() {
     updateSwipeRefreshColors(tab.isIncognito)
     updateTabCount()
     updateAddressBar(tab.webView.url ?: "")
+    uiState.pageLoadProgress = tab.webView.progress
+    uiState.isPageLoading = tab.webView.progress < 100
     updateNavigationState()
     updateBookmarkIcon()
     BlockedRequestCounter.setActiveTab(tab.id)
