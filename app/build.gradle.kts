@@ -130,7 +130,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-service:2.11.0")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
 
-    implementation(platform("androidx.compose:compose-bom:2026.06.01"))
+    implementation(platform("androidx.compose:compose-bom:2026.08.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
