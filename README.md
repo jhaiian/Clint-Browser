@@ -6,12 +6,12 @@
 
 **Customizable Layered Internet Navigation Tool**
 
-Material Design Android Browser With ADM
-
+Material Design Android Browser with ADM and an Ad Blocker
+ 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blueviolet.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-blueviolet.svg)](https://developer.android.com)
-[![Stable](https://img.shields.io/badge/Stable-1.0.9-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.0.9)
-[![Beta](https://img.shields.io/badge/Beta-1.0.9-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.0.9)
+[![Stable](https://img.shields.io/badge/Stable-1.1.0-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.0)
+[![Beta](https://img.shields.io/badge/Beta-1.1.0-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.0)
 [![Downloads](https://img.shields.io/github/downloads/jhaiian/ClintBrowser/total?color=blueviolet)](https://github.com/jhaiian/ClintBrowser/releases)
 [![Open Source](https://img.shields.io/badge/Open%20Source-Yes-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser)
 
@@ -46,159 +46,52 @@ Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo de
 
 ## Features
 
-### 🌐 Browser Core
-- Multi‑tab browsing with a bottom sheet tab switcher, with clear separation of normal and incognito tabs.
-- Incognito mode — fully isolated session: no cookies, cache, or history saved.
-- Pull‑to‑refresh with smart detection for nested scrollable content.
-- **Reader Mode** — strip away clutter and distractions for a clean, readable article view.
-- **Data Saver** — block all images from loading and disable auto-play video to save bandwidth and speed up browsing.
-- **Speech‑to‑Text Support** — voice input in address bar for hands‑free searching.
-- **Search Suggestions** — real‑time query predictions powered by DuckDuckGo API.
-- **Nested Scroll** controls exactly which bars hide on scroll:
-  - *Off* – both bars always visible
-  - *Search Bar* – search bar hides when scrolling down
-  - *Navigation Bar* – bottom navigation hides (Split mode only)
-  - *Both* – both bars hide (Split mode only)
-- See **Look & Feel** for the full set of bar‑position and scroll options.
-- **Hide Status Bar** option for immersive full‑screen browsing (off by default).
-- Desktop Mode toggle with JavaScript injection.
-- Address bar with select‑all on focus.
-- Back, forward, refresh, and home navigation.
-- Intent handling — links open installed apps (YouTube, Spotify, etc.) with a prompt to choose between external app or staying in‑app.
-- **"Open in ___"** button in the menu (grayed out when no compatible app is available).
-- Enhanced intent support with more actions and deep linking capabilities.
-- Full‑screen video and media support.
-- **Popup Protection** — when a website tries to open a new window or popup, an alert asks if you want to allow it, helping prevent unwanted ads and tabs.
+### 🌐 Browser
+
+- Multi-tab browsing and tab groups
+- Incognito mode
+- Reader Mode
+- Desktop Mode
+- Popup protection
+- Data Saver
 
 ### 🛡️ Quiver Guard
 
-Quiver Guard is Clint Browser's built-in content blocker powered by **adblock-rust**. It blocks ads, trackers, annoyances, and cosmetic elements directly inside the browser without relying on external services.
+- Built-in ad and tracker blocker
+- Cosmetic and network filtering
+- Multiple filter lists
+- Per-site controls
 
-- Built on **adblock-rust**
-- Blocks ads, trackers, and known malicious domains
-- Supports cosmetic filtering
-- Supports scriptlets
-- Supports network filtering
-- Multiple filter list support
-- Enable or disable individual filter lists
-- One-tap updates for filter lists
-- Disable Quiver Guard for specific websites
-- All downloaded filter lists are stored locally on your device
-- Filtering is performed entirely on-device  no browsing data or requests are sent to any server
+### ⬇️ Download Manager
+
+- Multi-threaded and multi-part downloads
+- Pause and resume
+- Download scheduler
+- Speed limiter
+- Custom download locations
+
+### 🎨 UI & Customization
+
+Clint is built with **Material 3** and **Jetpack Compose**, with a highly customizable interface.
+
+- 8+ accent colors
+- Light, Dark
+- Multiple surface intensities
+
+### 🔖 Bookmarks & History
+
+- Local bookmarks and browsing history
+- Sorting and management options
+- Automatic favicons
 
 ### 🔐 Site Settings
-Manage website permissions in one place:
-- **Camera**, **Microphone**, **Location**, **Notifications**
-- Each permission has configurable defaults: *Ask first*, *Always deny*, or *Always allow*
-- **Site Exceptions** — override default behavior for specific websites
-- Sites you choose "Don't ask again" for are automatically added to exceptions
 
-### 🗂️ Tab Switcher & Favicons
-- Tabs display the website's own favicon instead of a generic icon.
-- Bookmark pages automatically receive their favicon.
-- Normal and Incognito tabs are visually separated with clear headers.
-- The favicon system uses direct website icons first, with DuckDuckGo as a privacy‑friendly fallback — **no Google services involved**.
+- Camera, microphone, location, and notification controls
+- Per-site permission settings
 
-### 📎 Uploads & Downloads
-- Upload images, videos, audio, and recordings
-- Advanced download manager using OkHttp (1DM inspired)
-- Custom download location
-- Split download parts
-- Multi-threading
-- Pause and resume support
-- Long-press any image to download
+> Just download the app and explore it yourself.
 
-### 🔖 Bookmarks
-- Save any page with a single tap from the navigation bar; the bookmark icon updates live to reflect the saved state.
-- View, open, and delete bookmarks from a dedicated screen.
-- **Sorting options** — sort by Title, Last Visit, or Date Added (ascending or descending).
-- All bookmarks are stored locally on your device using SQLite — never synced or uploaded.
 
-### 📜 Search History
-- Access via Settings → History
-- Delete individual or all history entries
-- Sort history by Title or Last Visit (ascending or descending)
-- Saved locally using SQLite
-
-### 🔍 Search Bar
-- **Material Design Search Bar** — modern look and feel with improved interaction
-- **Speech‑to‑Text** — voice input support
-- **Search Suggestions** — real‑time predictions from DuckDuckGo
-
-### 🔒 Privacy & Security
-- **Third‑party cookie blocking** — prevents cross‑site tracking.
-- **Generic User‑Agent** — reduces browser fingerprinting.
-- **HTTPS-Only Mode** — Redirect HTTP connections to HTTPS and block sites that don't support it.
-- **Incognito isolation** — separate cookie and cache context for each incognito tab.
-
-### 🔍 Search Engines
-- DuckDuckGo (default)
-- Brave Search
-- Google *(with privacy warning)*
-- Change at any time from Settings
-
-### ⬇️ Advance Download Manager
-- Custom download engine built on OkHttp
-- Smart multi-part and multi-threaded downloads
-- Speed limiter
-- Download scheduler
-- High-speed downloads
-
-### 🎨 Look & Feel
-The dedicated **Look & Feel** section in Settings gives you full control over the interface:
-
-#### Theme
-- 🌙 **Dark** – Dark background
-- ⚪ **Light** – Clean white background 
-- 🟣 **Legacy** – Deep purple, signature Clint styles
-
-#### Accent Color
-Choose an accent that tints backgrounds and UI elements (in Dark/Light themes) or icons & dialogs (in Default theme).
-- **Purple (Default)** – Cool violet tones across the UI
-- **Material You** – dynamic colors from your wallpaper
-- **Monochrome**, **Blue**, **Yellow**, **Red**, **Green**, **Orange** – each with its own vibe
-
-#### Surface Intensity
-Controls how strong the background tone appears:
-- **Soft Tint** – subtle, gentle background
-- **Strong Tint** – deep dark surfaces, higher contrast
-- **Pure Mode** – black or white surfaces for maximum contrast
-
-> ℹ️ Some combinations are limited:  
-> - Default accent: only Soft Tint and Pure Mode  
-> - Material You: Strong Tint unavailable (system limitation)  
-> - Default theme: Surface Intensity is not applied (keeps the original style)
-
-#### Address Bar Position
-- **Top** – address bar only; navigation moves to the menu
-- **Bottom** – address bar at the bottom of the screen (navigation also moves to the menu)
-- **Split** – address bar top, navigation buttons below
-
-#### Menu Style
-- **Pop‑up Menu** – compact floating menu near the toolbar
-- **Bottom Sheet** – full‑width menu sliding up from the bottom
-
-#### Nested Scroll
-Controls exactly which bars hide while you scroll. Available modes:
-- **Off** – bars always visible
-- **Search Bar** – search bar hides on scroll
-- **Navigation Bar** – bottom bar hides on scroll (Split mode only)
-- **Both** – both bars hide (Split mode only)
-
-All these options combine to give you **~52 distinct theme combinations**, and the Setup Wizard lets you pick your base theme from the start.
-
-### 🔄 Updates
-- In‑app update checker for **Stable** and **Beta** channels.
-- Installs updates directly with a progress dialog.
-- Architecture‑aware APK download.
-- Optional check on launch, with an option to skip on metered connections.
-- **View Changelog** button inside update settings.
-
-### 🐛 Debug & Crash Reports
-- Local crash log viewer — everything stays on your device, nothing is transmitted.
-- Automatically captures stack traces, device info, and timestamps when a crash occurs.
-- One‑tap copy of crash logs and a pre‑filled GitHub issue template.
-- Reports auto‑deleted after 7 days.
 
 ---
 
