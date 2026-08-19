@@ -153,7 +153,6 @@ fun SetupWelcomePage(
     }
 }
 
-/** Shared with the Look & Feel settings dialogs so both places resolve intensity swatches identically. */
 data class IntensitySwatchColors(
     val softBg: Color, val softSurface: Color,
     val strongBg: Color, val strongSurface: Color,

@@ -20,13 +20,10 @@ class SiteListUiState {
     var addDialogOpen by mutableStateOf(false)
     var deleteConfirmOpen by mutableStateOf(false)
 
-    /** Tap in selection mode: toggles one row without touching selection-mode itself,
-     *  which persists even once the count reaches zero (matches the original adapter). */
     fun toggleSelection(origin: String) {
         selectedOrigins = if (origin in selectedOrigins) selectedOrigins - origin else selectedOrigins + origin
     }
 
-    /** Long-press on a row when not yet selecting: enters selection mode with that row selected. */
     fun enterSelectionWith(origin: String) {
         isInSelectionMode = true
         selectedOrigins = selectedOrigins + origin
@@ -36,8 +33,6 @@ class SiteListUiState {
         selectedOrigins = selectedOrigins + displayed.map { it.origin }
     }
 
-    /** Inverts selection only within the currently filtered/displayed rows, preserving
-     *  the selection state of any row a search filter is currently hiding. */
     fun invertSelection(displayed: List<SiteEntry>) {
         val displayedOrigins = displayed.map { it.origin }.toSet()
         val keptOutsideView = selectedOrigins - displayedOrigins

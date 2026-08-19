@@ -21,8 +21,7 @@ internal class TabDatabase(context: Context) :
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // The old per-tab group_id column and tab_groups table are left in place on upgrading
-        // installs but are no longer read or written.
+
         if (oldVersion < 3) {
             db.execSQL("ALTER TABLE $TABLE ADD COLUMN $COL_TAB_ID TEXT")
         }

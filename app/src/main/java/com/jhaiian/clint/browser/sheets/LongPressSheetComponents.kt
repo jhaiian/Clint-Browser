@@ -22,17 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** Corner radius shared by the identity card (favicon/thumbnail block) at the top of a
- *  long-press sheet, kept in one place so the two sheets stay visually consistent. */
 internal val LongPressCardCorner = 16.dp
 
-/** Caps how wide a long-press sheet's content grows on tablets/foldables so rows don't
- *  stretch into an awkward single line across the full width of the screen. */
 internal val LongPressContentMaxWidth = 480.dp
 
-/** One tappable action row for the image/link long-press sheets. The icon sits in a tinted
- *  chip rather than floating bare, which is what gives these rows their identity versus the
- *  plainer [ActionSheetRow] used elsewhere. */
 @Composable
 internal fun LongPressActionRow(icon: ImageVector, text: String, onClick: () -> Unit) {
     val colors = LocalClintColors.current
@@ -50,8 +43,6 @@ internal fun LongPressActionRow(icon: ImageVector, text: String, onClick: () -> 
     }
 }
 
-/** Single hairline separating the identity card from the action rows below it. Long-press
- *  sheets only need the one, between header and actions, rather than one per row. */
 @Composable
 internal fun LongPressSheetDivider() {
     HorizontalDivider(color = LocalClintColors.current.divider, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))

@@ -19,15 +19,6 @@ import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
-/**
- * Ad/tracker filter list manager: a master switch, a pinned Manual Filter row, and a
- * searchable/sortable list of filter lists with per-item download/enable/remove
- * actions. Business logic (compile/download/update, add-from-link/file, per-item menu
- * actions) lives in the extension-function files alongside this one, matching the
- * original architecture — they now read/write [uiState] instead of Views, so Compose's
- * recomposition replaces every imperative "refresh the FAB/banner/list" call the
- * original needed.
- */
 class QuiverGuardActivity : ClintActivity() {
 
     companion object {

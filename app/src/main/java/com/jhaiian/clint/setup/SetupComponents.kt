@@ -63,7 +63,6 @@ fun SelectableCard(
     }
 }
 
-/** Reserves the same 22dp footprint as the original View.INVISIBLE check icon so layout doesn't shift. */
 @Composable
 fun RowScope.CheckSlot(visible: Boolean, tint: Color) {
     Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
@@ -139,11 +138,6 @@ fun DefaultChip(text: String, color: Color, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Renders a drawable resource that painterResource() can't load — layer-list, shape, selector,
- * inset, etc. — via a plain Android View. painterResource only supports vector and raster
- * (PNG/WEBP/JPG) assets; anything else throws IllegalArgumentException at runtime.
- */
 @Composable
 fun DrawableImage(drawableRes: Int, modifier: Modifier = Modifier) {
     AndroidView(

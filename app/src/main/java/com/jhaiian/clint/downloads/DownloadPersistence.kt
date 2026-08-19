@@ -8,10 +8,6 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.io.File
 
-/**
- * Wraps the SQLite-backed download store. All methods suspend and run on [Dispatchers.IO],
- * since [android.database.sqlite.SQLiteDatabase] calls block the calling thread.
- */
 internal object DownloadPersistence {
 
     private const val LEGACY_PREFS_NAME = "clint_downloads_prefs"
@@ -192,12 +188,6 @@ internal object DownloadPersistence {
         }
     }
 
-    /**
-     * A cheap progress write used during an active transfer: it updates only the byte count and
-     * completed parts mask columns for [id], skipping the full row write [persistDownload] does.
-     * Callers already run on a background thread (the download read loop, or an IO dispatched
-     * coroutine), so this stays a plain blocking call rather than a suspend function.
-     */
     fun checkpointProgress(context: Context, id: Int, bytesDownloaded: Long, completedPartsMask: Long, partOffsets: String) {
         val values = ContentValues().apply {
             put(DownloadDatabase.COL_BYTES_DOWNLOADED, bytesDownloaded)

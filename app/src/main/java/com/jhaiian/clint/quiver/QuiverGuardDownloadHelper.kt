@@ -6,12 +6,8 @@ import com.jhaiian.clint.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-// Launches a download coroutine for the given filter list, reflects byte-level progress
-// through uiState.downloadProgress, and persists the result to the database on success.
-// Cancelling the dialog cancels the coroutine, which in turn cancels the OkHttp call and
-// deletes the partial download file.
 internal fun QuiverGuardActivity.startFilterListDownload(filterList: FilterList) {
-    // Prevent duplicate downloads if the user taps the download button twice.
+
     if (isDownloadInProgress(filterList.id)) return
     val activity = this
     markDownloading(filterList.id, true)
@@ -34,8 +30,7 @@ internal fun QuiverGuardActivity.startFilterListDownload(filterList: FilterList)
                     is FilterListDownloadProgress.Success -> {
                         didSucceed = true
                         val downloadedAt = System.currentTimeMillis()
-                        // Persist all download metadata including ETag and Last-Modified for future
-                        // conditional HTTP requests during update checks.
+
                         database().updateDownloadResult(
                             filterList.id,
                             progress.file.absolutePath,
@@ -45,8 +40,7 @@ internal fun QuiverGuardActivity.startFilterListDownload(filterList: FilterList)
                             progress.etag,
                             progress.lastModified
                         )
-                        // Auto-enable the list after a successful download so it is immediately
-                        // available for the user to include in the next compile.
+
                         onFilterListDownloaded(filterList.id)
                         refreshFilterListDisplay()
                     }

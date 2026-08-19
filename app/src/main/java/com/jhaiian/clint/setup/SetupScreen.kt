@@ -25,8 +25,6 @@ import androidx.compose.ui.unit.dp
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** Content wider than this is centered with a max width instead of stretching edge to edge
- *  (tablets, unfolded foldables, desktop windowing). */
 private val WideScreenBreakpointDp = 600
 private val CenteredContentMaxWidth = 480.dp
 

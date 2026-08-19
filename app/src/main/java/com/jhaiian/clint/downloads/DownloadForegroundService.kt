@@ -17,15 +17,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-/**
- * Keeps the process alive while any download is actively transferring. [LifecycleService] provides
- * [lifecycleScope], which replaces the previous [android.os.Handler]-based 1-second polling loop
- * with a direct reactive collection of [ClintDownloadManager.downloadsFlow]: the service now reacts
- * to state changes as they happen rather than checking on a fixed interval. [collectLatest] with a
- * trailing [delay] reproduces the old "wait a second before actually stopping" debounce, so a
- * download finishing right as the next one starts doesn't cause a stop-then-immediately-restart.
- * The same collection keeps the active count on the summary notification current.
- */
 class DownloadForegroundService : LifecycleService() {
 
     companion object {

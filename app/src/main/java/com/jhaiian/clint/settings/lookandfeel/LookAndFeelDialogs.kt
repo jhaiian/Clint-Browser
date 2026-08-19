@@ -55,7 +55,6 @@ import kotlinx.coroutines.withContext
 private val OptionContentPadding = SettingsPickerOptionContentPadding
 private val OptionBottomSpacing = SettingsPickerOptionBottomSpacing
 
-/** Resolves the background/surface pair used by the layout previews for the given theme + accent. */
 @Composable
 private fun rememberBgSurface(theme: String, accent: String): Pair<Color, Color> {
     val context = LocalContext.current
@@ -309,8 +308,6 @@ fun TabMenuStyleDialog(
     }
 }
 
-/** Small hand-drawn mockup distinguishing the two tab menu styles: a grid of cards for "grid",
- *  a bottom panel with stacked rows for "sheet" (mirroring the existing Tab Sheet's own look). */
 @Composable
 private fun TabMenuStylePreview(variant: String, bg: Color, surface: Color, accent: Color) {
     Box(
@@ -374,11 +371,6 @@ private fun TabMenuStylePreview(variant: String, bg: Color, surface: Color, acce
     }
 }
 
-/**
- * onSelect reports the tapped slot key ("off"/"search_bar"/"navigation_bar"/"both"), not the final
- * preference value; when the address bar sits at the bottom the navigation_bar slot actually hides
- * the search bar, so the caller is responsible for translating it before persisting.
- */
 @Composable
 fun ScrollHideModeDialog(
     current: String,
@@ -479,8 +471,6 @@ fun LanguageSelectorDialog(current: String, hideStatusBar: Boolean, onSelect: (S
     val context = LocalContext.current
     var options by remember { mutableStateOf(emptyList<LanguageOption>()) }
 
-    // Scanning every string resource across every shipped locale is too slow for the main thread,
-    // so the dialog opens immediately with just System and the rest populate once ready.
     LaunchedEffect(Unit) {
         options = withContext(Dispatchers.Default) { collectLanguageOptions(context) }
     }

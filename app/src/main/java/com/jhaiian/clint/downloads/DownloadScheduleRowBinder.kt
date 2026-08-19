@@ -13,12 +13,6 @@ import com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig
 import java.util.Calendar
 import java.util.TimeZone
 
-/**
- * Shows the same MaterialDatePicker/MaterialTimePicker Fragment dialogs used by the "Schedule
- * This Download" row in [DownloadRequestDialog] and [DownloadManualDialog], reporting the picked
- * value back via callback. [MaterialDatePicker] works in UTC regardless of device timezone, so
- * the picked day is read back through a UTC calendar rather than used directly.
- */
 internal fun showScheduleDatePicker(fragmentManager: FragmentManager, currentMillis: Long, onPicked: (year: Int, month: Int, dayOfMonth: Int) -> Unit) {
     val calendar = Calendar.getInstance().apply { timeInMillis = currentMillis }
     val utcSelection = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
@@ -49,19 +43,9 @@ internal fun showScheduleTimePicker(context: Context, fragmentManager: FragmentM
     picker.show(fragmentManager, "download_schedule_time_picker")
 }
 
-/**
- * True when, on API 31+, the user hasn't yet granted the "Alarms & reminders" permission needed
- * for alarms to fire at an exact time rather than an OS-deferred approximation. Without it,
- * "Schedule This Download" would silently start late by anywhere from a few minutes to much
- * longer, so callers should show [exactAlarmPermissionDialogConfig]'s rationale up front, the
- * same way the battery-optimization rationale in [com.jhaiian.clint.browser.delegates] does.
- */
 internal fun needsExactAlarmPermissionRationale(context: Context): Boolean =
     !DownloadCustomScheduleMonitor.canScheduleExact(context)
 
-/** Config for the caller's own `ConfirmDialogConfig`/`ConfirmDialogHost` state (both
- *  [DownloadRequestDialog] and [DownloadManualDialog] already have one for their other blocking
- *  dialogs) — shown when [needsExactAlarmPermissionRationale] is true. */
 internal fun exactAlarmPermissionDialogConfig(context: Context): ConfirmDialogConfig = ConfirmDialogConfig(
     title = context.getString(R.string.download_schedule_exact_alarm_title),
     message = context.getString(R.string.download_schedule_exact_alarm_message, context.getString(R.string.app_name)),

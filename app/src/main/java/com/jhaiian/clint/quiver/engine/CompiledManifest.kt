@@ -4,7 +4,6 @@ import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Snapshot of one filter list as it was when last successfully compiled. */
 data class CompiledManifestEntry(
     val id: Long,
     val name: String,
@@ -22,12 +21,6 @@ data class CompiledManifestData(
     val compiledAtMillis: Long = System.currentTimeMillis(),
 )
 
-/**
- * Records which filter lists (and in what state) contributed to the currently-active compiled
- * engine, so [com.jhaiian.clint.quiver.QuiverGuardCompileHelper]'s startup check can tell
- * whether a recompile is needed without re-parsing anything - just compare the current
- * [com.jhaiian.clint.quiver.FilterList] state against this snapshot.
- */
 object CompiledManifest {
 
     fun write(file: File, data: CompiledManifestData) {

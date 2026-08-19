@@ -18,15 +18,13 @@ import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 
-// Sealed hierarchy emitted by FilterListDownloader.download to communicate
-// progress and the final result back to the UI without callbacks.
 sealed class FilterListDownloadProgress {
     data class Progress(val bytesRead: Long, val totalBytes: Long) : FilterListDownloadProgress()
     data class Success(
         val file: File,
         val bytesTotal: Long,
         val ruleCount: Long,
-        // HTTP caching headers captured from the response for future conditional requests.
+
         val etag: String? = null,
         val lastModified: String? = null
     ) : FilterListDownloadProgress()
@@ -36,21 +34,13 @@ class FilterListDownloadException(message: String) : Exception(message)
 
 internal object FilterListDownloader {
 
-    // Progress events are throttled to avoid flooding the main thread with
-    // updates when downloading large lists over a fast connection.
     private const val PROGRESS_EMIT_INTERVAL_MS = 80L
 
-    // Returns the canonical on-disk path for a filter list identified by its
-    // database row ID. The file lives inside the app's private files directory
-    // so it is not accessible to other apps and is preserved across app updates.
     fun localFileFor(context: Context, filterListId: Long): File {
         val dir = File(context.applicationContext.filesDir, "quiver_guard")
         return File(dir, "filter_list_$filterListId.txt")
     }
 
-    // Counts non-blank, non-comment lines in a downloaded filter file to report
-    // an approximate rule count in the UI. Comments start with '!' and section
-    // headers are bracketed lines like "[Adblock Plus 2.0]".
     private fun countRules(file: File): Long {
         var count = 0L
         file.bufferedReader().useLines { lines ->
@@ -65,12 +55,6 @@ internal object FilterListDownloader {
         return count
     }
 
-    // Downloads the filter list to a temporary file first and then atomically
-    // moves it to the final location. Writing to a .part file means that a
-    // partially downloaded file never replaces a previously working one if the
-    // download is interrupted.
-    // The browser's cookie jar and user-agent string are forwarded so servers
-    // that gate list access behind authentication can still be reached.
     fun download(context: Context, filterList: FilterList): Flow<FilterListDownloadProgress> = flow {
         val appContext = context.applicationContext
         val targetFile = localFileFor(appContext, filterList.id)
@@ -93,8 +77,7 @@ internal object FilterListDownloader {
         }
 
         val call = ClintDownloadManager.httpClient.newCall(requestBuilder.build())
-        // Cancel the OkHttp call when the coroutine is cancelled so the
-        // underlying socket is released promptly instead of waiting for a timeout.
+
         currentCoroutineContext()[Job]?.invokeOnCompletion { call.cancel() }
 
         try {
@@ -133,8 +116,6 @@ internal object FilterListDownloader {
                     }
                 }
 
-                // Prefer an atomic rename for reliability. Fall back to copy-and-delete
-                // on file systems where rename across directories is not supported.
                 if (targetFile.exists()) targetFile.delete()
                 if (!tempFile.renameTo(targetFile)) {
                     tempFile.copyTo(targetFile, overwrite = true)

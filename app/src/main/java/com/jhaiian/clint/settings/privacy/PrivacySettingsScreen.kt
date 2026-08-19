@@ -29,8 +29,7 @@ fun PrivacySettingsScreen(
     val colors = LocalClintColors.current
 
     SettingsScreenScaffold {
-        // These two section headers are already stored fully uppercase in strings.xml
-        // (the original XML never applied textAllCaps to them), so they're used as-is.
+
         SectionLabel(stringResource(R.string.privacy_section_privacy), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
         SettingsSection(colors.cardBackground) {
             SettingsRow(

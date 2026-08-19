@@ -11,11 +11,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.Executors
 
-/** Fetches a markdown document from a URL and shows it in a Compose dialog rendered inline in
- *  the host activity's own composition (via [OverlayHostActivity]), rather than as a separate
- *  ComposeView mounted on the window's decor view. Kept as a plain object with a
- *  show(context, title, url) signature (rather than a Composable) so every existing call site
- *  — Activities and non-Compose call sites alike — can keep invoking it the same way. */
 object DocumentViewer {
 
     private val client = OkHttpClient()

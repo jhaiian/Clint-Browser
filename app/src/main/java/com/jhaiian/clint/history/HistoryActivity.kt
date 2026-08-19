@@ -20,16 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Hosts the Compose [HistoryScreen]. All persistence (SQLite reads/writes via
- * [SearchHistoryManager]) stays off the main thread via [lifecycleScope] coroutines; this
- * activity's job is just wiring that data and the "open item" / "delete selected" /
- * "clear all" actions into [uiState], which the screen renders reactively.
- *
- * The content column adapts to the window: [maxContentWidth] constrains and centers the list
- * once the window is wider than a phone (tablet, unfolded foldable, split-screen, desktop
- * freeform window), while the toolbar and delete FAB stay full-bleed at the true window edges.
- */
 class HistoryActivity : ClintActivity() {
 
     private lateinit var uiState: HistoryUiState
@@ -81,9 +71,6 @@ class HistoryActivity : ClintActivity() {
         }
     }
 
-    /** Search-history rows can be either a visited URL or a raw search query; a query has to
-     *  be routed through the user's chosen search engine before it can be opened, matching
-     *  how the omnibox itself resolves plain-text input. */
     private fun openHistoryItem(item: HistoryItem) {
         val url = if (item.query.startsWith("http")) {
             item.query

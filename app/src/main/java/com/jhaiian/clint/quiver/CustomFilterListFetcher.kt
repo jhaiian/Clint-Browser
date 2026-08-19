@@ -20,15 +20,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-// Sealed hierarchy emitted by CustomFilterListFetcher.fetch to report byte-level
-// download progress and a final parsed result back to the add-list dialog.
 sealed class CustomFilterListFetchProgress {
     data class Progress(val bytesRead: Long, val totalBytes: Long) : CustomFilterListFetchProgress()
     data class Success(
         val file: File,
         val bytesTotal: Long,
         val ruleCount: Long,
-        // Key/value pairs extracted from the list header (e.g. "Title", "Version").
+
         val metadata: Map<String, String>
     ) : CustomFilterListFetchProgress()
 }
@@ -37,11 +35,8 @@ class CustomFilterListFetchException(message: String) : Exception(message)
 
 internal object CustomFilterListFetcher {
 
-    // Progress events are throttled so the dialog update rate stays reasonable
-    // even when downloading from a fast local connection.
     private const val PROGRESS_EMIT_INTERVAL_MS = 80L
 
-    // Validates that the string is a well-formed HTTP or HTTPS URL with a non-empty host.
     fun isValidUrl(url: String): Boolean {
         val trimmed = url.trim()
         if (!trimmed.startsWith("http://", ignoreCase = true) &&
@@ -53,18 +48,12 @@ internal object CustomFilterListFetcher {
         return !host.isNullOrBlank()
     }
 
-    // Creates a unique temporary file in the app's cache directory. Using a UUID
-    // name ensures concurrent fetches do not collide with each other.
     private fun tempFileFor(context: Context): File {
         val dir = File(context.applicationContext.cacheDir, "quiver_guard_fetch")
         dir.mkdirs()
         return File(dir, "fetch_${UUID.randomUUID()}.txt")
     }
 
-    // Downloads the URL to a temporary file, validates that it is a filter list
-    // (not an HTML error page and not empty), and emits progress updates at a
-    // throttled rate. The caller is responsible for moving the file to its final
-    // location on success.
     fun fetch(context: Context, url: String): Flow<CustomFilterListFetchProgress> = flow {
         val appContext = context.applicationContext
         val tempFile = tempFileFor(appContext)
@@ -85,8 +74,7 @@ internal object CustomFilterListFetcher {
         }
 
         val call = ClintDownloadManager.httpClient.newCall(requestBuilder.build())
-        // Tie the OkHttp call lifetime to the coroutine so cancellation releases
-        // the socket without waiting for a network timeout.
+
         currentCoroutineContext()[Job]?.invokeOnCompletion { call.cancel() }
 
         try {
@@ -131,8 +119,7 @@ internal object CustomFilterListFetcher {
                 }
 
                 val analysis = FilterListContentValidator.analyzeFile(tempFile)
-                // Reject files that contain no actionable rules; an empty file cannot
-                // contribute anything useful to the compiled database.
+
                 if (analysis.ruleCount <= 0L) {
                     throw CustomFilterListFetchException(
                         appContext.getString(R.string.filter_list_add_error_invalid_format)

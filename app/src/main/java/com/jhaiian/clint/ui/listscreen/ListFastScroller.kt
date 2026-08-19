@@ -27,13 +27,6 @@ import androidx.compose.ui.unit.sp
 import com.jhaiian.clint.ui.theme.LocalClintColors
 import kotlinx.coroutines.launch
 
-/**
- * A right-edge draggable thumb that mirrors list scroll position, with a section-letter
- * bubble shown while dragging. Position is index-based (current item / total items) rather
- * than pixel-extent based, since LazyListState doesn't expose RecyclerView-style scroll
- * range/extent/offset — this mirrors how the original widget itself computed drag targets
- * (it only used pixel extent to reflect *passive* scrolling, never for the drag math).
- */
 @Composable
 fun ListFastScroller(
     listState: LazyListState,

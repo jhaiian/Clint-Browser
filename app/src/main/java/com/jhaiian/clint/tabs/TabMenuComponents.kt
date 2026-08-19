@@ -61,21 +61,11 @@ import com.jhaiian.clint.R
 import com.jhaiian.clint.ui.ClintCheckbox
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** Fixed dark colors for incognito cards, independent of the app's own theme — the same idea
- *  as most browsers hard-coding a distinct look for incognito UI so it reads as private at a
- *  glance no matter what accent or light/dark mode is active. */
 private val IncognitoCardBackground = Color(0xFF2A2A31)
 private val IncognitoOnCard = Color(0xFFEDEDF2)
 private val IncognitoOnCardSecondary = Color(0xFFAEAEBB)
 private val IncognitoAccent = Color(0xFF9D8CF5)
 
-/**
- * One card in the Tab Grid menu: favicon + title + close button up top, a live WebView
- * thumbnail below. In selection mode the close button and drag handle are swapped for a
- * checkbox, matching the multi-select conventions used elsewhere in the app (Downloads, Quiver
- * Guard's manual filter). Incognito tabs get a fixed dark card style plus a persistent badge on
- * the thumbnail, so privacy status stays legible even when a page's own favicon is loaded.
- */
 @Composable
 internal fun TabMenuCard(
     preview: TabPreview,
@@ -205,8 +195,7 @@ internal fun TabMenuCard(
                         modifier = Modifier.size(36.dp).align(Alignment.Center)
                     )
                 }
-                // Persistent incognito badge: shown regardless of thumbnail/favicon content, so
-                // privacy status is never lost behind a loaded page preview.
+
                 if (preview.isIncognito) {
                     Box(
                         Modifier
@@ -230,8 +219,6 @@ internal fun TabMenuCard(
     }
 }
 
-/** A thin full-width label row separating normal and incognito tabs in the grid, only shown
- *  when both kinds are open at once — mirrors the Tab Sheet's own section headers. */
 @Composable
 internal fun TabMenuSectionHeader(isIncognitoSection: Boolean, modifier: Modifier = Modifier) {
     val colors = LocalClintColors.current

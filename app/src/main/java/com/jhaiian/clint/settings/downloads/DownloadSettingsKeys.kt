@@ -1,12 +1,5 @@
 package com.jhaiian.clint.settings.downloads
 
-/**
- * SharedPreferences keys, mode values, and defaults for download settings. Referenced from many
- * download-related files (DownloadSizeUtils, DownloadWorker, ClintDownloadManager, the manual/
- * redownload dialogs, DownloadNotificationHelper, MainDownloadDialogDelegate, etc.) in addition
- * to [DownloadSettingsScreen] itself, so it lives here as a plain object rather than inside any
- * single screen or Activity. Kept exactly as they were on the old DownloadSettingsFragment.
- */
 object DownloadSettingsKeys {
     const val PREF_DOWNLOAD_LOCATION_MODE  = "download_location_mode"
     const val PREF_DOWNLOAD_CUSTOM_URI     = "download_custom_uri"

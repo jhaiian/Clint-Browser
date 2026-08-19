@@ -18,9 +18,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Walks a Context's wrapper chain to find the hosting Activity. Compose content mounted
- *  inside a Fragment's ComposeView only has a Context (not a direct Activity reference), so
- *  callers like [SettingsScreenScaffold] need this to reach [rememberMaxContentWidth]. */
 fun Context.findActivity(): Activity? {
     var ctx = this
     while (ctx is ContextWrapper) {
@@ -30,14 +27,6 @@ fun Context.findActivity(): Activity? {
     return null
 }
 
-/**
- * The max width a screen's content column should grow to once the window is wider than a
- * phone. `null` means no constraint (compact width: phone portrait, or a narrow split-screen
- * pane). Used to keep list/settings rows from stretching edge-to-edge on a tablet, unfolded
- * foldable, or desktop freeform window, matching Material's large-screen guidance for
- * single-pane content. Toolbars are expected to stay full-bleed and only the scrollable
- * content itself should be wrapped in [AdaptiveWidthContainer].
- */
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun rememberMaxContentWidth(activity: Activity): Dp? {
@@ -49,19 +38,12 @@ fun rememberMaxContentWidth(activity: Activity): Dp? {
     }
 }
 
-/** Convenience overload for composables that only have a [Context] (e.g. content hosted in a
- *  Fragment's ComposeView) rather than a direct Activity reference. Returns `null` if no
- *  hosting Activity can be found, same as the compact-width case. */
 @Composable
 fun rememberMaxContentWidth(context: Context): Dp? {
     val activity = context.findActivity() ?: return null
     return rememberMaxContentWidth(activity)
 }
 
-/**
- * Centers [content] and caps it at [maxContentWidth] (pass the result of
- * [rememberMaxContentWidth]); on a compact/phone width this is a no-op full-bleed Box.
- */
 @Composable
 fun AdaptiveWidthContainer(
     maxContentWidth: Dp?,

@@ -68,13 +68,6 @@ import com.jhaiian.clint.ui.listscreen.SortMenu
 import com.jhaiian.clint.ui.theme.LocalClintColors
 import com.jhaiian.clint.util.formatRelativeTimestamp
 
-/**
- * The History screen's content column is width-constrained and centered once the window is
- * wider than a phone (tablet, unfolded foldable, desktop windowing), matching Material's
- * large-screen guidance for single-pane list content. The toolbar and FAB stay full-bleed at
- * the true window edges, which is where a hand or pointer naturally reaches regardless of
- * where the reading column sits. null means no constraint (compact phone width).
- */
 @Composable
 fun HistoryScreen(
     state: HistoryUiState,

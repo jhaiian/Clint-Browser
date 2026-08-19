@@ -13,12 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.google.android.material.color.MaterialColors
 import com.jhaiian.clint.R
 
-/**
- * The small set of design tokens the setup screens actually use, resolved from the
- * XML theme that ClintActivity already applied via setTheme()/recreate(). This is a
- * read-only bridge, not a parallel design system: change the XML theme/attrs and
- * these follow automatically.
- */
 data class ClintColors(
     val background: Color,
     val onSurface: Color,
@@ -85,7 +79,7 @@ fun ClintComposeTheme(theme: String, content: @Composable () -> Unit) {
         else -> (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) !=
             Configuration.UI_MODE_NIGHT_YES
     }
-    // Re-resolve whenever the underlying (XML) theme instance changes.
+
     val clintColors = remember(context.theme, theme) { resolveClintColors(context, isLight) }
 
     val base = if (isLight) lightColorScheme() else darkColorScheme()

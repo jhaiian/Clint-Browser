@@ -20,11 +20,6 @@ internal const val SPEED_LIMIT_UNIT_KB = "KB"
 internal const val SPEED_LIMIT_UNIT_MB = "MB"
 internal const val DEFAULT_SPEED_LIMIT_UNIT = SPEED_LIMIT_UNIT_KB
 
-/**
- * Converts a user-entered speed limit ([amount] of [unit], "KB" or "MB") into bytes/sec, using the
- * same binary-vs-decimal base as [com.jhaiian.clint.util.formatFileSize] so "1 MB/s" means the same
- * thing here as it does everywhere else size is displayed. [amount] <= 0 always means unlimited.
- */
 internal fun resolveSpeedLimitBytesPerSec(context: Context, amount: Int, unit: String): Long {
     if (amount <= 0) return 0L
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -34,12 +29,6 @@ internal fun resolveSpeedLimitBytesPerSec(context: Context, amount: Int, unit: S
     return amount.toLong() * multiplier
 }
 
-/**
- * Best-effort inverse of [resolveSpeedLimitBytesPerSec], used to pre-fill an edit field from a
- * previously resolved rate (e.g. redownloading an item that already carries a speed limit).
- * Prefers MB when the value divides evenly, since that's how most limits set through the dialog
- * are entered; otherwise falls back to KB.
- */
 internal fun speedLimitBytesToAmountAndUnit(context: Context, bytesPerSec: Long): Pair<Int, String> {
     if (bytesPerSec <= 0L) return 0 to DEFAULT_SPEED_LIMIT_UNIT
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -62,11 +51,8 @@ internal fun resolveVolumePathFromUri(uri: Uri): String? {
     }
 }
 
-/** Path shown for the default (non-SAF) download location, e.g. in the settings screen while no custom folder is set. */
 internal const val DEFAULT_DOWNLOAD_PATH = "/storage/emulated/0/Download/"
 
-/** Renders a SAF tree [Uri] as a human-readable filesystem path, best-effort. Shared by the download
- *  settings screen (folder row) and anywhere else a chosen custom location needs to be displayed. */
 internal fun uriToDisplayPath(uri: Uri): String {
     val path = uri.lastPathSegment ?: return uri.toString()
     return when {
@@ -79,7 +65,6 @@ internal fun uriToDisplayPath(uri: Uri): String {
     }
 }
 
-/** Pure form of [updateStorageInfo], usable from Compose without a TextView to write into. */
 internal fun resolveStorageInfoText(context: Context, mode: String, customUri: Uri?): String {
     return try {
         val path = if (mode == DownloadSettingsKeys.MODE_CUSTOM) {
@@ -131,14 +116,10 @@ internal fun checkStorageAvailable(
         } else null
     }
 
-    // Doubling (or a separate temp-file check) is only needed for the SAF temp-then-copy
-    // workflow. Whenever this device/permission combination lets the app write straight to the
-    // destination, the transfer never stages a duplicate copy, so only the single content length
-    // is required - matching the write path DownloadWorker actually takes for a fresh download.
     val canWriteDirectly = DownloadFileHelper.canWriteSharedStorageDirectly(context)
 
     return if (customUri?.lastPathSegment?.startsWith("primary:") == true) {
-        // Destination is on the same physical volume as the temp file (or as the direct write).
+
         if (canWriteDirectly) {
             if (emulatedFree < contentLength) {
                 context.getString(
@@ -180,18 +161,10 @@ internal fun checkStorageAvailable(
     }
 }
 
-/** FAT32 cannot address a single file at or above 4 GiB; a download that crosses this size on such a card fails partway through instead of at the point where the user could still choose a different destination. */
 private const val FAT32_MAX_FILE_SIZE = 4L * 1024 * 1024 * 1024
 
 private val FAT32_FS_TYPES = setOf("vfat", "fat", "fat32", "msdos")
 
-/**
- * Warns before a download starts if it would exceed FAT32's single-file limit on the chosen
- * destination. Only fires for a custom location on a physically removable, FAT32-formatted
- * volume; the default location and the primary internal volume are never affected regardless of
- * their reported filesystem, since they're the emulated internal partition rather than a real
- * FAT32 card.
- */
 internal fun checkFat32FileSizeLimit(
     context: Context,
     contentLength: Long,
@@ -216,12 +189,6 @@ private fun isRemovableVolume(context: Context, path: String): Boolean {
     } catch (_: Throwable) { false }
 }
 
-/**
- * Android has no public API for a volume's filesystem type, so this reads the kernel's mount
- * table directly and matches the longest mount point that prefixes [path]. Returns null if the
- * file can't be read or nothing matches, which the caller treats as "unknown" rather than
- * blocking the download.
- */
 private fun mountedFsType(path: String): String? {
     val canonicalPath = try { File(path).canonicalPath } catch (_: Throwable) { path }
     return try {
@@ -243,10 +210,6 @@ private fun mountedFsType(path: String): String? {
     } catch (_: Throwable) { null }
 }
 
-/**
- * Approximates decoded size straight from the encoded string length so the FAT32 check can run
- * before a blob payload is base64-decoded in full.
- */
 internal fun estimateBase64DecodedSize(base64: String): Long {
     val trimmed = base64.trimEnd()
     val padding = when {

@@ -234,7 +234,7 @@ fun DownloadManualDialog(
                             scheduledStartAtMillis = effectiveScheduledMillis
                         )
                         onSubmit(submission, onDismiss) {
-                            // onRename: nothing extra needed — the filename field is already visible and editable.
+
                         }
                     },
                     enabled = url.isNotBlank() && !isFetching

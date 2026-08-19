@@ -73,8 +73,6 @@ import com.jhaiian.clint.util.PREF_MEASUREMENT_SYSTEM
 import com.jhaiian.clint.util.setMeasurementSystemDecimal
 import kotlinx.coroutines.launch
 
-// Data Saver keys (no external callers; kept local rather than a shared object like
-// DownloadSettingsKeys, which genuinely is referenced from many download-related files).
 private const val PREF_DATA_SAVER_ENABLED = "data_saver_enabled"
 private const val PREF_DISABLE_IMAGES = "data_saver_disable_images"
 private const val PREF_DISABLE_AUTOPLAY = "data_saver_disable_autoplay"
@@ -82,7 +80,6 @@ private const val DEFAULT_DATA_SAVER_ENABLED = false
 private const val DEFAULT_DISABLE_IMAGES = true
 private const val DEFAULT_DISABLE_AUTOPLAY = true
 
-// Privacy keys (no external callers).
 private const val PREF_BLOCK_THIRD_PARTY_COOKIES = "block_third_party_cookies"
 private const val PREF_CUSTOM_USER_AGENT = "custom_user_agent"
 private const val PREF_HTTPS_ONLY = "https_only"
@@ -90,7 +87,6 @@ private const val DEFAULT_BLOCK_THIRD_PARTY_COOKIES = true
 private const val DEFAULT_CUSTOM_USER_AGENT = true
 private const val DEFAULT_HTTPS_ONLY = true
 
-// Update keys (no external callers).
 private const val PREF_CHECK_UPDATE_ON_LAUNCH = "check_update_on_launch"
 private const val PREF_SKIP_UPDATE_ON_METERED = "skip_update_on_metered"
 private const val PREF_BETA_CHANNEL = "beta_channel"
@@ -98,9 +94,6 @@ private const val DEFAULT_CHECK_UPDATE_ON_LAUNCH = true
 private const val DEFAULT_SKIP_UPDATE_ON_METERED = true
 private const val DEFAULT_BETA_CHANNEL = false
 
-/** Runs [action] whenever the hosting Activity resumes, replacing the fragments' old
- *  `onResume()` override (used to pick up preference changes made on a screen the user just
- *  navigated back from, e.g. the notification/exact-alarm permission screens). */
 @Composable
 private fun OnResume(action: () -> Unit) {
     val owner = LocalLifecycleOwner.current
@@ -363,9 +356,6 @@ fun PrivacySettingsPane(activity: SettingsActivity) {
     )
 }
 
-/** Every row is pure navigation into its own Activity (permission editors, desktop mode, Quiver
- *  Guard exceptions) with no dialogs of its own, so [OnResume] just re-reads the summaries those
- *  activities may have changed. */
 @Composable
 fun SiteSettingsPane(activity: SettingsActivity) {
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -437,9 +427,6 @@ fun DataSaverPane(activity: SettingsActivity) {
     )
 }
 
-/** "Skip update check on metered" stays clickable-guarded on [UpdateSettingsUiState.checkOnLaunch]
- *  (a dimmed row can't flip its own pref while the row it depends on is off). Enrolling in Beta
- *  routes through a confirm dialog same as before; leaving Beta is immediate. */
 @Composable
 fun UpdateSettingsPane(activity: SettingsActivity) {
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -577,8 +564,6 @@ private fun buildCrashReportTemplate(context: Context): String {
     }
 }
 
-/** Report loading/deleting runs on a coroutine off [rememberCoroutineScope] rather than a raw
- *  Thread + runOnUiThread, matching how the rest of the app's migrated screens do background work. */
 @Composable
 fun DebugPane(activity: SettingsActivity) {
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
@@ -680,8 +665,6 @@ private fun aboutOpenLink(context: Context, url: String) {
     runCatching { context.startActivity(intent) }
 }
 
-/** MANAGE_EXTERNAL_STORAGE is only declared in the GitHub flavor's manifest and only exists from
- *  Android 11 (API 30) onward, so the row is only shown once both conditions hold. */
 private fun showGrantAllFilesAccessRow(): Boolean =
     !BuildConfig.IS_FDROID && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
@@ -748,8 +731,7 @@ fun DownloadSettingsPane(activity: SettingsActivity) {
     }
 
     OnResume {
-        // Battery optimization and all-files-access are granted through system settings screens
-        // the user can return from, so refresh both defensively every time this screen resumes.
+
         uiState.ignoringBatteryOptimizations = isIgnoringBatteryOptimizations(activity)
         if (uiState.showGrantAllFilesAccessRow) {
             uiState.allFilesAccessGranted = isAllFilesAccessGranted()
@@ -757,7 +739,6 @@ fun DownloadSettingsPane(activity: SettingsActivity) {
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
     }
 
-    /** Shows Material's clock/spinner time picker, honoring the device's 12/24-hour setting, and reports the result as minutes since midnight. */
     fun showSchedulePicker(currentMinutes: Int, onPicked: (Int) -> Unit) {
         val is24Hour = android.text.format.DateFormat.is24HourFormat(activity)
         val picker = MaterialTimePicker.Builder()

@@ -15,10 +15,6 @@ import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 
 internal object DownloadNotificationHelper {
 
-    /**
-     * Notifications sharing this key collapse into one expandable group in the notification
-     * shade, headed by the group-summary notification built in [buildSummaryNotification].
-     */
     const val DOWNLOAD_GROUP_KEY = "com.jhaiian.clint.downloads.GROUP"
 
     fun createNotificationChannel(context: Context) {
@@ -42,11 +38,6 @@ internal object DownloadNotificationHelper {
         nm.createNotificationChannel(eventChannel)
     }
 
-    /**
-     * Serves as both the required foreground-service notification and the group summary for the
-     * per-download notifications below it, so simultaneous downloads collapse under one entry in
-     * the notification shade instead of each spawning its own top-level entry.
-     */
     fun buildSummaryNotification(context: Context, activeCount: Int): Notification {
         val downloadsIntent = Intent(context, DownloadsActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -485,9 +476,7 @@ internal object DownloadNotificationHelper {
         val speedEta = if (item.totalBytes <= 0L || remaining <= 0L)
             context.getString(R.string.download_speed_only, formatFileSize(speed))
         else {
-            // The ETA uses the average speed rather than the current reading above, since the
-            // current speed alone can swing the remaining-time estimate wildly on a connection
-            // that briefly speeds up or stalls.
+
             val etaSpeed = item.averageSpeedBytesPerSec().takeIf { it > 0L } ?: speed
             context.getString(R.string.download_speed_eta, formatFileSize(speed), formatEta(context, remaining / etaSpeed))
         }

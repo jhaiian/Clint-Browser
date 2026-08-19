@@ -23,10 +23,7 @@ internal fun MainActivity.onShowCustomView(view: View, callback: WebChromeClient
         val parts = result?.trim('"')?.split(",")
         val vw = parts?.getOrNull(0)?.toIntOrNull() ?: 0
         val vh = parts?.getOrNull(1)?.toIntOrNull() ?: 0
-        // On large screens (sw > 600dp) Android 17 ignores orientation-lock requests like this
-        // one by design (see the Android 17 adaptive-app behavior change) — the video simply
-        // plays at whatever orientation the window already is, which is the correct outcome
-        // there, so no extra handling is needed for that case here.
+
         requestedOrientation = when {
             vw > 0 && vh > 0 && vw >= vh -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             vw > 0 && vh > 0 && vh > vw  -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
@@ -59,10 +56,6 @@ internal fun MainActivity.exitFullscreen() {
     }
 }
 
-/**
- * Applies the "hide_status_bar" preference to the real system status bar and to [MainUiState]
- * (which drives the Compose toolbars' padding — see `MainScreen.kt`).
- */
 internal fun MainActivity.applyStatusBarVisibility() {
     val hide = prefs.getBoolean("hide_status_bar", false)
     uiState.hideStatusBar = hide

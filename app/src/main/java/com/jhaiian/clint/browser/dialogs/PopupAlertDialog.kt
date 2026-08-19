@@ -52,8 +52,7 @@ internal fun PopupAlertDialog(request: PopupAlertRequest, hideStatusBar: Boolean
         }
     ) {
         Column(Modifier.padding(horizontal = 16.dp)) {
-            // The message embeds a bold host name via HTML markup, so this stays an interop
-            // TextView (Html.fromHtml) rather than a hand-rolled AnnotatedString.
+
             AndroidView(
                 factory = { ctx ->
                     android.widget.TextView(ctx).apply {

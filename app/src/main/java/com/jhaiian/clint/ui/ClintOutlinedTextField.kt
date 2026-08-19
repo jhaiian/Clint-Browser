@@ -7,15 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * The app's themed replacement for Material3's bare [OutlinedTextField]. Four separate call
- * sites across the app each hand-rolled the same `OutlinedTextFieldDefaults.colors(...)` block
- * (focused text/border/label/cursor only) — none of them set `unfocusedBorderColor`, so the
- * outline showed Material3's stock default (unmapped, purple-tinted) color the moment the field
- * lost focus. This maps every role, including disabled and error states (using the app's
- * existing `colorError` role), so new fields — including ones migrated from XML — get correct
- * theming without repeating the color block.
- */
 @Composable
 fun ClintOutlinedTextField(
     value: String,

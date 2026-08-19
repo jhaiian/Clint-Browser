@@ -18,11 +18,10 @@ import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 
-// Result of checking a single filter list for updates.
 sealed class FilterListUpdateItemResult {
-    // The list was skipped because it has not been downloaded yet.
+
     data class Skipped(val filterList: FilterList) : FilterListUpdateItemResult()
-    // The server confirmed the list has not changed (HTTP 304 or matching ETag).
+
     data class UpToDate(val filterList: FilterList) : FilterListUpdateItemResult()
     data class Updated(
         val filterList: FilterList,
@@ -34,7 +33,6 @@ sealed class FilterListUpdateItemResult {
     data class Failed(val filterList: FilterList, val message: String) : FilterListUpdateItemResult()
 }
 
-// Events emitted by FilterListUpdateChecker.checkAndUpdateAll as each list is processed.
 sealed class FilterListUpdateEvent {
     data class CheckingList(
         val filterList: FilterList,
@@ -51,19 +49,10 @@ sealed class FilterListUpdateEvent {
 
 internal object FilterListUpdateChecker {
 
-    // A file shorter than 100 bytes or with fewer than 3 non-empty lines cannot
-    // be a valid filter list and is rejected to avoid replacing a working file
-    // with a server-side error response.
     private const val MIN_VALID_FILE_BYTES = 100L
     private const val MIN_VALID_LINE_COUNT = 3
     private const val PROGRESS_EMIT_INTERVAL_MS = 80L
 
-    // Iterates through every downloaded filter list sequentially, emitting
-    // progress events for each one so the update dialog can show which list is
-    // currently being checked. Lists that have never been downloaded are skipped.
-    // When forceUpdate is true, conditional HTTP headers are omitted so the server
-    // always responds with full content rather than 304, and the ETag equality
-    // short-circuit in the response path is also bypassed.
     fun checkAndUpdateAll(
         context: Context,
         filterLists: List<FilterList>,
@@ -85,12 +74,6 @@ internal object FilterListUpdateChecker {
         }
     }.flowOn(Dispatchers.IO)
 
-    // Performs an HTTP request for a single filter list. When forceUpdate is false,
-    // a conditional request is made using the ETag or Last-Modified header from the
-    // previous download so the server can respond with 304 when the list has not changed.
-    // When forceUpdate is true, no conditional headers are sent and the ETag equality
-    // short-circuit in the response is also skipped, guaranteeing a full re-download
-    // and ensuring the result is always Updated (not UpToDate) on success.
     private suspend fun tryCheckAndUpdate(
         context: Context,
         filterList: FilterList,
@@ -116,8 +99,7 @@ internal object FilterListUpdateChecker {
             if (!cookie.isNullOrBlank()) {
                 requestBuilder.header("Cookie", cookie)
             }
-            // Conditional headers are only sent for regular update checks. Force update
-            // omits them so the server always returns the full current content.
+
             if (!forceUpdate) {
                 if (!filterList.etag.isNullOrBlank()) {
                     requestBuilder.header("If-None-Match", filterList.etag)
@@ -146,10 +128,6 @@ internal object FilterListUpdateChecker {
                 val responseEtag = response.header("ETag")
                 val responseLastModified = response.header("Last-Modified")
 
-                // Some servers return 200 with the same ETag instead of 304. For a
-                // regular check this is treated as up-to-date to avoid an unnecessary
-                // file replacement. For force update this check is skipped so the file
-                // is always replaced and recompilation is always triggered.
                 if (!forceUpdate &&
                     !responseEtag.isNullOrBlank() &&
                     responseEtag == filterList.etag &&
@@ -183,8 +161,6 @@ internal object FilterListUpdateChecker {
                     }
                 }
 
-                // Validate the downloaded content before replacing the working file.
-                // This prevents a server-side error page from wiping out a valid list.
                 if (!isValidFilterFile(tempFile)) {
                     tempFile.delete()
                     return FilterListUpdateItemResult.Failed(
@@ -222,9 +198,6 @@ internal object FilterListUpdateChecker {
         }
     }
 
-    // A filter list is considered valid when the file exists, is at least 100 bytes,
-    // and contains at least three non-empty lines. This catches truncated downloads
-    // and HTML error pages without doing a full parse.
     private fun isValidFilterFile(file: File): Boolean {
         if (!file.exists() || file.length() < MIN_VALID_FILE_BYTES) return false
         var lineCount = 0
@@ -241,8 +214,6 @@ internal object FilterListUpdateChecker {
         }
     }
 
-    // Counts actionable rules in the file. Comment lines (starting with '!') and
-    // section headers (bracketed lines) are excluded from the count.
     private fun countFilterRules(file: File): Long {
         var count = 0L
         file.bufferedReader().useLines { lines ->

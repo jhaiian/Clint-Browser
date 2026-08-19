@@ -345,9 +345,6 @@ fun DownloadSettingsScreen(
     }
 }
 
-/** Read-only "field" that opens a small popup menu, styled like an outlined dropdown field.
- *  Uses a stable [DropdownMenu] rather than the experimental ExposedDropdownMenuBox API, matching
- *  the plain-DropdownMenu convention already used for the sort/options popups elsewhere in the app. */
 @Composable
 private fun DownloadLocationDropdown(mode: String, colors: ClintColors, onModeSelected: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -393,8 +390,6 @@ private fun DownloadLocationDropdown(mode: String, colors: ClintColors, onModeSe
     }
 }
 
-/** Icon + title + description header followed by a stepped slider and a live summary line,
- *  matching the concurrent/split-parts/multithreading cards from the original View-based layout. */
 @Composable
 private fun SliderSettingsCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -425,8 +420,6 @@ private fun SliderSettingsCard(
     }
 }
 
-/** Formats a minutes-since-midnight value using the device's own 12/24-hour and locale settings,
- *  matching the original View-based fragment's formatMinutesOfDay(). */
 private fun formatMinutesOfDay(context: android.content.Context, minutes: Int): String {
     val cal = java.util.Calendar.getInstance().apply {
         set(java.util.Calendar.HOUR_OF_DAY, minutes / 60)

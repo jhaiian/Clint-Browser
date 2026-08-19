@@ -499,9 +499,6 @@ private fun FilterListRow(
     }
 }
 
-/** The expandable add-list FAB menu: file/link mini-buttons fade in above the primary
- *  FAB, with a full-screen scrim to catch outside taps, mirroring
- *  QuiverGuardFabMenuHelper's rotation/fade animation. */
 @Composable
 private fun BoxScope.QuiverGuardFabMenu(
     isOpen: Boolean,

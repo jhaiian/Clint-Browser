@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
-/** Identifies which picker dialog, if any, is currently shown over the screen. */
 enum class DownloadSettingsDialog {
     MEASUREMENT_SYSTEM, RETRY_COUNT, RETRY_INTERVAL, SPEED_LIMIT
 }
@@ -54,11 +53,8 @@ class DownloadSettingsUiState(
     var retryCount by mutableStateOf(initialRetryCount)
     var retryInterval by mutableStateOf(initialRetryInterval)
 
-    /** Kept separate from [initialIgnoringBatteryOptimizations] so onResume() can refresh it after
-     *  the user comes back from the system settings screen without recreating the whole UiState. */
     var ignoringBatteryOptimizations by mutableStateOf(initialIgnoringBatteryOptimizations)
 
-    /** GitHub flavor only, Android 11+ (see [com.jhaiian.clint.settings.downloads.DownloadSettingsKeys]). */
     var showGrantAllFilesAccessRow by mutableStateOf(initialShowGrantAllFilesAccessRow)
     var allFilesAccessGranted by mutableStateOf(initialAllFilesAccessGranted)
 

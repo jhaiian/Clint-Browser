@@ -29,17 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
-/**
- * Performs the actual network transfer for one download. Each call to [run] is one suspend
- * function invocation covering the whole attempt-and-retry lifecycle for a single [DownloadItem];
- * [ClintDownloadManager] launches exactly one coroutine per download and tracks it in `activeJobs`,
- * so cancelling that job (from `pause`/`remove`) is the single mechanism that stops everything here.
- *
- * State is threaded through as a local, immutable `item` snapshot rather than mutated in place,
- * since the shared copy lives in a [kotlinx.coroutines.flow.StateFlow] and must never be mutated
- * after publication. Only [ClintDownloadManager.publish] pushes a new snapshot out; everything
- * else here is a local working copy.
- */
 internal object DownloadWorker {
 
     private const val MIN_PART_BYTES = 512 * 1024L
@@ -71,10 +60,7 @@ internal object DownloadWorker {
         }
 
         val directCustomDir = DownloadFileHelper.resolveDirectCustomDir(context, item)
-        // A download already partway through the SAF temp-then-copy workflow (started before
-        // all-files access was granted, or before this feature existed) must keep going through
-        // moveTempToSaf so its file actually reaches the custom folder, even though direct
-        // writes are now available for anything starting fresh.
+
         val safMode = DownloadFileHelper.isSafCustomMode(context, item) &&
             (directCustomDir == null || DownloadFileHelper.isInTempDir(context, item.file))
         val speedLimiter = ClintDownloadManager.activeSpeedLimiters.getOrPut(item.id) {
@@ -256,12 +242,7 @@ internal object DownloadWorker {
             if (e is CancellationException) throw e
         }
     }
-    /**
-     * Completes the graceful-pause bookkeeping: finalize elapsed time, persist and publish PAUSED
-     * status, clear the notification in favor of a paused/waiting-for-unmetered one, and let the
-     * next queued download take this slot. Callers are expected to have already consumed
-     * [ClintDownloadManager.pauseRequested] for this id before calling this.
-     */
+
     private suspend fun handlePauseTransition(context: Context, item: DownloadItem) {
         var paused = finalizeElapsed(item)
         paused = paused.copy(status = DownloadStatus.PAUSED, speedBytesPerSec = 0L)
@@ -278,13 +259,6 @@ internal object DownloadWorker {
         ClintDownloadManager.tryDequeueNext(context)
     }
 
-    /**
-     * Shared cleanup for a download attempt ending abnormally: either a hard removal (the job was
-     * cancelled by [ClintDownloadManager.remove], surfaced as [CancellationException]) or a genuine
-     * error. Pause is handled separately via cooperative polling (see [handlePauseTransition]) since
-     * pause never cancels the job. Runs under [NonCancellable] for a cancellation, since the
-     * coroutine is already cancelling and any further suspend call would otherwise throw immediately.
-     */
     private suspend fun handleAttemptFailure(context: Context, item: DownloadItem, e: Throwable) {
         suspend fun cleanup() {
             if (item.status != DownloadStatus.PAUSED) {
@@ -304,15 +278,6 @@ internal object DownloadWorker {
         }
     }
 
-    /**
-     * Copies [inputStream] into [outputFile] starting at [writeStartPos]. Runs on [Dispatchers.IO]
-     * via [runInterruptible] so cancelling the owning job actually interrupts a blocked read, the
-     * same guarantee [Future.cancel(true)] gave the old thread-based implementation. Pause never
-     * cancels the job (see [ClintDownloadManager.pause]), so a sibling watcher closes [inputStream]
-     * directly once requested, unblocking a read that's waiting on a stalled connection instead of
-     * leaving it stuck until the socket read timeout.
-     */
-    /** Result of a copy pass: the updated item snapshot, and whether it finished (false = stopped early for a pause). */
     private class CopyResult(val item: DownloadItem, val completed: Boolean)
 
     private suspend fun copyToFile(
@@ -390,12 +355,6 @@ internal object DownloadWorker {
         return CopyResult(current, reachedEof)
     }
 
-    /**
-     * Every call site (the single-stream path, the parallel-download path, and
-     * [ClintDownloadManager.enqueueBlob]) is already running inside that download's own tracked
-     * coroutine, so this stays a direct suspend call rather than launching a separate job that
-     * `activeJobs` wouldn't know about.
-     */
     internal suspend fun moveTempToSaf(context: Context, initialItem: DownloadItem) {
         var item = initialItem
         val treeUri = DownloadFileHelper.getSafTreeUri(context, item)
@@ -460,9 +419,6 @@ internal object DownloadWorker {
                 }
             }
 
-            // Tracked as its own status rather than folded into the copy step above, since the
-            // slow, byte-by-byte part of the SAF handoff is done and what remains is a distinct,
-            // near-instant local cleanup step.
             item = item.copy(status = DownloadStatus.DELETING_TEMP)
             ClintDownloadManager.persistDownload(item)
             ClintDownloadManager.publish(item)
@@ -485,7 +441,6 @@ internal object DownloadWorker {
         }
     }
 
-    /** Reserves [item.totalBytes] on disk up front so parallel parts can each seek and write independently. */
     private suspend fun preAllocateFile(context: Context, initialItem: DownloadItem, file: File): DownloadItem? {
         var item = initialItem.copy(status = DownloadStatus.ALLOCATING, allocationProgress = 0)
         ClintDownloadManager.persistDownload(item)
@@ -517,14 +472,12 @@ internal object DownloadWorker {
         }
     }
 
-    /** Bitmask (bit i = part i) of which parts in [partCompleted] have finished downloading. */
     private fun partsToMask(partCompleted: Array<AtomicBoolean>): Long {
         var mask = 0L
         for (i in partCompleted.indices) if (partCompleted[i].get()) mask = mask or (1L shl i)
         return mask
     }
 
-    /** Serializes the bytes already written for parts that aren't complete yet, so a resume can pick up mid-part instead of redownloading them. */
     private fun encodePartOffsets(partBytesDownloaded: Array<AtomicLong>, partCompleted: Array<AtomicBoolean>): String =
         partBytesDownloaded.indices
             .filter { !partCompleted[it].get() && partBytesDownloaded[it].get() > 0L }
@@ -539,12 +492,6 @@ internal object DownloadWorker {
         }.toMap()
     }
 
-    /**
-     * Downloads [totalParts] byte ranges of [item] concurrently, adaptively growing or shrinking
-     * how many run at once based on measured throughput and 429 responses. [simultaneousParts] is
-     * the starting and maximum concurrency; parts are pulled from a shared cursor so free capacity
-     * is picked up immediately rather than waiting for the next monitor tick.
-     */
     private suspend fun runParallelDownload(
         context: Context,
         initialItem: DownloadItem,
@@ -579,7 +526,6 @@ internal object DownloadWorker {
         val nextPartIndex = AtomicInteger(0)
         val activeWorkers = AtomicInteger(0)
 
-        /** Skips parts the resume mask already marked complete rather than redownloading them. */
         fun claimNextPart(): Int? {
             while (true) {
                 val idx = nextPartIndex.get()
@@ -721,8 +667,6 @@ internal object DownloadWorker {
                 if (firstError.get() != null || ClintDownloadManager.pauseRequested.contains(item.id) || rateLimitDetected.get()) return
             }
 
-            // Resume from whatever this part already has (from a prior session, or an earlier
-            // attempt within this same call) instead of re-fetching bytes that are already on disk.
             val resumeStart = start + partBytesDownloaded[partIndex].get()
             if (resumeStart > end) {
                 partCompleted[partIndex].set(true)
@@ -818,7 +762,6 @@ internal object DownloadWorker {
         }
     }
 
-    /** Interprets how [runParallelDownload]'s coroutineScope ended and applies the matching state transition. */
     private suspend fun resolveParallelOutcome(
         context: Context,
         initialItem: DownloadItem,
@@ -834,7 +777,6 @@ internal object DownloadWorker {
     ) {
         var item = initialItem
 
-        /** Captures true progress (which parts are actually done, not just a contiguous prefix) so resume never redownloads finished parts. */
         fun interruptedProgress(): DownloadItem {
             val total = partBytesDownloaded.sumOf { it.get() }
             return item.copy(
@@ -888,7 +830,6 @@ internal object DownloadWorker {
         return code in 400..499 && code != 429
     }
 
-    /** Detects the OS-level out-of-space error so a full disk fails clearly instead of retrying until space is freed. */
     private fun isDiskFull(msg: String): Boolean = msg.contains("No space left on device", ignoreCase = true)
 
     suspend fun fail(context: Context, initialItem: DownloadItem, msg: String, scheduleRetry: Boolean = true) {
@@ -950,7 +891,7 @@ internal object DownloadWorker {
             }
             delay(retryInterval * 1000L)
             if (item.id in ClintDownloadManager.removedIds) {
-                // Removed during the countdown; remove() already tore down state, nothing to do.
+
             } else if (ClintDownloadManager.pauseRequested.remove(item.id)) {
                 item = item.copy(retryDelaySec = 0)
                 handlePauseTransition(context, item)

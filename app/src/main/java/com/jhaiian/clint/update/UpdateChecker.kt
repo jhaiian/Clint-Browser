@@ -37,25 +37,14 @@ object UpdateChecker {
     private const val KEY_CACHED_APK_VERSION_CODE = "cached_apk_version_code"
     private const val ARCH_UNIVERSAL = "universal"
 
-    // Minimum interval between progress UI updates while downloading, so we
-    // don't hop to the main thread on every single buffer read.
     private const val PROGRESS_UI_THROTTLE_BYTES = 65536L
     private const val SPEED_SAMPLE_INTERVAL_MS = 400L
 
     private val client = OkHttpClient()
 
-    // Ties background work to the activity's own lifecycle when possible (so it is
-    // cancelled automatically if the activity goes away), falling back to a
-    // standalone main-dispatcher scope for the rare case the activity isn't a
-    // LifecycleOwner.
     private fun scopeFor(activity: Activity): CoroutineScope =
         (activity as? LifecycleOwner)?.lifecycleScope ?: CoroutineScope(Dispatchers.Main.immediate)
 
-    // Renders the update flow inline in the host activity's own Compose tree via
-    // OverlayHostActivity.overlayContent, rather than mounting a separate ComposeView on the
-    // window's decor view. The same overlay moves between NoUpdate/CheckFailed/Available/
-    // Downloading as the user interacts with it, and tears itself down (state.step = None,
-    // overlayContent = null) once dismissed, cancelled, or the download finishes/fails.
     private fun mountFlow(activity: Activity): UpdateFlowState {
         val host = activity as? OverlayHostActivity
             ?: return UpdateFlowState(hideStatusBar = false)
@@ -152,11 +141,6 @@ object UpdateChecker {
         return JSONObject(body)
     }
 
-    // Picks the download URL matching the architecture actually installed on this
-    // device. A universal (fat) install always prefers the universal build back, so
-    // an update never silently swaps a user from a universal install onto a slimmer
-    // arch-specific one (or vice versa) — falling back to the other kind only if the
-    // preferred one isn't published.
     private fun resolveDownloadUrl(downloads: JSONObject, arch: String, isUniversal: Boolean): String? {
         return if (isUniversal) {
             downloads.optString(ARCH_UNIVERSAL).takeIf { it.isNotEmpty() }
@@ -167,14 +151,6 @@ object UpdateChecker {
         }
     }
 
-    // Determines which ABI(s) are actually packaged in the currently *installed*
-    // APK(s), rather than which ABIs the device supports. This matters now that
-    // AdBlock's engine is bundled as native (Rust/NDK) code: a device can support
-    // multiple ABIs while the installed build only ships one of them (an
-    // arch-specific split), or ships all of them together (a universal/fat APK).
-    // Basing the update choice on the installed build's own contents ensures a
-    // universal install is offered a universal update (and an arch-specific install
-    // stays on that same arch) rather than picking whatever the device prefers.
     private fun getInstalledAppArch(context: Context): Pair<String, Boolean> {
         val appInfo = context.applicationInfo
         val apkPaths = mutableListOf(appInfo.sourceDir)
@@ -195,12 +171,10 @@ object UpdateChecker {
                     }
                 }
             } catch (_: Exception) {
-                // This APK part couldn't be read; other paths may still yield an answer.
+
             }
         }
 
-        // More than one ABI folder packaged together means this install is a
-        // universal/fat build rather than a single-arch split.
         val isUniversal = foundAbis.size > 1
         val arch = when {
             isUniversal || foundAbis.isEmpty() -> ARCH_UNIVERSAL

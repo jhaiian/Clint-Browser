@@ -57,7 +57,6 @@ import com.jhaiian.clint.ui.listscreen.ClintSearchField
 import com.jhaiian.clint.ui.theme.LocalClintColors
 import com.jhaiian.clint.util.formatRelativeTimestamp
 
-/** See [com.jhaiian.clint.history.HistoryScreen] for the adaptive-width rationale this mirrors. */
 @Composable
 fun BookmarksScreen(
     state: BookmarksUiState,

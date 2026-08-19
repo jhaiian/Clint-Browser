@@ -9,9 +9,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-// Shows a confirmation dialog before starting an update check so the user is aware that
-// the operation will make network requests. Skips immediately (info-only) if no lists
-// have been downloaded yet, since there is nothing to update.
 internal fun QuiverGuardActivity.showFilterListUpdateConfirmation() {
     if (uiState.isUpdateRunning || uiState.isCompileRunning) return
     val downloadedCount = effectiveFilterLists().count { it.isDownloaded && !it.isLocal }
@@ -32,14 +29,6 @@ internal fun QuiverGuardActivity.showFilterListUpdateConfirmation() {
     )
 }
 
-// Iterates over filter lists using FilterListUpdateChecker, emitting progress events for
-// each one. Results are accumulated and handled by onUpdateCheckComplete. listsOverride
-// lets callers supply a pre-filtered subset (e.g. only enabled lists, or a single list
-// from the per-row overflow menu). When null, all downloaded lists are used. When
-// forceUpdate is true, the checker skips conditional HTTP headers so the server always
-// responds with fresh content. progressTitleOverride lets callers (e.g. single-item
-// operations) show a more specific title than the generic "Checking for Updates" /
-// "Force Updating Filter Lists" defaults.
 internal fun QuiverGuardActivity.startFilterListUpdateCheck(
     forceUpdate: Boolean = false,
     listsOverride: List<FilterList>? = null,
@@ -51,9 +40,6 @@ internal fun QuiverGuardActivity.startFilterListUpdateCheck(
 
     uiState.isUpdateRunning = true
 
-    // Use a different title when force-updating so the user knows all lists are being
-    // re-downloaded rather than conditionally checked. A caller-supplied override takes
-    // precedence (used for single-item operations to name the list).
     val dialogTitle = progressTitleOverride ?: if (forceUpdate) {
         getString(R.string.filter_list_force_update_progress_title)
     } else {
@@ -87,8 +73,7 @@ internal fun QuiverGuardActivity.startFilterListUpdateCheck(
                         )
                     }
                     is FilterListUpdateEvent.DownloadingList -> {
-                        // Show determinate progress once the content-length is known, or a
-                        // size-only indicator when it is not available.
+
                         uiState.updateProgress = uiState.updateProgress?.copy(
                             statusText = if (event.totalBytes > 0L) {
                                 getString(R.string.filter_list_update_progress_downloading_known, formatFileSize(event.bytesRead), formatFileSize(event.totalBytes))
@@ -102,8 +87,7 @@ internal fun QuiverGuardActivity.startFilterListUpdateCheck(
                         uiState.updateProgress = uiState.updateProgress?.copy(processedCount = processedCount)
                         when (val result = event.result) {
                             is FilterListUpdateItemResult.Updated -> {
-                                // Persist the new download metadata so future update checks can
-                                // use the new ETag or Last-Modified headers.
+
                                 val downloadedAt = System.currentTimeMillis()
                                 database().updateDownloadResult(
                                     result.filterList.id,
@@ -135,9 +119,6 @@ internal fun QuiverGuardActivity.startFilterListUpdateCheck(
     }
 }
 
-// Handles the four possible outcome combinations after all lists are processed: all
-// up-to-date (toast), all updated successfully (toast + recompile), some updated and
-// some failed (result dialog with recompile option), all failed (info result dialog).
 private fun QuiverGuardActivity.onUpdateCheckComplete(
     updatedResults: List<FilterListUpdateItemResult.Updated>,
     failedResults: List<FilterListUpdateItemResult.Failed>,
@@ -166,8 +147,6 @@ private fun QuiverGuardActivity.onUpdateCheckComplete(
     }
 }
 
-// Shown when at least one list was updated and at least one failed, giving the user the
-// choice to compile with the partial update or cancel.
 private fun QuiverGuardActivity.showPartialUpdateResultDialog(
     updatedCount: Int,
     failedResults: List<FilterListUpdateItemResult.Failed>
@@ -180,23 +159,15 @@ private fun QuiverGuardActivity.showPartialUpdateResultDialog(
     )
 }
 
-// Starts a compile run after a successful update so the engine immediately benefits
-// from the freshly downloaded rule content.
 private fun QuiverGuardActivity.triggerRecompilationAfterUpdate() {
     if (!uiState.isCompileRunning) {
         startCompilation()
     }
 }
 
-// Returns all filter lists that are both enabled and downloaded. These are the "active"
-// lists — the ones currently contributing to request filtering. Used by the overflow
-// menu operations that target the active subset only.
 internal fun QuiverGuardActivity.getActiveFilterLists(): List<FilterList> =
     effectiveFilterLists().filter { it.isEnabled && it.isDownloaded }
 
-// Confirms before checking for updates on (or force-downloading) only the
-// enabled+downloaded filter lists. If no lists are enabled, informs the user so they
-// know to enable at least one list first.
 internal fun QuiverGuardActivity.showActiveFilterListUpdateConfirmation(forceUpdate: Boolean) {
     if (uiState.isUpdateRunning || uiState.isCompileRunning) {
         Toast.makeText(this, getString(R.string.filter_list_operation_in_progress), Toast.LENGTH_SHORT).show()
@@ -232,8 +203,6 @@ internal fun QuiverGuardActivity.showActiveFilterListUpdateConfirmation(forceUpd
     )
 }
 
-// Shows a confirmation dialog before force-updating all downloaded filter lists.
-// Reports the count so the user knows the scope of the network operation.
 internal fun QuiverGuardActivity.showForceUpdateAllConfirmation() {
     if (uiState.isUpdateRunning || uiState.isCompileRunning) {
         Toast.makeText(this, getString(R.string.filter_list_operation_in_progress), Toast.LENGTH_SHORT).show()
@@ -257,9 +226,6 @@ internal fun QuiverGuardActivity.showForceUpdateAllConfirmation() {
     )
 }
 
-// Shows a confirmation dialog before triggering a full recompile from the overflow
-// menu. Unlike the FAB compile path (which only activates when there are unsaved
-// changes), this can be triggered at any time.
 internal fun QuiverGuardActivity.showRecompileConfirmation() {
     if (uiState.isCompileRunning) return
     if (uiState.isUpdateRunning) {

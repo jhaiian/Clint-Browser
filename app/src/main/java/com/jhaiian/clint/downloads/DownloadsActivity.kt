@@ -35,31 +35,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Hosts the Compose [DownloadsScreen]. See [com.jhaiian.clint.history.HistoryActivity] for the
- * general hosting pattern.
- *
- * Everything item-scoped (open/share/properties/APK-install/redownload/change-settings/etc.) is
- * preserved unchanged below, since none of it ever depended on the old per-tab Fragment/
- * ViewPager2 architecture this rewrite removes — it always operated on a single [DownloadItem]
- * (or an explicit list of them) passed in directly. Only the toolbar, tab filtering, sort/
- * search/selection state, and bulk-delete flow were coupled to that architecture and needed
- * rewriting.
- */
 class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity {
 
-    /** Full-window Compose overlay (e.g. the redownload dialog) rendered inline in this
-     *  activity's own composition; see [OverlayHostActivity]. */
     override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
 
-    /** Backs the "downloading started" Snackbar; see [SnackbarHostActivity]. */
     override val snackbarHostState = SnackbarHostState()
 
     companion object {
         const val EXTRA_OPEN_ID = "open_download_id"
 
-        /** Opens (or, if already the foreground Activity, refocuses) the downloads screen. Used
-         *  by the "downloading started" Snackbar's View action, wherever it's shown from. */
         fun open(context: android.content.Context) {
             context.startActivity(
                 Intent(context, DownloadsActivity::class.java).apply {
@@ -71,10 +55,6 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActi
 
     internal lateinit var uiState: DownloadsUiState
 
-    /** No-op shims: multiRedownload/multiRemove below reset this and call refresh() to force an
-     *  immediate re-render after their own action, matching the pre-Compose throttled-polling
-     *  design. Compose already re-renders reactively from ClintDownloadManager.downloadsFlow on
-     *  every emission, so there's nothing left for these to actually do. */
     internal var lastRefreshMs = 0L
     internal fun refresh() {}
 
@@ -157,10 +137,6 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActi
                 val maxContentWidth = rememberMaxContentWidth(this)
                 val allItems by ClintDownloadManager.downloadsFlow.collectAsState()
 
-                // Active downloads show elapsed time and speed/ETA text computed from
-                // System.currentTimeMillis() at render time, not stored reactively in the Flow's
-                // value — so this ticks recomposition once a second to keep that text current
-                // even when the Flow itself hasn't emitted a new list.
                 var tick by remember { mutableStateOf(0L) }
                 LaunchedEffect(Unit) {
                     while (true) {

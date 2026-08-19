@@ -32,12 +32,8 @@ import com.jhaiian.clint.R
 import com.jhaiian.clint.base.ClintActivity
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** Max height of a ClintDialog's scrollable content area before it starts scrolling. */
 val ClintDialogContentMaxHeight = 440.dp
 
-/** Space reserved for the title and footer rows, subtracted from the window height when
- *  capping the content area so the dialog never grows taller than the screen (e.g. in
- *  landscape, where the window is shorter than [ClintDialogContentMaxHeight] alone needs). */
 private val ClintDialogChromeHeight = 140.dp
 
 @Composable
@@ -45,12 +41,6 @@ internal fun ClintDialogStatusBarEffect(hideStatusBar: Boolean) {
     val view = LocalView.current
     val context = LocalContext.current
 
-    // Mirrors the old MaterialAlertDialogBuilder-era applyStatusBarFlagToDialog()'s
-    // trackDialogShown()/trackDialogDismissed() bookkeeping: while any dialog (now: any
-    // Compose dialog reaching this effect) is on screen, the hosting Activity's own
-    // onWindowFocusChanged should skip re-asserting its status-bar visibility, so it doesn't
-    // fight this dialog's own window over the status bar on a focus change (e.g. pulling down
-    // the notification shade and back while a dialog is open).
     DisposableEffect(Unit) {
         val activity = context as? ClintActivity
         activity?.trackDialogShown()
@@ -82,12 +72,6 @@ fun ClintDialogCancelFooter(onDismiss: () -> Unit) {
     }
 }
 
-/**
- * The app's shared dialog chrome: a themed rounded Surface with a title, a scrollable content
- * slot, and a footer slot, plus status-bar sync with the "hide status bar" preference. Used for
- * settings pickers, confirmations, and document viewing alike — reach for this rather than a new
- * MaterialAlertDialogBuilder or a one-off Surface/Dialog pair.
- */
 @Composable
 fun ClintDialog(
     title: String,

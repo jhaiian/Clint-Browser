@@ -60,9 +60,7 @@ fun DownloadRow(
     val colors = LocalClintColors.current
     var optionsMenuOpen by remember { mutableStateOf(false) }
     val cardColor = if (isSelected) lerp(colors.cardBackground, colors.primary, 0.55f) else colors.cardBackground
-    // Reading tick here (even though its value isn't otherwise used) forces this specific row
-    // to recompute display text once a second, since elapsed time / speed / ETA are computed
-    // from System.currentTimeMillis() at render time rather than stored reactively.
+
     val display = downloadRowDisplay(item, tick, onPause, onResume, onRetry)
 
     Column(

@@ -25,10 +25,6 @@ import com.jhaiian.clint.R
 import com.jhaiian.clint.ui.ClintDialog
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** Text-field + optional allow/deny radio choice, matching dialog_add_site_exception.xml.
- *  showStateChoice is false for desktop mode / Quiver Guard exceptions, which always add
- *  an "allow" entry with no choice to make. onConfirm receives the raw trimmed input;
- *  origin normalization (scheme stripping, eTLD+1) stays the caller's job, as before. */
 @Composable
 fun AddSiteDialog(
     title: String,

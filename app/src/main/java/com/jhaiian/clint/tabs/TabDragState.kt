@@ -10,14 +10,6 @@ import androidx.compose.ui.unit.IntSize
 
 internal fun tabItemKey(tabId: String): String = "tab:$tabId"
 
-/**
- * Tracks an in-progress drag-to-reorder gesture on the Tab Grid menu, started from a card's
- * dedicated drag handle (see [TabMenuCard]) rather than the card itself, so dragging never
- * fights the card's own tap/long-press handling or the grid's vertical scroll gesture.
- *
- * Hit-testing re-walks [gridState]'s own visible-item bounds on every call, so it stays correct
- * as the grid scrolls or reflows while items are live-swapped underneath the drag.
- */
 @Stable
 internal class TabDragState(private val gridState: LazyGridState) {
     var draggingId by mutableStateOf<String?>(null)
@@ -29,7 +21,6 @@ internal class TabDragState(private val gridState: LazyGridState) {
     var originSize: IntSize = IntSize.Zero
         private set
 
-    /** Key of whichever grid item the pointer currently sits over; null over empty space. */
     var hoverKey: Any? = null
         private set
 

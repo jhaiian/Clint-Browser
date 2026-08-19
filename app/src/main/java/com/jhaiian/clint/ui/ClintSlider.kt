@@ -6,15 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * The app's themed replacement for Material3's bare [Slider]. A plain
- * `Slider(colors = SliderDefaults.colors(thumbColor = ..., activeTrackColor = ...))` call only
- * covers the thumb and the filled (active) side of the track — the unfilled (inactive) side and
- * every tick color are left on Material3's stock default color scheme, which is why the
- * unselected portion of the track rendered as a purple-tinted default instead of matching this
- * app's theme. This maps every role instead, so new sliders (e.g. ones migrated from XML) get
- * the correct theme for free.
- */
 @Composable
 fun ClintSlider(
     value: Float,

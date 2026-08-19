@@ -28,8 +28,6 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
 
     private lateinit var uiState: SetupUiState
 
-    /** Full-window Compose overlay (document viewer) rendered inline in this activity's own
-     *  composition; see [OverlayHostActivity]. */
     override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
 
     private val browserRoleLauncher = registerForActivityResult(

@@ -61,8 +61,6 @@ private fun DocumentViewerContent(state: DocumentViewerUiState) {
     }
 }
 
-/** Renders a document (changelog, privacy policy, terms, attribution) fetched as markdown,
- *  reusing the same dialog chrome, status-bar sync, and theming as every other ClintDialog. */
 @Composable
 fun DocumentViewerDialog(
     title: String,

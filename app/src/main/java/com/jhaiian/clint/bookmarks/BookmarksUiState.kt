@@ -8,7 +8,6 @@ import com.jhaiian.clint.ui.listscreen.ListSortOrder
 
 enum class BookmarksSortKey { TITLE, LAST_VISIT, DATE_ADDED }
 
-/** Items are keyed by [Bookmark.url], matching the database's unique column. */
 class BookmarksUiState {
     var items by mutableStateOf<List<Bookmark>>(emptyList())
     var isLoading by mutableStateOf(true)

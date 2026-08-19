@@ -20,11 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Hosts the Compose [BookmarksScreen]. See [com.jhaiian.clint.history.HistoryActivity] for the
- * general pattern this mirrors (coroutine-backed persistence, WindowSizeClass-driven adaptive
- * width, shared confirm-dialog host).
- */
 class BookmarksActivity : ClintActivity() {
 
     private lateinit var uiState: BookmarksUiState
