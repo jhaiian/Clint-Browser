@@ -71,8 +71,6 @@ sealed class ManualFilterRuleDialogMode {
     data class Edit(val rule: ManualFilterRule) : ManualFilterRuleDialogMode()
 }
 
-/** Rows are keyed by [ManualFilterRule.id] for both the lazy list and selection, so selection
- *  state survives re-sorting and re-filtering. */
 class ManualFilterUiState {
     var rules by mutableStateOf<List<ManualFilterRule>>(emptyList())
     var isEnabled by mutableStateOf(false)
@@ -104,8 +102,6 @@ class ManualFilterUiState {
         selectedIds = selectedIds + displayed.map { it.id }
     }
 
-    /** Inverts selection only within the currently filtered/displayed rows, preserving the
-     *  selection state of any row a search filter is currently hiding. */
     fun invertSelection(displayed: List<ManualFilterRule>) {
         val displayedIds = displayed.map { it.id }.toSet()
         val keptOutsideView = selectedIds - displayedIds
@@ -386,9 +382,6 @@ private fun sectionLetterForManualFilterRule(rule: ManualFilterRule): String {
     return if (first.isLetter()) first.uppercaseChar().toString() else if (first.isDigit()) first.toString() else "#"
 }
 
-/** Shared add/edit dialog: a single multi-line text field for the rule pattern(s). When
- *  adding, the user can paste multiple lines at once (one rule per line); when editing,
- *  the field holds just the one rule being changed. */
 @Composable
 fun ManualFilterRuleDialog(
     mode: ManualFilterRuleDialogMode,

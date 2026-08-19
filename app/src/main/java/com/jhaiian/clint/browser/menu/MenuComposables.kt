@@ -89,9 +89,6 @@ import com.jhaiian.clint.ui.ClintDialogStatusBarEffect
 import com.jhaiian.clint.ui.listscreen.PopupShape
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** A fresh read of everything the menu displays; built once each time the menu opens, mirroring
- * the old showPopupMenu()/showBottomSheetMenu() setup blocks (which computed the same things
- * twice, once per presentation style). */
 internal data class BrowserMenuSnapshot(
     val showNavRow: Boolean,
     val canGoBack: Boolean,
@@ -197,8 +194,6 @@ internal fun MainActivity.buildMenuActions(dismiss: () -> Unit): BrowserMenuActi
     onDisableQuiverGuardForSite = { dismiss(); onMenuDisableQuiverGuardForSite() }
 )
 
-/** The button that lives in the address bar row; owns the open/closed state and picks the
- * popup vs. bottom-sheet presentation from the "menu_style" preference. */
 @Composable
 internal fun MenuTriggerButton(activity: MainActivity, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
@@ -254,19 +249,13 @@ private fun BrowserMenuBottomSheet(
         PreferenceManager.getDefaultSharedPreferences(context).getBoolean("hide_status_bar", false)
     }
     val listState = rememberLazyListState()
-    // Consumes whatever fling velocity is left over once the list itself has scrolled as far as
-    // it can, so a fast fling at either edge of the list never reaches the sheet's own drag
-    // gesture and closes it. Dragging the handle, tapping the scrim, or pressing back still
-    // dismiss normally since none of those go through this connection.
+
     val flingBoundaryConnection = remember {
         object : NestedScrollConnection {
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
         }
     }
-    // In portrait the sheet is capped at half the screen height so it never covers the toolbar
-    // above it; a long menu scrolls internally past that point instead of growing further. In
-    // landscape, where half height would be too cramped for the item list, it keeps a smaller
-    // scrim gap at the top instead.
+
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     val maxSheetHeight = if (isPortrait) {
         (configuration.screenHeightDp.dp * 0.5f).coerceAtLeast(320.dp)
@@ -439,9 +428,7 @@ private fun MenuItemRow(
                 )
             }
             if (badge != null) {
-                // Deliberately a sibling of the clipped icon background above, not a child of
-                // it: the rounded-corner clip on that box was cutting this badge off since its
-                // offset pushes it partially outside the icon container's bounds.
+
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier

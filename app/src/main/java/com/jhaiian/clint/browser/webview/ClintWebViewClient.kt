@@ -35,15 +35,6 @@ class ClintWebViewClient(
     private val cooldownDomains = mutableMapOf<String, Long>()
     private var pendingHeaderLoad: String? = null
 
-    // Caches the Quiver Guard site-exception lookup for the current page's host.
-    // shouldInterceptRequest() is invoked once per subresource - often dozens of
-    // times per page load thanks to images alone - and SitePermissionManager.getState()
-    // is a synchronous SQLite query plus a public-suffix domain computation, so
-    // repeating it per-request rather than per-navigation was adding a real,
-    // cumulative DB round-trip to every single image/script/style fetch on the
-    // page. The exception state can't change mid-navigation from anything the
-    // WebView itself does, so it's safe to compute once per host and reuse it
-    // for every subsequent request until the next page starts loading.
     @Volatile private var exceptionCacheHost: String? = null
     @Volatile private var exceptionCacheValid: Boolean = false
     @Volatile private var exceptionCacheState: Boolean = false
@@ -88,10 +79,7 @@ class ClintWebViewClient(
         super.onPageStarted(view, url, favicon)
         cachedPageUrl = url
         pendingHeaderLoad = null
-        // Invalidate the per-host exception cache on every navigation so a
-        // change made via the Quiver Guard exception toggle (which reloads the
-        // tab) is picked up on the very next request instead of serving a
-        // stale cached result for this host.
+
         exceptionCacheValid = false
         if (isActive()) onPageStartedCallback(url)
     }

@@ -6,7 +6,6 @@ import android.widget.Toast
 import com.jhaiian.clint.R
 import kotlinx.coroutines.launch
 
-// Launches the system file picker for adding a filter list from a local file.
 internal fun QuiverGuardActivity.launchAddFilterListFromFile() {
     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
         addCategory(Intent.CATEGORY_OPENABLE)
@@ -15,9 +14,6 @@ internal fun QuiverGuardActivity.launchAddFilterListFromFile() {
     filePickerLauncher.launch(intent)
 }
 
-// Called with the picked file's Uri once the file picker returns. Validates and copies
-// the file's content into the app's storage; on success shows the title-confirmation
-// dialog, on failure shows a toast (there is nothing to confirm, so no dialog is shown).
 internal fun QuiverGuardActivity.importFilterListFromFile(uri: Uri) {
     activityScope.launch {
         when (val result = LocalFilterListImporter.import(applicationContext, uri)) {
@@ -27,9 +23,6 @@ internal fun QuiverGuardActivity.importFilterListFromFile(uri: Uri) {
     }
 }
 
-// Persists the already-imported local file as a new custom (non-downloadable) filter
-// list using the (possibly edited) title, and marks it enabled so it is included in the
-// next compile without an extra tap.
 internal fun QuiverGuardActivity.confirmAddFilterListFromFile(title: String) {
     val imported = uiState.addFromFileImport ?: return
     val id = database().addCustomFilterList(title, "")

@@ -74,7 +74,6 @@ fun MeasurementSystemDialog(
     }
 }
 
-/** Shared chrome for the two plain "enter a number" dialogs (retry count, retry interval). */
 @Composable
 private fun NumberEntryDialog(
     title: String,

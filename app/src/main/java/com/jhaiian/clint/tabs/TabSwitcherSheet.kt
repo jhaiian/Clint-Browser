@@ -59,37 +59,24 @@ import com.jhaiian.clint.browser.MainActivity
 import com.jhaiian.clint.ui.FaviconCache
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * Replaces the old `BottomSheetDialogFragment` + `RecyclerView`/`TabAdapter`. [tabs] is a local
- * mirror of [MainActivity.tabManager]'s list, kept in lockstep by removing from both on close
- * (the same two-list arrangement the old Fragment/Adapter pair used) so the sheet updates
- * immediately without needing the tab manager itself to be observable.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     val tabs = remember { mutableStateListOf<TabPreview>().apply { addAll(activity.tabManager.previews()) } }
-    // Captured once, same as the old Fragment's constructor-injected `activeIndex` — not
-    // recomputed after a close, matching the original's (slightly quirky but faithful) behavior.
+
     val activeIndex = remember { activity.tabManager.activeIndex }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
     val listState = rememberLazyListState()
-    // Consumes whatever fling velocity is left over once the list itself has scrolled as far as
-    // it can, so a fast fling at either edge of the list never reaches the sheet's own drag
-    // gesture and closes it. Dragging the handle, tapping the scrim, or pressing back still
-    // dismiss normally since none of those go through this connection.
+
     val flingBoundaryConnection = remember {
         object : NestedScrollConnection {
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
         }
     }
     val configuration = LocalConfiguration.current
-    // In portrait the sheet is capped at half the screen height so it never covers the toolbar
-    // above it; a long list scrolls internally past that point instead of growing further. In
-    // landscape, where half height would be too cramped for the tab list, it keeps a smaller
-    // scrim gap at the top instead.
+
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
     val maxSheetHeight = if (isPortrait) {
         (configuration.screenHeightDp.dp * 0.5f).coerceAtLeast(320.dp)
@@ -283,9 +270,6 @@ private fun TabRow(tab: TabPreview, isActive: Boolean, onClick: () -> Unit, onCl
     }
 }
 
-/** Mirrors TabAdapter's old favicon logic: incognito tabs use the memory-only cache lookup so
- *  nothing about them ever touches disk, matching the original's privacy behavior exactly. Also
- *  used by the Tab Grid menu (TabMenuComponents.kt) so both tab menu styles share one favicon path. */
 @Composable
 internal fun rememberTabFavicon(tab: TabPreview): Bitmap? {
     val context = LocalContext.current

@@ -66,8 +66,6 @@ import java.net.URLDecoder
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
-/** Everything the old newInstance() Bundle args carried. Also reused (with `isPreviewContext =
- *  true`) by [ContentPreviewSheet] for image long-presses inside its own embedded WebView. */
 data class ImageLongPressRequest(
     val imageUrl: String,
     val pageTitle: String,
@@ -75,7 +73,6 @@ data class ImageLongPressRequest(
     val referer: String = "",
     val isPreviewContext: Boolean = false
 )
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,10 +113,7 @@ internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainA
         }
     }
     val configuration = LocalConfiguration.current
-    // In portrait the sheet is capped at half the screen height so it never covers the toolbar
-    // above it; a long menu scrolls internally past that point instead of growing further. In
-    // landscape, where half height would be too cramped for the item list, it keeps a smaller
-    // scrim gap at the top instead.
+
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
     val maxSheetHeight = if (isPortrait) {
         (configuration.screenHeightDp.dp * 0.5f).coerceAtLeast(320.dp)
@@ -185,10 +179,6 @@ internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainA
     }
 }
 
-/** Hosts a plain [ImageView] via interop rather than Compose's Image()/AsyncImage, since this is
- *  the one spot in the app that needs to keep an [AnimatedImageDrawable] (animated GIF/WebP)
- *  actually animating — Compose has no built-in equivalent for that. Clipped and framed like a
- *  card so the thumbnail reads as a distinct preview rather than a bare, edge-to-edge bitmap. */
 @Composable
 private fun ImageThumbnail(imageUrl: String, referer: String) {
     val context = LocalContext.current

@@ -31,7 +31,6 @@ internal fun MainActivity.applyAddressBarPosition() {
     updateMainContentInsets()
 }
 
-/** Sets up the shared suggestion fetcher/background thread backing [SearchOverlay]. */
 internal fun MainActivity.setupAddressBar() {
     suggestionFetcher = SuggestionFetcher()
     val bgThread = android.os.HandlerThread("ClintSuggestions").also { it.start() }
@@ -344,9 +343,7 @@ internal fun MainActivity.updateTabCount() {
 }
 
 internal fun MainActivity.updateIncognitoState(isIncognito: Boolean) {
-    // The toolbars are plain Compose Surfaces colored from LocalClintColors.surface, so unlike
-    // the old Views there's no separate "reapply the surface color" step needed here — this
-    // just flips the incognito icon/badge.
+
     uiState.isIncognito = isIncognito
 }
 
@@ -357,7 +354,6 @@ internal fun MainActivity.updateSwipeRefreshColors(isIncognito: Boolean) {
     swipeRefreshView.setColorSchemeColors(getThemeColor(androidx.appcompat.R.attr.colorPrimary))
 }
 
-/** Closes the search overlay (if open) and drops focus/IME, without touching the address bar text. */
 internal fun MainActivity.hideKeyboard() {
     hideKeyboardOnly()
 }

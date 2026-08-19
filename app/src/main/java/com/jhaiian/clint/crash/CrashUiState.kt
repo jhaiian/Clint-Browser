@@ -6,8 +6,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import java.io.File
 
-/** On-screen and clipboard content is truncated past this length — very large logs are
- *  rare but shouldn't be able to freeze the UI or blow past clipboard limits. */
 const val MAX_CRASH_CLIP_CHARS = 450_000
 
 class CrashReportItem(val file: File, val title: String, val content: String)

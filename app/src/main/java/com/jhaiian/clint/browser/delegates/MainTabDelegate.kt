@@ -42,9 +42,6 @@ internal fun MainActivity.restoreTabs(): Boolean {
     return true
 }
 
-/** Captures a snapshot of the currently active tab's WebView into [TabThumbnailCache], for the
- *  Tab Grid menu to show as that tab's preview. Must be called while the tab's WebView is still
- *  attached and laid out, i.e. right before switching away from it or closing it. */
 internal fun MainActivity.captureActiveTabThumbnail() {
     val tab = tabManager.activeTab ?: return
     TabThumbnailCache.capture(tab.id, tab.webView, tab.isIncognito)

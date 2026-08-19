@@ -11,7 +11,6 @@ import com.jhaiian.clint.browser.delegates.PREF_BATTERY_OPT_ASKED
 import com.jhaiian.clint.settings.downloads.DownloadSettingsKeys
 import java.io.File
 
-
 internal fun resolveFilename(url: String, contentDisposition: String, contentType: String): String {
     if (contentDisposition.isNotBlank()) {
         val cdFilename = DownloadFileHelper.extractFilenameFromContentDisposition(contentDisposition)

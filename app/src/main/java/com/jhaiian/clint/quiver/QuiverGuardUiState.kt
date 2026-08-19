@@ -7,7 +7,6 @@ import com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig
 import com.jhaiian.clint.ui.listscreen.ListSortKey
 import com.jhaiian.clint.ui.listscreen.ListSortOrder
 
-/** Rule count and enabled state pushed into the pinned Manual Filter row. */
 data class ManualFilterSummary(val ruleCount: Int, val isEnabled: Boolean)
 
 data class DownloadProgressUi(
@@ -25,9 +24,6 @@ data class UpdateProgressUi(
     val currentListName: String = ""
 )
 
-/** Shown after an update check completes with at least one failure, or with none
- *  updated and none failed except via a toast (see QuiverGuardUpdateHelper). When
- *  onCompile is null this is an info-only OK dialog; otherwise Cancel/Compile. */
 data class UpdateResultUi(
     val title: String,
     val message: String,
@@ -51,8 +47,6 @@ data class CompileResultUi(
     val onRetry: (() -> Unit)? = null
 )
 
-/** Tracks the two-stage add-from-link flow: idle -> fetching -> fetched (ready to
- *  confirm the title) or error (shown under the URL field, resets to idle on edit). */
 sealed class AddLinkFetchStatus {
     object Idle : AddLinkFetchStatus()
     data class Fetching(val bytesRead: Long, val totalBytes: Long) : AddLinkFetchStatus()
@@ -78,7 +72,6 @@ class QuiverGuardUiState {
     var filterListActionsMenuOpen by mutableStateOf(false)
     var selectionOptionsMenuOpen by mutableStateOf(false)
 
-    // In-memory overrides for enabled states / staged removals not yet compiled.
     var pendingEnabledOverrides by mutableStateOf<Map<Long, Boolean>>(emptyMap())
     var pendingRemovedIds by mutableStateOf<Set<Long>>(emptySet())
     var isStartupDirty by mutableStateOf(false)
@@ -114,8 +107,6 @@ class QuiverGuardUiState {
         selectedIds = selectedIds + displayed.map { it.id }
     }
 
-    /** Inverts selection only within the currently filtered/displayed rows, preserving
-     *  the selection state of any row a search filter is currently hiding. */
     fun invertSelection(displayed: List<FilterList>) {
         val displayedIds = displayed.map { it.id }.toSet()
         val keptOutsideView = selectedIds - displayedIds

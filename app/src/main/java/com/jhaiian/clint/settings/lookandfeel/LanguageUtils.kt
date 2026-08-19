@@ -7,27 +7,8 @@ import com.jhaiian.clint.R
 import com.jhaiian.clint.util.LocaleHelper
 import java.util.Locale
 
-/** A language shipped in the app. */
 data class LanguageOption(val tag: String, val locale: Locale)
 
-/**
- * Discovers every language the APK ships, derived at runtime from the compiled values-*
- * qualifiers rather than a hardcoded list. A shipped translation is only detected by comparing
- * its strings against the base English values, since an untranslated string silently falls back
- * to English.
- *
- * [Context.getAssets] locales include qualifiers contributed only by dependencies (AndroidX,
- * Compose, pseudo-locales used for testing) that translate their own strings but none of this
- * app's, so a locale is only kept when at least one of this app's own strings is translated;
- * otherwise it is indistinguishable from the base language and just adds noise to the picker.
- * Region variants such as "fil-PH" that have no values-fil-rPH override resolve to the exact same
- * strings as their base "fil" tag, so entries are also deduplicated by their resolved content and
- * the shortest matching tag is kept.
- *
- * This walks every string resource for every shipped locale, so it is deliberately cached for the
- * lifetime of the process: the app's own translations never change while it's running, and callers
- * are expected to invoke this off the main thread.
- */
 fun collectLanguageOptions(context: Context): List<LanguageOption> {
     cachedLanguageOptions?.let { return it }
 

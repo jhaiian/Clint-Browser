@@ -69,7 +69,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Everything the old newInstanceFor*() Bundle args carried. */
 data class ContentPreviewRequest(
     val url: String,
     val isPage: Boolean,
@@ -107,8 +106,6 @@ internal fun ContentPreviewSheet(request: ContentPreviewRequest, activity: MainA
 
     val quiverGuardPreviewTabId = remember { "preview-" + System.identityHashCode(request) }
 
-    // Loads the header favicon exactly like the old Fragment: reader mode gets a reader icon
-    // fallback, page mode gets a globe fallback, standalone-file mode gets no favicon fetch at all.
     androidx.compose.runtime.LaunchedEffect(request.url, request.isReaderMode, request.isPage) {
         if ((request.isReaderMode || request.isPage) && request.url.isNotEmpty()) {
             val prefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -209,16 +206,7 @@ private fun PreviewWebView(
     onImageLongPress: (ImageLongPressRequest) -> Unit,
     onPreviewLinkLongPress: (PreviewLinkLongPressRequest) -> Unit
 ) {
-    // Wrapped in a single-item LazyColumn instead of a bare Box so the WebView participates
-    // in Compose's nested-scroll negotiation with the enclosing ModalBottomSheet. A raw
-    // AndroidView never dispatches nested-scroll events, so without this wrapper the sheet's
-    // drag-to-dismiss gesture claims any vertical drag before the WebView can consume it,
-    // leaving its content unscrollable.
-    //
-    // The overscroll/stretch effect is disabled because this LazyColumn always has exactly
-    // one item sized to fill the viewport: any stretch at its edges has nothing to reveal but
-    // empty space, showing up as a gap above or below the WebView instead of an intentional
-    // visual effect.
+
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
     LazyColumn(Modifier.fillMaxSize()) {
         item {
@@ -234,11 +222,6 @@ private fun PreviewWebView(
                     val wv = WebView(ctx)
                     onWebViewCreated(wv)
 
-                    // Quiver Guard's cosmetic-filter bootstrap must be registered before this WebView's
-                    // first navigation (addDocumentStartJavaScript only affects navigations *after* it's
-                    // called). Every preview WebView's one and only page load *is* that first navigation,
-                    // so this early call is required here even though a real tab gets it for free from
-                    // MainActivity.createWebView. See QuiverGuardWebIntegration.installEarly's kdoc.
                     if (quiverGuardEnabled) QuiverGuardWebIntegration.installEarly(ctx, wv)
 
                     wv.settings.apply {
@@ -263,24 +246,11 @@ private fun PreviewWebView(
                         WebViewCompat.addDocumentStartJavaScript(wv, activity.loadJsAsset("disable_autoplay.js"), setOf("*"))
                     }
 
-                    // Quiver Guard's document-start bootstrap script was already registered above via
-                    // installEarly() — that script looks up the current page's host at runtime (inside
-                    // the JS itself) since a document-start registration happens once, before this
-                    // WebView's first navigation, and so can't know in advance which site is about to
-                    // load or whether that site is on the exception list. So there's nothing further to
-                    // register here for the DOCUMENT_START_SCRIPT-supported path; only the fallback path
-                    // below (for WebView versions without that API) needs its own registration, done
-                    // after the page has actually loaded and its real host is known.
-
                     if (!request.isReaderMode) applyPreviewDarkMode(ctx, wv)
 
                     wv.setOnScrollChangeListener { _, _, scrollY, _, _ -> onScrollYChanged(scrollY) }
                     wv.setOnTouchListener { view, _ -> view.parent?.requestDisallowInterceptTouchEvent(true); false }
 
-                    // ClintWebViewClient already implements the Quiver Guard network-blocking check
-                    // (including the exception-list lookup), https-only upgrading, tracker-host blocking,
-                    // and external-app intent handling — reusing it keeps this preview identical to a
-                    // real tab instead of duplicating that logic.
                     wv.webViewClient = ClintWebViewClient(
                         prefs = prefs,
                         isActive = { true },
@@ -291,9 +261,7 @@ private fun PreviewWebView(
                                 if (!pageTitle.isNullOrEmpty()) onTitleChanged(pageTitle)
                                 if (pageHost.isNotEmpty()) onUrlChanged(pageHost)
                             }
-                            // Fallback cosmetic-filter injection for WebView versions without
-                            // WebViewFeature.DOCUMENT_START_SCRIPT; the document-start path above
-                            // already handles everything else.
+
                             if (request.isPage && quiverGuardEnabled && !WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
                                 scope.launch {
                                     val pageHost = runCatching { android.net.Uri.parse(pageUrl).host }.getOrNull()
@@ -332,10 +300,7 @@ private fun PreviewWebView(
                                     true
                                 }
                                 WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
-                                    // HitTestResult.extra returns the <img> src rather than the enclosing
-                                    // anchor's href for this hit type, so the href must be requested
-                                    // asynchronously via requestFocusNodeHref, letting a linked icon
-                                    // resolve to the link sheet instead of the image sheet.
+
                                     val hrefHandler = Handler(Looper.getMainLooper()) { message ->
                                         val linkUrl = message.data.getString("url")
                                         if (!linkUrl.isNullOrEmpty()) showPreviewLinkFromWebView(wv, linkUrl, onPreviewLinkLongPress)

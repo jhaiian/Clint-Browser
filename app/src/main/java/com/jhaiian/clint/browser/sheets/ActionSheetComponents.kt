@@ -17,8 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** One tappable icon+label row, 52dp tall — matches every `action_*` LinearLayout row across
- *  bottom_sheet_image_actions.xml / bottom_sheet_link_actions.xml / bottom_sheet_preview_link_actions.xml. */
 @Composable
 internal fun ActionSheetRow(iconRes: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
     val colors = LocalClintColors.current
@@ -31,7 +29,6 @@ internal fun ActionSheetRow(iconRes: androidx.compose.ui.graphics.vector.ImageVe
     }
 }
 
-/** The 1dp hairline between rows, matching `?attr/clintDividerColor`. */
 @Composable
 internal fun ActionSheetDivider() {
     HorizontalDivider(color = LocalClintColors.current.divider, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))

@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.cos
 
-/** Exact port of android.view.animation.AccelerateDecelerateInterpolator's curve. */
 val AccelerateDecelerateEasing = Easing { fraction ->
     (cos((fraction + 1) * PI) / 2.0 + 0.5).toFloat()
 }
@@ -43,7 +42,6 @@ private fun loopSpec(): InfiniteRepeatableSpec<Float> = infiniteRepeatable(
     repeatMode = RepeatMode.Reverse
 )
 
-/** The 44dp two-tone + accent chip used for theme/accent/intensity selection cards. */
 @Composable
 fun AccentSwatch(bg: Color, surface: Color, accent: Color, modifier: Modifier = Modifier) {
     Box(
@@ -73,7 +71,6 @@ private val PreviewWidth = 52.dp
 private val PreviewHeight = 64.dp
 private val BarHeight = 14.dp
 
-/** Three stacked 3dp lines representing page content, matching the original mockup. */
 @Composable
 private fun BoxScope.ContentLinesStack(onSurface: Color, topPad: Dp, bottomPad: Dp) {
     Box(
@@ -90,11 +87,9 @@ private fun BoxScope.ContentLinesStack(onSurface: Color, topPad: Dp, bottomPad: 
     }
 }
 
-/** translationY = translationFraction * BarHeight, applied in the draw phase (no recomposition). */
 private fun Modifier.translateYByBarHeight(translationFraction: Float): Modifier =
     this.graphicsLayer { translationY = translationFraction * BarHeight.toPx() }
 
-/** Pill positioned top or bottom center, offset by [translationFraction] * bar height (0..1, signed). */
 @Composable
 private fun BoxScope.Pill(color: Color, atTop: Boolean, translationFraction: Float = 0f) {
     Box(
@@ -110,7 +105,6 @@ private fun BoxScope.Pill(color: Color, atTop: Boolean, translationFraction: Flo
     )
 }
 
-/** Row of 4 nav dots, offset by [translationFraction] * bar height (0..1, signed). */
 @Composable
 private fun BoxScope.NavDotsRow(onSurface: Color, translationFraction: Float = 0f) {
     Row(
@@ -134,11 +128,9 @@ private fun BoxScope.NavDotsRow(onSurface: Color, translationFraction: Float = 0
     }
 }
 
-/** Computes the surface-vs-background color for the swatch top/bottom bars. */
 fun topBarColorFor(position: String, surface: Color, bg: Color) = if (position != "bottom") surface else bg
 fun bottomBarColorFor(position: String, surface: Color, bg: Color) = if (position != "top") surface else bg
 
-/** The address-bar-position preview (page 2, first section). Static, non-animated. */
 @Composable
 fun AddressBarPreview(position: String, bg: Color, surface: Color, onSurface: Color) {
     Box(
@@ -158,7 +150,7 @@ fun AddressBarPreview(position: String, bg: Color, surface: Color, onSurface: Co
                 Box(Modifier.fillMaxWidth().height(BarHeight).align(Alignment.BottomCenter).background(surface))
                 Pill(onSurface, atTop = false)
             }
-            else -> { // split
+            else -> {
                 Box(Modifier.fillMaxWidth().height(BarHeight).align(Alignment.TopCenter).background(surface))
                 Pill(onSurface, atTop = true)
                 ContentLinesStack(onSurface, topPad = 20.dp, bottomPad = 20.dp)
@@ -169,7 +161,6 @@ fun AddressBarPreview(position: String, bg: Color, surface: Color, onSurface: Co
     }
 }
 
-/** The menu-style preview (page 2, second section): "popup" or "sheet". */
 @Composable
 fun MenuStylePreview(
     variant: String,
@@ -241,7 +232,6 @@ fun MenuStylePreview(
     }
 }
 
-/** Resets the scroll-hide selection if it's no longer valid for the given address bar position. */
 fun sanitizeScrollHideMode(mode: String, position: String): String = when (position) {
     "top" -> if (mode == "navigation_bar" || mode == "both") "off" else mode
     "bottom" -> if (mode == "search_bar" || mode == "both") "off" else mode
@@ -264,7 +254,6 @@ fun scrollCardVisible(kind: String, position: String): Boolean = when (kind) {
     else -> true
 }
 
-/** The nested-scroll-hide preview (page 2, third section): off / search_bar / navigation_bar / both. */
 @Composable
 fun ScrollHidePreview(
     kind: String,

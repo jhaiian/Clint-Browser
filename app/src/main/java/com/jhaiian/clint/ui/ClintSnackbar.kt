@@ -21,20 +21,10 @@ import androidx.lifecycle.lifecycleScope
 import com.jhaiian.clint.ui.theme.LocalClintColors
 import kotlinx.coroutines.launch
 
-/**
- * Implemented by every Activity that can show a themed Snackbar as part of its own Compose
- * composition. This is the lightweight sibling of [OverlayHostActivity]: that one hosts a single
- * full-window dialog/overlay, this one hosts a single bottom Snackbar, driven the same way (a
- * state object the Activity's own composition collects, set from anywhere via [showClintSnackbar]).
- */
 interface SnackbarHostActivity {
     val snackbarHostState: SnackbarHostState
 }
 
-/**
- * Shows [message] in the Activity's Snackbar, replacing any Snackbar already showing. If
- * [actionLabel] is non-null, tapping it runs [onAction].
- */
 fun <T> T.showClintSnackbar(
     message: String,
     actionLabel: String? = null,
@@ -51,11 +41,6 @@ fun <T> T.showClintSnackbar(
     }
 }
 
-/**
- * Renders [hostState]'s queued Snackbar with the app's own colors instead of Material's stock
- * ones, so it reads as part of Clint rather than a plain default Android bar. Pin this as a
- * top-level sibling in each Activity's `setContent`, the same way [OverlayHostActivity.overlayContent] is.
- */
 @Composable
 fun ClintSnackbarHost(hostState: SnackbarHostState) {
     val colors = LocalClintColors.current

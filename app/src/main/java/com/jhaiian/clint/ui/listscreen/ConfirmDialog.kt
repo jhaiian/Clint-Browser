@@ -14,9 +14,6 @@ import androidx.compose.ui.unit.sp
 import com.jhaiian.clint.ui.ClintDialog
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** A single confirm-style dialog: title + message + up to three action buttons. Covers the
- *  many simple confirmations across list screens (delete selected, clear all, discard changes,
- *  etc.) instead of each screen defining its own dialog composable. */
 data class ConfirmDialogConfig(
     val title: String,
     val message: String,

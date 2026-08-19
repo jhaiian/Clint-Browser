@@ -99,9 +99,6 @@ private fun MainActivity.copyDownloadRequestLink(text: String) {
     }
 }
 
-/** Renders a [DownloadRequestDialog] inline in [MainActivity]'s own Compose tree via
- *  [com.jhaiian.clint.ui.OverlayHostActivity.overlayContent] -- the same mechanism
- *  [com.jhaiian.clint.update.UpdateChecker] uses for its own dialogs. */
 private fun MainActivity.mountDownloadRequestDialog(
     url: String,
     onCopyLink: () -> Unit,

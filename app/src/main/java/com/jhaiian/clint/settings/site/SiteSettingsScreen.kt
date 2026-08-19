@@ -33,8 +33,6 @@ fun SiteSettingsScreen(
 ) {
     val colors = LocalClintColors.current
 
-    // These three section headers are already stored fully uppercase in strings.xml
-    // (the original XML never applied textAllCaps to them), so they're used as-is.
     SettingsScreenScaffold {
         SectionLabel(stringResource(R.string.site_section_permissions), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
         SettingsSection(colors.cardBackground) {

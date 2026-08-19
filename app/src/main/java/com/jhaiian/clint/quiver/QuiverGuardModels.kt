@@ -20,8 +20,7 @@ fun filterAndSortFilterLists(
             filtered.sortedBy { it.name.lowercase() }
         else
             filtered.sortedByDescending { it.name.lowercase() }
-        // "Date downloaded" for filter lists; downloadedAt is 0L for never-downloaded lists,
-        // which naturally sorts them together regardless of order.
+
         ListSortKey.DATE_ADDED -> if (sortOrder == ListSortOrder.ASCENDING)
             filtered.sortedBy { it.downloadedAt }
         else

@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
-/** Hoisted state for the setup wizard. Lives as long as the Activity instance. */
 class SetupUiState(
     initialPage: Int,
     initialScrollY: Int,

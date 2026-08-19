@@ -72,11 +72,6 @@ private sealed class TabMenuItem {
     data class Tab(val preview: TabPreview) : TabMenuItem()
 }
 
-/**
- * Splits [tabs] into a normal section followed by an incognito section (only inserting the
- * "NORMAL TABS"/"INCOGNITO TABS" labels when both exist, matching [TabSwitcherSheet]'s own
- * split).
- */
 private fun buildRenderList(tabs: List<TabPreview>): List<TabMenuItem> {
     val hasBothSections = tabs.any { !it.isIncognito } && tabs.any { it.isIncognito }
     val result = mutableListOf<TabMenuItem>()
@@ -89,17 +84,6 @@ private fun buildRenderList(tabs: List<TabPreview>): List<TabMenuItem> {
     return result
 }
 
-/**
- * The "Tab Grid" style tab menu: a Chrome-switcher-inspired scrollable grid of live thumbnails
- * with drag-to-reorder, offered as an alternative to the classic [TabSwitcherSheet] via the
- * "Tab Menu" setting in Look & Feel.
- *
- * Mutating actions (reorder, close) apply straight to [MainActivity.tabManager] as they happen
- * rather than being deferred to dismissal, so a tab closed mid-session always resolves against
- * the real, current tab list; [tabs] here is just a reactive local mirror of that manager,
- * re-synced after every such action. Normal and incognito tabs are always treated as separate
- * sections: drag reordering never crosses that boundary.
- */
 @Composable
 fun TabMenuScreen(activity: MainActivity, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
@@ -121,9 +105,6 @@ fun TabMenuScreen(activity: MainActivity, onDismiss: () -> Unit) {
         onDismiss()
     }
 
-    /** Closes every tab in [ids] by id (safe even mid-drag, when the local mirror's order may
-     *  briefly differ from the manager's), dismissing the whole menu if that empties it — the
-     *  same "closing the last tab closes the switcher too" behavior as the Tab Sheet. */
     fun closeTabs(ids: List<String>) {
         val closingAll = ids.isNotEmpty() && ids.toSet() == tabs.map { it.id }.toSet()
         ids.forEach { id ->
@@ -134,8 +115,6 @@ fun TabMenuScreen(activity: MainActivity, onDismiss: () -> Unit) {
         syncFromManager()
     }
 
-    /** Closes every open tab. [activity.onTabClosed] already opens a fresh tab itself once the
-     *  count hits zero, so nothing further is needed here. */
     fun closeAllTabs() {
         tabs.map { it.id }.forEach { id ->
             val idx = activity.tabManager.tabs.indexOfFirst { it.id == id }
@@ -144,9 +123,6 @@ fun TabMenuScreen(activity: MainActivity, onDismiss: () -> Unit) {
         onDismiss()
     }
 
-    /** Live-swaps the dragged tab toward whichever plain tab card the pointer is currently
-     *  over, for immediate visual feedback; the actual order isn't committed to the manager
-     *  until the drag ends (see [commitDrag]). Never swaps across the normal/incognito boundary. */
     fun onDragMoved() {
         val draggedId = dragState.draggingId ?: return
         val draggedPreview = tabs.find { it.id == draggedId } ?: return
@@ -160,9 +136,6 @@ fun TabMenuScreen(activity: MainActivity, onDismiss: () -> Unit) {
         }
     }
 
-    /** Commits the drag by writing the local mirror's current order back onto the real tab
-     *  list. [onDragMoved] has already live-swapped [tabs] into its final order, so this just
-     *  needs to persist that order and clear the drag state. */
     fun commitDrag() {
         val draggedId = dragState.draggingId
         dragState.end()
@@ -311,8 +284,6 @@ fun TabMenuScreen(activity: MainActivity, onDismiss: () -> Unit) {
     }
 }
 
-/** Animates a grid item's entrance, exit, and reflow when it's added, removed, or shifted by a
- *  reorder/close — the single call that gives the whole grid its "alive" feel. */
 @Composable
 private fun LazyGridItemScope.AnimatedGridItem(content: @Composable () -> Unit) {
     Box(

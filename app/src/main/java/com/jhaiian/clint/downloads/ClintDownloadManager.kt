@@ -23,19 +23,6 @@ import kotlinx.coroutines.launch
 import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 
-/**
- * Owns the download queue, its persisted state, and the lifetime of every in-flight transfer.
- *
- * All state lives in [downloadsFlow], a [StateFlow] that replaces the previous mutable list plus
- * change-callback pair. Consumers collect it directly instead of registering a callback, and every
- * mutation goes through [publish]/[updateItem]/[addNew] so the flow only ever sees new, immutable
- * snapshots (an object already published to a [StateFlow] must never be mutated in place, or
- * conflation will treat the change as a no-op).
- *
- * [pause]/[resume]/[remove]/[enqueue] and friends stay plain, non-suspend functions so existing
- * callers (broadcast receivers, click listeners, other non-coroutine call sites) don't need to
- * change; each one launches its work on [applicationScope] internally.
- */
 object ClintDownloadManager {
 
     internal const val CHANNEL_ID = "clint_downloads"
@@ -47,25 +34,16 @@ object ClintDownloadManager {
         .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
         .build()
 
-    /** Application-scoped: downloads must keep running independently of any single screen's lifecycle. */
     internal val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val idCounter = AtomicInteger(1)
 
-    /** Tracks the coroutine running each download so [pause]/[remove] can cancel it. */
     internal val activeJobs: MutableMap<Int, Job> = ConcurrentHashMap()
 
-    /**
-     * Tracks the [SpeedLimiter] backing each currently-running transfer, keyed the same way and
-     * with the same lifetime as [activeJobs], so [updateDownloadSettings] can change an active
-     * download's throttle in place instead of waiting for it to restart.
-     */
     internal val activeSpeedLimiters: MutableMap<Int, SpeedLimiter> = ConcurrentHashMap()
 
-    /** Cooperative "please stop and preserve partial progress" signal, checked by [DownloadWorker]. */
     internal val pauseRequested: MutableSet<Int> = ConcurrentHashMap.newKeySet()
 
-    /** Marks a download as fully deleted, so any in-flight work knows not to persist further. */
     internal val removedIds: MutableSet<Int> = ConcurrentHashMap.newKeySet()
 
     internal var appContext: Context? = null
@@ -82,7 +60,6 @@ object ClintDownloadManager {
         _downloads.update { list -> list.map { if (it.id == item.id) item else it } }
     }
 
-    /** Applies [transform] to the current snapshot of [id], if present. Used by callers that don't already hold a working copy. */
     internal fun updateItem(id: Int, transform: (DownloadItem) -> DownloadItem) {
         _downloads.update { list -> list.map { if (it.id == id) transform(it) else it } }
     }
@@ -92,7 +69,6 @@ object ClintDownloadManager {
         DownloadPersistence.persistDownload(ctx, item, removedIds)
     }
 
-    /** Lightweight progress checkpoint so a killed process resumes near where it left off; see [DownloadPersistence.checkpointProgress]. */
     internal fun checkpointProgress(id: Int, bytesDownloaded: Long, completedPartsMask: Long, partOffsets: String) {
         if (id in removedIds) return
         val ctx = appContext ?: return
@@ -108,11 +84,6 @@ object ClintDownloadManager {
         DownloadNotificationHelper.createNotificationChannel(context)
     }
 
-    /**
-     * Loads persisted downloads and starts the network monitor. Returns the [Job] doing this work
-     * so callers that can't suspend (like [DownloadBootReceiver]) can still wait for completion via
-     * [Job.invokeOnCompletion], pairing it with `goAsync()`.
-     */
     fun init(context: Context): Job {
         appContext = context.applicationContext
         if (initialized) return Job().apply { complete() }
@@ -157,7 +128,6 @@ object ClintDownloadManager {
     internal fun activeCount(): Int =
         downloadsFlow.value.count { it.status in DownloadStatus.ACTIVELY_WORKING }
 
-    /** Returns the first unfinished download already queued for [url], if any, so callers can warn before starting a duplicate. */
     fun findActiveDownloadForUrl(url: String): DownloadItem? =
         downloadsFlow.value.firstOrNull { it.url == url && it.status in DownloadStatus.NOT_FINISHED }
 
@@ -178,7 +148,6 @@ object ClintDownloadManager {
         }
     }
 
-    /** Launches the coroutine that persists and runs one download attempt-chain, tracked in [activeJobs]. */
     private fun launchDownload(context: Context, item: DownloadItem) {
         activeSpeedLimiters[item.id] = SpeedLimiter(item.speedLimitBytesPerSec)
         val job = applicationScope.launch {
@@ -192,12 +161,6 @@ object ClintDownloadManager {
         }
     }
 
-    /**
-     * Applies a [transform] to [item] using whatever retry/unmetered/speed-limit settings are
-     * currently live for its id, so a change saved through [updateDownloadSettings] while this
-     * transfer is in flight survives the worker's own next progress publish instead of being
-     * reverted by it. Every other field comes from [item] untouched.
-     */
     internal fun withLiveSettings(item: DownloadItem): DownloadItem {
         val current = downloadsFlow.value.find { it.id == item.id } ?: return item
         return item.copy(
@@ -207,15 +170,6 @@ object ClintDownloadManager {
         )
     }
 
-    /**
-     * Updates the subset of a download's settings that can change safely while it's queued,
-     * paused, or actively transferring: retry-on-failure, Wi-Fi/unmetered-only, and the speed
-     * limit. Unlike the filename, destination, or part count, none of these are tied to bytes
-     * already written, so nothing needs to restart. Takes effect immediately: the change is
-     * published and persisted right away, and if this download is actively transferring right
-     * now, its live [SpeedLimiter] is retuned in place so a lowered or raised cap is honored on
-     * the very next chunk rather than the next attempt.
-     */
     fun updateDownloadSettings(
         context: Context,
         id: Int,
@@ -368,9 +322,6 @@ object ClintDownloadManager {
             return
         }
 
-        // Cooperative only: the worker polls pauseRequested itself so it can finish its current
-        // chunk cleanly and compute an accurate resume point. Cancelling activeJobs[id] here would
-        // unwind mid-transfer before that bookkeeping runs; remove() below is the hard-stop path.
         pauseRequested.add(id)
 
         if (item.status == DownloadStatus.RETRYING || item.status == DownloadStatus.CONNECTING) {

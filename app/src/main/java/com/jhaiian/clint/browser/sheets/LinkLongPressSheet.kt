@@ -81,10 +81,7 @@ internal fun LinkLongPressSheet(request: LinkLongPressRequest, activity: MainAct
         }
     }
     val configuration = LocalConfiguration.current
-    // In portrait the sheet is capped at half the screen height so it never covers the toolbar
-    // above it; a long menu scrolls internally past that point instead of growing further. In
-    // landscape, where half height would be too cramped for the item list, it keeps a smaller
-    // scrim gap at the top instead.
+
     val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
     val maxSheetHeight = if (isPortrait) {
         (configuration.screenHeightDp.dp * 0.5f).coerceAtLeast(320.dp)
@@ -145,8 +142,6 @@ internal fun LinkLongPressSheet(request: LinkLongPressRequest, activity: MainAct
     }
 }
 
-/** Favicon (or a generic link glyph while it loads / if none is found) inside a bordered,
- *  rounded chip so the identity row reads as a small card rather than a bare icon. */
 @Composable
 private fun LinkFaviconChip(favicon: Bitmap?, colors: com.jhaiian.clint.ui.theme.ClintColors) {
     val chipShape = RoundedCornerShape(11.dp)

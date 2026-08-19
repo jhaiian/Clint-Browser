@@ -20,11 +20,6 @@ import com.jhaiian.clint.settings.site.SiteListUiState
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * Quiver Guard exceptions: the simplest of the three site-list screens — just a searchable/
- * sortable list of sites where Quiver Guard is disabled, no default-behavior cards at all.
- * Every saved site is STATE_ALLOW and always shows the same "Exception" label.
- */
 class QuiverGuardExceptionActivity : ClintActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

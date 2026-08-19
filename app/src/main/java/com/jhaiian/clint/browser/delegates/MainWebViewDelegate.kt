@@ -52,11 +52,7 @@ internal fun MainActivity.createWebView(isIncognito: Boolean): WebView {
     webView.addJavascriptInterface(BottomNavBridge(), "BottomNavBridge")
     webView.addJavascriptInterface(NotificationBridge(webView), "ClintNotificationBridge")
     webView.addJavascriptInterface(BlobDownloadBridge(), "BlobDownloadBridge")
-    // Registered here, not reactively per-navigation like the rest of Quiver Guard's
-    // integration - addJavascriptInterface/addDocumentStartJavaScript both only take
-    // effect starting with the navigation *after* they're called, so doing this in
-    // response to onPageStarted is always one navigation too late for a WebView's
-    // first-ever page load. See QuiverGuardWebIntegration.installEarly's kdoc.
+
     if (prefs.getBoolean("quiver_guard_enabled", false)) {
         QuiverGuardWebIntegration.installEarly(this, webView)
     }

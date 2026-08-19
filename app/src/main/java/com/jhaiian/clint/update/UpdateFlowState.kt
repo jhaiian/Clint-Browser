@@ -27,8 +27,6 @@ class DownloadProgressState {
     var speedText by mutableStateOf("")
 }
 
-/** Backs one "showing" of the update flow: a single overlay can move between NoUpdate,
- *  CheckFailed, Available, and Downloading as the user interacts with it. */
 class UpdateFlowState(val hideStatusBar: Boolean) {
     var step by mutableStateOf<UpdateFlowStep>(UpdateFlowStep.None)
     val download = DownloadProgressState()

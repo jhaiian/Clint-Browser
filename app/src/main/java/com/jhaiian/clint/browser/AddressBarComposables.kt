@@ -67,11 +67,6 @@ import com.jhaiian.clint.R
 import com.jhaiian.clint.ui.rememberClintFavicon
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * The pill-shaped, read-only address bar shown in the top or bottom toolbar. Tapping it opens
- * [SearchOverlay]. Mirrors the old `Widget.Clint.SearchBar`-styled Material SearchBar (56dp
- * stadium pill, lock/unlock navigation icon, tab-count badge, overflow menu).
- */
 @Composable
 internal fun AddressBarRow(
     activity: MainActivity,
@@ -140,13 +135,6 @@ internal fun AddressBarRow(
     }
 }
 
-/**
- * Full-screen replacement for the old Material `SearchView`: an editable field seeded with the
- * active tab's URL (selected, ready to be typed over) plus a live bookmarks/history/suggestions
- * list. When [isBottom] the field docks to the bottom of the screen and the list grows upward
- * from it, matching where the bottom address bar sits; otherwise the field docks to the top.
- * [hint] names the active search engine so an empty field reads "Search Brave or type URL".
- */
 @Composable
 internal fun SearchOverlay(
     initialText: String,
@@ -283,7 +271,6 @@ internal fun SearchOverlay(
     }
 }
 
-/** One bookmark / history / raw-suggestion row inside [SearchOverlay]'s list. */
 @Composable
 private fun SuggestionRow(
     item: SuggestionItem,

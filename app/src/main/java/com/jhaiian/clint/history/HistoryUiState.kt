@@ -7,8 +7,6 @@ import com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig
 import com.jhaiian.clint.ui.listscreen.ListSortKey
 import com.jhaiian.clint.ui.listscreen.ListSortOrder
 
-/** Items are keyed by [HistoryItem.query], which is the database's unique column, so selection
- *  state survives re-sorting and re-filtering without needing a separate numeric id. */
 class HistoryUiState {
     var items by mutableStateOf<List<HistoryItem>>(emptyList())
     var isLoading by mutableStateOf(true)
@@ -43,8 +41,6 @@ class HistoryUiState {
         selectedKeys = selectedKeys + displayed.map { it.query }
     }
 
-    /** Inverts selection only within the currently filtered/displayed rows, preserving the
-     *  selection state of any row a search filter is currently hiding. */
     fun invertSelection(displayed: List<HistoryItem>) {
         val displayedKeys = displayed.map { it.query }.toSet()
         val keptOutsideView = selectedKeys - displayedKeys

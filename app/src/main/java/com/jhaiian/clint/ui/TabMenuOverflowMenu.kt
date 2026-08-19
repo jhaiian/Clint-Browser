@@ -17,10 +17,6 @@ import com.jhaiian.clint.ui.listscreen.ListMenuItem
 import com.jhaiian.clint.ui.listscreen.PopupShape
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * Overflow menu anchored to the tab grid's top bar, consolidating the actions that used to be
- * separate icon buttons (new tab, new incognito tab, close all, select mode) behind one control.
- */
 @Composable
 fun TabMenuOverflowMenu(
     expanded: Boolean,
@@ -53,10 +49,6 @@ fun TabMenuOverflowMenu(
     }
 }
 
-/**
- * Overflow menu anchored to the tab grid's top bar while in selection mode, replacing the
- * individual Group/Close/Cancel controls with a single consolidated menu.
- */
 @Composable
 fun TabSelectionOverflowMenu(
     expanded: Boolean,

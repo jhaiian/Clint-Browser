@@ -20,8 +20,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
-// Shown the first time a user enables Quiver Guard to explain that no lists are active
-// yet and that they need to download and compile at least one before filtering takes effect.
 internal fun QuiverGuardActivity.showSetupGuideDialog() {
     val prefs = PreferenceManager.getDefaultSharedPreferences(this)
     uiState.confirmDialog = ConfirmDialogConfig(
@@ -29,8 +27,7 @@ internal fun QuiverGuardActivity.showSetupGuideDialog() {
         message = getString(R.string.quiver_guard_no_active_lists_message),
         positiveLabel = getString(R.string.action_ok),
         onPositive = {
-            // Show the experimental feature notice on first entry so the user is aware
-            // that the feature may have rough edges.
+
             if (!prefs.getBoolean(QuiverGuardActivity.PREF_EXPERIMENTAL_SHOWN, false)) {
                 showExperimentalDialog()
             }
@@ -38,10 +35,6 @@ internal fun QuiverGuardActivity.showSetupGuideDialog() {
     )
 }
 
-// Displays a one-time notice that Quiver Guard is an experimental feature. The dialog
-// itself (ExperimentalDialog in QuiverGuardStatusDialogs.kt) owns the 3-second countdown
-// that keeps its OK button disabled; this function only marks the notice as shown and
-// opens it.
 internal fun QuiverGuardActivity.showExperimentalDialog() {
     PreferenceManager.getDefaultSharedPreferences(this)
         .edit()
@@ -50,9 +43,6 @@ internal fun QuiverGuardActivity.showExperimentalDialog() {
     uiState.experimentalDialogOpen = true
 }
 
-// Handles the hardware or gesture back action. If a compile is running, back is
-// suppressed so the user cannot leave mid-compile. If there are unsaved changes, a
-// dialog asks whether to compile or discard them before exiting.
 internal fun QuiverGuardActivity.handleBackNavigation() {
     if (uiState.isCompileRunning) return
     if (!isConfigurationDirty()) {
@@ -70,13 +60,6 @@ internal fun QuiverGuardActivity.handleBackNavigation() {
     )
 }
 
-// Called on activity start to check whether the compiled database is consistent with
-// the current filter list configuration. A mismatch is possible when:
-//   - the app was updated and default lists changed;
-//   - the user modified lists in a previous session without compiling;
-//   - the database file was deleted externally.
-// When a mismatch is detected, isStartupDirty is set and a banner prompts the user
-// to recompile.
 internal fun QuiverGuardActivity.performStartupValidation() {
     val dbFile = QuiverGuardPaths.databaseFile(this)
     val manifest = CompiledManifest.read(QuiverGuardPaths.manifestFile(this))
@@ -87,13 +70,9 @@ internal fun QuiverGuardActivity.performStartupValidation() {
     }
 
     val currentLists = database().getAllFilterLists()
-    // The manual filter's own entry, if any, is compared separately below via
-    // isManualFilterDirty since it has no corresponding row in FilterListDatabase.
+
     val manifestMap = manifest.entries.filterNot { it.id == ManualFilterState.COMPILE_ID }.associateBy { it.id }
 
-    // Compare the count and per-list enabled flags. Count mismatch means lists were
-    // added or removed since the last compile; flag mismatch means lists were toggled
-    // without recompiling.
     var diffFound = currentLists.size != manifestMap.size
     if (!diffFound) {
         for (fl in currentLists) {
@@ -111,11 +90,6 @@ internal fun QuiverGuardActivity.performStartupValidation() {
     }
 }
 
-// Drives the full compile workflow: builds inputs from the effective list state, shows
-// a progress state with stage labels and a live rule counter, and delegates to
-// QuiverGuardCompiler.compile. On success, persists the new compiled state to the
-// database and manifest and activates the newly compiled engine. On failure, shows an
-// error dialog with a retry option.
 internal fun QuiverGuardActivity.startCompilation() {
     if (uiState.isCompileRunning) return
 
@@ -141,9 +115,7 @@ internal fun QuiverGuardActivity.startCompilation() {
             rulesFile = FilterListDownloader.localFileFor(applicationContext, fl.id)
         )
     } + if (manualFilterContributes) {
-        // Writing the rule set to disk right before compiling, rather than keeping it
-        // continuously in sync, avoids a redundant file write on every add/edit/delete in
-        // ManualFilterActivity for a file only the compiler ever reads.
+
         ManualFilterDatabase.writeRulesFile(applicationContext, manualFilterRules)
         listOf(
             FilterListCompileInput(
@@ -165,9 +137,7 @@ internal fun QuiverGuardActivity.startCompilation() {
     )
 
     val compileStartMs = System.currentTimeMillis()
-    // A separate timer coroutine updates the elapsed time every 500 ms independently of
-    // the progress events emitted by the compiler, so the clock ticks smoothly even
-    // between long-running parsing bursts.
+
     var timerJob: Job? = null
     timerJob = activityScope.launch {
         while (true) {
@@ -215,10 +185,6 @@ internal fun QuiverGuardActivity.startCompilation() {
     }
 }
 
-// Called after a successful compile. Flushes pending removals (deletes files and
-// database rows), persists the new enabled states and compilation timestamps, writes
-// the manifest, clears all pending changes, and activates the newly compiled engine so
-// filtering with the new rules starts immediately.
 private fun QuiverGuardActivity.onCompileSuccess(
     result: CompileResult.Success,
     compiledListCount: Int,
@@ -246,12 +212,11 @@ private fun QuiverGuardActivity.onCompileSuccess(
             downloadUrl = fl.downloadUrl,
             isCustom = fl.isCustom,
             isEnabled = enabledStates[fl.id] ?: fl.isEnabled,
-            // Encodes enough information to detect content changes without re-reading the file.
+
             contentFingerprint = "${fl.id}:${fl.downloadedAt}:${fl.ruleCount}"
         )
     }
-    // Recorded as its own manifest entry, using the same reserved id startCompilation() gave
-    // it, so isManualFilterDirty can find it again next time without scanning file contents.
+
     val manualFilterEntries = if (manualFilterIncluded) {
         val rules = manualFilterDb().getAllRules()
         listOf(
@@ -293,10 +258,6 @@ private fun QuiverGuardActivity.onCompileFailure(result: CompileResult.Failure) 
     showCompileFailureDialog(result)
 }
 
-// Builds the grid-style success result rows. adblock-rust doesn't expose a duplicate-rule
-// count or a per-rule rejection reason the way the old compiler did, so those rows (and
-// the "unsupported rules" detail dialog that used to hang off one of them) are gone
-// entirely rather than shown with fabricated data.
 private fun QuiverGuardActivity.showCompileSuccessDialog(result: CompileResult.Success, listCount: Int) {
     val fmt = NumberFormat.getNumberInstance()
     val s = result.statistics
@@ -314,9 +275,6 @@ private fun QuiverGuardActivity.showCompileSuccessDialog(result: CompileResult.S
     )
 }
 
-// Shows an error result with the failed list name, error message, and a note that the
-// previous compiled engine is still active. No stat rows since no statistics are
-// available on failure; onRetry re-runs startCompilation.
 private fun QuiverGuardActivity.showCompileFailureDialog(result: CompileResult.Failure) {
     val detail = buildString {
         result.failedFilterListName?.let {
@@ -336,7 +294,6 @@ private fun QuiverGuardActivity.showCompileFailureDialog(result: CompileResult.F
     )
 }
 
-// Maps a CompileStage enum to the human-readable label shown in the progress dialog.
 private fun QuiverGuardActivity.compileStageLabel(stage: CompileStage, currentList: String?): String =
     when (stage) {
         CompileStage.PREPARING  -> getString(R.string.quiver_guard_compile_progress_stage_preparing)
@@ -345,7 +302,6 @@ private fun QuiverGuardActivity.compileStageLabel(stage: CompileStage, currentLi
         CompileStage.FINALIZING -> getString(R.string.quiver_guard_compile_progress_stage_finalizing)
     }
 
-// Formats a duration as "Nm Ns" when >= 60 seconds, or just "Ns" otherwise.
 internal fun formatElapsedSeconds(totalSeconds: Long): String {
     val m = totalSeconds / 60L
     val s = totalSeconds % 60L

@@ -6,9 +6,6 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import java.io.File
 
-// Persists the user's manually authored filter rules. Kept separate from FilterListDatabase
-// since a manual rule has no download URL, ETag, or file-size metadata to track, only its text
-// and when it was added.
 internal class ManualFilterDatabase(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DB_NAME, null, DB_VERSION) {
 
@@ -23,8 +20,7 @@ internal class ManualFilterDatabase(context: Context) :
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // No schema changes yet. Future versions add one guarded ALTER TABLE block per
-        // version bump here, the same way FilterListDatabase does.
+
     }
 
     fun getAllRules(): List<ManualFilterRule> {
@@ -53,10 +49,6 @@ internal class ManualFilterDatabase(context: Context) :
         return cursor.use { it.count > 0 }
     }
 
-    // Inserts every non-blank, non-duplicate line from a bulk paste in one transaction. Lines
-    // already present in the table, or repeated within the same paste, are skipped so pasting
-    // the same block twice is harmless instead of creating duplicate rows. Returns how many
-    // rows were actually inserted.
     fun addRules(texts: List<String>): Int {
         if (texts.isEmpty()) return 0
         val db = writableDatabase
@@ -100,9 +92,6 @@ internal class ManualFilterDatabase(context: Context) :
         private const val RULES_DIR_NAME = "quiver_guard"
         private const val RULES_FILE_NAME = "manual_filter_rules.txt"
 
-        // On-disk mirror of the rule set, one rule per line, handed to QuiverGuardCompiler the
-        // same way a downloaded filter list's local file is. This is what lets manual rules
-        // compile through the exact same native parsing path with no JNI changes.
         fun rulesFile(context: Context): File =
             File(File(context.applicationContext.filesDir, RULES_DIR_NAME), RULES_FILE_NAME)
 

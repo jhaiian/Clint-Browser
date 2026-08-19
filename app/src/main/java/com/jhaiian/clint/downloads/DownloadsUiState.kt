@@ -7,7 +7,6 @@ import com.jhaiian.clint.ui.listscreen.ListSortOrder
 
 enum class DownloadSortKey { NAME, DATE, SIZE, STATUS }
 
-/** Items are keyed by [DownloadItem.id]. */
 class DownloadsUiState {
     var currentTab by mutableStateOf(DownloadsTabType.ALL)
 
@@ -23,9 +22,8 @@ class DownloadsUiState {
     var selectionOptionsMenuOpen by mutableStateOf(false)
     var multiItemOptionsMenuOpen by mutableStateOf(false)
 
-    /** Items pending the "delete from storage?" confirmation; null when no dialog is showing. */
     var deleteConfirmItems by mutableStateOf<List<DownloadItem>?>(null)
-    /** Set while a delete is actually running, driving the non-cancelable progress dialog. */
+
     var deleteProgress by mutableStateOf<DeleteProgress?>(null)
 
     var propertiesItem by mutableStateOf<DownloadItem?>(null)
@@ -33,8 +31,6 @@ class DownloadsUiState {
     var updateLinkItem by mutableStateOf<DownloadItem?>(null)
     var manualDownloadDialogOpen by mutableStateOf(false)
 
-    /** Generic 2-button confirm dialog for the Activity-level flows (APK install, redownload,
-     *  open-folder error) that don't need their own dedicated dialog composable. */
     var confirmDialogConfig by mutableStateOf<com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig?>(null)
     var conflictDialogRequest by mutableStateOf<DownloadConflictDialogRequest?>(null)
 

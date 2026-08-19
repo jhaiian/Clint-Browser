@@ -63,18 +63,12 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
 
     internal var refreshLinkSession: RefreshLinkSession? = null
 
-    /** Compose-observed chrome state; see [MainUiState] and `MainScreen.kt`. */
     internal val uiState = MainUiState()
 
-    /** Full-window Compose overlay (document viewer, download dialog, update flow) rendered
-     *  inline in this activity's own composition; see [OverlayHostActivity]. */
     override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
 
-    /** Backs the "downloading started" Snackbar; see [SnackbarHostActivity]. */
     override val snackbarHostState = SnackbarHostState()
 
-    // The WebView/pull-to-refresh island and the fullscreen-video host stay real Android Views
-    // (there's no Compose gain there) and are hosted into the Compose tree via `AndroidView`.
     internal lateinit var webContainer: FrameLayout
     internal lateinit var swipeRefreshView: ClintSwipeRefreshLayout
     internal lateinit var fullscreenContainerView: FrameLayout

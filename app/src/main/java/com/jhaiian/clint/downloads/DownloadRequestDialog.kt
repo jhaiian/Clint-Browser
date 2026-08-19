@@ -72,27 +72,6 @@ data class DownloadRequestSubmission(
     val scheduledStartAtMillis: Long
 )
 
-/**
- * The dialog shown when a download link (or blob, or redownload) is intercepted and needs the
- * user's confirmation -- same visual style as [DownloadManualDialog], but the URL is a read-only
- * label (tap the link icon to copy it) instead of an editable, fetchable field.
- *
- * @param url display text for the LINK card. Real callers pass the actual URL; blob downloads pass
- *   a fixed placeholder label since there's no real URL to show or copy usefully.
- * @param initialFilename full "name.ext" suggested filename, split into the filename/extension fields.
- * @param contentLengthBytes known (or -1 if unknown) content length in bytes, used both to render the
- *   file-size line and for the storage/FAT32 checks on submit.
- * @param fileSizeDisplayOverride if non-null, shown in place of the [contentLengthBytes]-derived text --
- *   used by blob downloads, whose displayed size is always "Unknown" even though [contentLengthBytes]
- *   holds a real, validation-only estimate.
- * @param fetchUrl if non-null, launches an async HEAD/Range content-length fetch against this URL on
- *   first composition, overwriting [contentLengthBytes] and the displayed size once it resolves.
- * @param checkStorage whether to run the free-space check on submit (skipped for blob/redownload,
- *   which don't have a reliable expected size or are re-using an already-granted location).
- * @param showOptions whether to show the OPTIONS card (retry/unmetered/split/multithreading/speed limit).
- * @param showSchedule whether to show the "schedule this download" row within OPTIONS.
- * @param showStorageInfo whether to show the free-space line under the save-location card.
- */
 @Composable
 fun DownloadRequestDialog(
     hideStatusBar: Boolean,

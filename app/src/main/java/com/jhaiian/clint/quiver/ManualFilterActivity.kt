@@ -90,9 +90,6 @@ class ManualFilterActivity : ClintActivity() {
         }
     }
 
-    /** Captures the rule's id and text directly in the closure rather than reading them back
-     *  out of [uiState] when the dialog confirms, since the dialog always dismisses (clearing
-     *  any "current target" state) before running its confirm action. */
     private fun showDeleteConfirm(rule: ManualFilterRule) {
         deleteConfirm = ConfirmDialogConfig(
             title = getString(R.string.quiver_guard_manual_filter_delete_confirm_title),

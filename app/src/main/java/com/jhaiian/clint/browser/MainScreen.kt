@@ -55,12 +55,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.jhaiian.clint.R
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * Root Compose UI for [MainActivity], replacing `activity_main.xml`. Layer order mirrors the
- * old `FrameLayout` exactly (bottom to top): the WebView/SwipeRefreshLayout island, the two
- * toolbar positions, the bottom nav bar, the search overlay, the fullscreen video host, and the
- * status-bar spacer.
- */
 @Composable
 internal fun MainScreen(activity: MainActivity, state: MainUiState) {
     val density = LocalDensity.current
@@ -89,8 +83,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
     }
 
     Box(modifier = Modifier.fillMaxSize().background(colors.surface)) {
-        // WebView + pull-to-refresh island. The View itself is created once by MainActivity;
-        // Compose only positions it and keeps its content padding in sync with the toolbars.
+
         AndroidView(
             factory = { activity.swipeRefreshView },
             modifier = Modifier.fillMaxSize(),
@@ -99,8 +92,6 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             }
         )
 
-        // Snapshots the active tab and re-reads the style preference fresh each time, matching
-        // how the pop-up/bottom-sheet browser menu style is resolved (see MenuComposables.kt).
         val openTabSwitcher: () -> Unit = {
             activity.captureActiveTabThumbnail()
             tabMenuStyle = activity.prefs.getString("tab_menu_style", "sheet") ?: "sheet"
@@ -136,8 +127,6 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             )
         }
 
-        // Grows out of whichever edge the tapped address bar docks to, so the overlay reads
-        // as that bar expanding into fullscreen rather than an unrelated screen swap.
         AnimatedVisibility(
             visible = state.searchOverlayOpen,
             enter = fadeIn(tween(200)) + expandVertically(
@@ -173,8 +162,6 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             )
         }
 
-        // The Tab Sheet handles its own show/hide animation as a ModalBottomSheet; the Tab
-        // Grid instead zooms in from the toolbar, echoing Chrome's own switcher transition.
         if (tabSwitcherOpen && tabMenuStyle == "sheet") {
             TabSwitcherSheet(activity = activity, onDismiss = { tabSwitcherOpen = false })
         }
@@ -380,7 +367,6 @@ private fun androidx.compose.foundation.layout.RowScope.NavIconButton(
     }
 }
 
-/** Maps the "search_engine" preference value to its display-name string resource. */
 private fun engineNameRes(engine: String): Int = when (engine) {
     "brave" -> R.string.engine_brave
     "google" -> R.string.engine_google

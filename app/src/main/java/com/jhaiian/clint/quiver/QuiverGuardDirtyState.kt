@@ -2,12 +2,6 @@ package com.jhaiian.clint.quiver
 
 import com.jhaiian.clint.quiver.engine.CompiledManifestData
 
-// Tracks in-memory edits (enabled toggles, staged removals) that haven't been compiled
-// yet, and recomputes the displayed list from the database plus those overrides. Unlike
-// the View-based original, there is no imperative "refresh the FAB drawable" step here:
-// QuiverGuardScreen reads isConfigurationDirty()/isCompileRunning reactively on every
-// recomposition, so the FAB icon and banner simply follow the state automatically.
-
 internal fun QuiverGuardActivity.isConfigurationDirty(): Boolean = uiState.isConfigurationDirty()
 
 internal fun QuiverGuardActivity.effectiveFilterLists(): List<FilterList> {
@@ -50,8 +44,6 @@ internal fun QuiverGuardActivity.markDownloading(id: Long, active: Boolean) {
     uiState.downloadingIds = if (active) uiState.downloadingIds + id else uiState.downloadingIds - id
 }
 
-// Called after a new list finishes downloading or a custom/local list is added: both
-// cases mark the list enabled going forward without requiring a separate toggle tap.
 internal fun QuiverGuardActivity.onFilterListDownloaded(id: Long) {
     setPendingEnabled(id, true)
 }
@@ -61,9 +53,6 @@ internal fun QuiverGuardActivity.onFilterListAdded(filterList: FilterList) {
     setPendingEnabled(filterList.id, true)
 }
 
-// Compares the compiled manifest's manual-filter entry (if any) against the current
-// rule set's content fingerprint to decide whether a recompile is needed even though
-// FilterListDatabase has no row for the manual filter to diff against directly.
 internal fun QuiverGuardActivity.isManualFilterDirty(manifest: CompiledManifestData): Boolean {
     val entry = manifest.entries.firstOrNull { it.id == ManualFilterState.COMPILE_ID }
     val rules = manualFilterDb().getAllRules()

@@ -12,12 +12,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Tracks device connectivity for the download system. [ConnectivityManager]'s callback API is
- * bridged into a cold [Flow] via [callbackFlow], so every reaction to a connectivity change goes
- * through one sequential collector instead of running directly inside callback methods that the
- * platform can invoke from arbitrary threads.
- */
 internal object DownloadNetworkMonitor {
 
     internal val unmeteredPausedIds: MutableSet<Int> = ConcurrentHashMap.newKeySet()
@@ -49,10 +43,6 @@ internal object DownloadNetworkMonitor {
         awaitClose { cm.unregisterNetworkCallback(callback) }
     }
 
-    /**
-     * Starts reacting to connectivity changes for the lifetime of the process. Idempotent, since
-     * [ClintDownloadManager.init] may call this more than once (app start, boot receiver).
-     */
     fun register(context: Context) {
         if (monitoringStarted) return
         monitoringStarted = true

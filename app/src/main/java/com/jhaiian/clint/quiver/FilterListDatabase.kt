@@ -5,10 +5,6 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-// Persists filter list metadata across app restarts. This database stores only
-// descriptive information about each list (name, URL, enabled state, download
-// timestamps, etc.); the actual rule content is kept in a separate text file on
-// disk managed by FilterListDownloader.
 internal class FilterListDatabase(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DB_NAME, null, DB_VERSION) {
 
@@ -29,8 +25,7 @@ internal class FilterListDatabase(context: Context) :
                 $COL_LAST_MODIFIED TEXT
             )"""
         )
-        // Seed the table with the curated default lists. They start disabled and
-        // are activated only after the user explicitly enables and compiles them.
+
         for ((name, url) in DEFAULT_FILTER_LISTS) {
             val cv = ContentValues()
             cv.put(COL_NAME, name)
@@ -42,9 +37,6 @@ internal class FilterListDatabase(context: Context) :
         }
     }
 
-    // Migrations are additive column additions so existing data is preserved.
-    // Each version guard is a separate if-block rather than fall-through cases
-    // so a user upgrading multiple versions in one step applies every patch.
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             db.execSQL("ALTER TABLE $TABLE ADD COLUMN $COL_IS_CUSTOM INTEGER NOT NULL DEFAULT 0")
@@ -53,8 +45,7 @@ internal class FilterListDatabase(context: Context) :
             db.execSQL("ALTER TABLE $TABLE ADD COLUMN $COL_COMPILED_AT INTEGER NOT NULL DEFAULT 0")
         }
         if (oldVersion < 4) {
-            // Insert new default lists added in this version. The existence check
-            // prevents duplicates when upgrading from a version that already has them.
+
             for ((name, url) in NEW_IN_V4_FILTER_LISTS) {
                 val exists = db.query(TABLE, arrayOf(COL_ID), "$COL_DOWNLOAD_URL = ?", arrayOf(url), null, null, null).use { it.count > 0 }
                 if (!exists) {
@@ -69,8 +60,7 @@ internal class FilterListDatabase(context: Context) :
             }
         }
         if (oldVersion < 5) {
-            // ETag and Last-Modified columns enable conditional HTTP requests during
-            // update checks, reducing unnecessary downloads.
+
             db.execSQL("ALTER TABLE $TABLE ADD COLUMN $COL_ETAG TEXT DEFAULT NULL")
             db.execSQL("ALTER TABLE $TABLE ADD COLUMN $COL_LAST_MODIFIED TEXT DEFAULT NULL")
         }
@@ -81,8 +71,7 @@ internal class FilterListDatabase(context: Context) :
         val cursor = db.query(TABLE, null, null, null, null, null, "$COL_ID ASC")
         val result = mutableListOf<FilterList>()
         while (cursor.moveToNext()) {
-            // ETag and Last-Modified columns were added in version 5. Checking the
-            // column index guards against reads on older schema versions.
+
             val etagIdx = cursor.getColumnIndex(COL_ETAG)
             val lastModifiedIdx = cursor.getColumnIndex(COL_LAST_MODIFIED)
             result.add(
@@ -106,8 +95,6 @@ internal class FilterListDatabase(context: Context) :
         return result
     }
 
-    // Records metadata produced by a completed download. The ETag and Last-Modified
-    // values are stored for use in future conditional requests.
     fun updateDownloadResult(
         id: Long,
         filePath: String,
@@ -135,8 +122,6 @@ internal class FilterListDatabase(context: Context) :
         db.update(TABLE, cv, "$COL_ID = ?", arrayOf(id.toString()))
     }
 
-    // Inserts a user-provided custom list entry and returns the auto-assigned row ID.
-    // The list starts disabled and is not considered for compilation until explicitly enabled.
     fun addCustomFilterList(name: String, downloadUrl: String): Long {
         val db = writableDatabase
         val cv = ContentValues()
@@ -148,9 +133,6 @@ internal class FilterListDatabase(context: Context) :
         return db.insert(TABLE, null, cv)
     }
 
-    // Inserts a list added from a local file. The download URL is left blank,
-    // which FilterList.isLocal treats as the signal that this row has no remote
-    // source to check for updates against.
     fun addLocalFilterList(name: String): Long {
         val db = writableDatabase
         val cv = ContentValues()
@@ -167,8 +149,6 @@ internal class FilterListDatabase(context: Context) :
         db.delete(TABLE, "$COL_ID = ?", arrayOf(id.toString()))
     }
 
-    // Deletes multiple lists in a single transaction to avoid holding the write
-    // lock open for each individual delete when removing many lists at once.
     fun deleteFilterLists(ids: Collection<Long>) {
         if (ids.isEmpty()) return
         val db = writableDatabase
@@ -183,8 +163,6 @@ internal class FilterListDatabase(context: Context) :
         }
     }
 
-    // Returns the raw enabled flag from the database without applying any in-memory
-    // pending overrides. Used by the dirty-state tracker to detect unsaved changes.
     fun getRawEnabled(id: Long): Boolean? {
         val db = readableDatabase
         val cursor = db.query(TABLE, arrayOf(COL_ENABLED), "$COL_ID = ?", arrayOf(id.toString()), null, null, null)
@@ -194,8 +172,6 @@ internal class FilterListDatabase(context: Context) :
         }
     }
 
-    // Returns true when at least one filter list is enabled and has been compiled
-    // into the rule database. Used at startup to decide whether filtering is active.
     fun hasActiveFilterLists(): Boolean {
         val db = readableDatabase
         val cursor = db.query(
@@ -207,8 +183,6 @@ internal class FilterListDatabase(context: Context) :
         return cursor.use { it.count > 0 }
     }
 
-    // Returns IDs of all lists that have never been part of a compiled database.
-    // The compiler uses this to skip re-reading lists that have not changed.
     fun getNeverCompiledIds(): List<Long> {
         val db = readableDatabase
         val cursor = db.query(TABLE, arrayOf(COL_ID), "$COL_COMPILED_AT = 0", null, null, null, null)
@@ -221,9 +195,6 @@ internal class FilterListDatabase(context: Context) :
         return result
     }
 
-    // Returns IDs of user-added custom lists that have never been compiled. These
-    // are candidates for cleanup when the user discards pending changes, because a
-    // never-compiled custom list has no effect on the active rule database.
     fun getNeverCompiledCustomIds(): List<Long> {
         val db = readableDatabase
         val cursor = db.query(
@@ -240,10 +211,6 @@ internal class FilterListDatabase(context: Context) :
         return result
     }
 
-    // Atomically persists the enabled state and compilation timestamp for all
-    // lists included in a completed compile run. Wrapping in a transaction ensures
-    // the database is never left in a partially committed state if the app is
-    // killed mid-write.
     fun commitCompiledState(enabledStates: Map<Long, Boolean>, compiledAtMillis: Long) {
         if (enabledStates.isEmpty()) return
         val db = writableDatabase
@@ -283,8 +250,6 @@ internal class FilterListDatabase(context: Context) :
         private const val ADGUARD_BASE_FILTER_URL = "https://filters.adtidy.org/extension/ublock/filters/2_without_easylist.txt"
         private const val ADGUARD_ANNOYANCES_URL = "https://filters.adtidy.org/extension/ublock/filters/14.txt"
 
-        // Lists seeded into every fresh installation. All start disabled so the
-        // user consciously opts in to which lists they want before a compile runs.
         private val DEFAULT_FILTER_LISTS = listOf(
             Pair("EasyList", "https://easylist.to/easylist/easylist.txt"),
             Pair("EasyPrivacy", "https://easylist.to/easylist/easyprivacy.txt"),
@@ -294,8 +259,6 @@ internal class FilterListDatabase(context: Context) :
             Pair("AdGuard Annoyances", ADGUARD_ANNOYANCES_URL)
         )
 
-        // Lists added in schema version 4 that must be inserted during migrations
-        // for users upgrading from an older install.
         private val NEW_IN_V4_FILTER_LISTS = listOf(
             Pair("AdGuard Base Filter", ADGUARD_BASE_FILTER_URL),
             Pair("AdGuard Annoyances", ADGUARD_ANNOYANCES_URL)

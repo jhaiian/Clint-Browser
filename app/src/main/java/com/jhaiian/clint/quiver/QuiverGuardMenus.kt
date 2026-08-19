@@ -18,8 +18,6 @@ import com.jhaiian.clint.ui.listscreen.PopupShape
 import com.jhaiian.clint.ui.listscreen.ListMenuItem
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** The toolbar's filter-list-actions overflow: active/all update checks, active/all force
- *  updates, and a direct recompile trigger. */
 @Composable
 fun FilterListActionsMenu(
     expanded: Boolean,
@@ -47,8 +45,6 @@ fun FilterListActionsMenu(
     }
 }
 
-/** The per-row (or multi-select) overflow: check/force update, remove, and clipboard/share
- *  actions. isLocal hides the four actions that only make sense for a downloadable list. */
 @Composable
 fun FilterListItemOptionsMenu(
     expanded: Boolean,

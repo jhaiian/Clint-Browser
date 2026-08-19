@@ -36,11 +36,6 @@ import com.jhaiian.clint.ui.rememberMaxContentWidth
 import com.jhaiian.clint.ui.theme.ClintColors
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * Common shell for a settings screen: themed background, a scrollable column that centers
- * itself on wide screens, and an optional overlay slot (rendered as a sibling of the scrollable
- * content) for screens that need to show picker dialogs above the list.
- */
 @Composable
 fun SettingsScreenScaffold(
     overlay: @Composable () -> Unit = {},
@@ -62,10 +57,6 @@ fun SettingsScreenScaffold(
     }
 }
 
-/** A solid, lightened tint of [ClintColors.popupBackground] -- used as the fill for [SettingsSection]
- *  cards placed inside popup dialogs, where [ClintColors.cardBackground] is too close in tone to
- *  [ClintColors.popupBackground] to read as a distinct card, and a translucent overlay plus shadow
- *  elevation tends to double-outline instead of reading as one clean raised card. */
 val ClintColors.dialogSectionBackground: Color
     get() = lerp(popupBackground, Color.White, 0.08f)
 

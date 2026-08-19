@@ -3,7 +3,6 @@ package com.jhaiian.clint.settings.site
 import com.jhaiian.clint.ui.listscreen.ListSortKey
 import com.jhaiian.clint.ui.listscreen.ListSortOrder
 
-/** One row: a site origin, its stored state (allow/deny, or a feature-specific state string), and when it was added. */
 data class SiteEntry(val origin: String, val state: String, val addedAt: Long)
 
 fun filterAndSortSites(
@@ -30,7 +29,6 @@ fun filterAndSortSites(
     }
 }
 
-/** The fast scroller's section label for an entry: first letter when sorted by title, "#" when sorted by date. */
 fun sectionLetterFor(entry: SiteEntry, sortKey: ListSortKey): String = when (sortKey) {
     ListSortKey.TITLE -> entry.origin.firstOrNull()?.uppercaseChar()?.toString() ?: "#"
     ListSortKey.DATE_ADDED -> "#"

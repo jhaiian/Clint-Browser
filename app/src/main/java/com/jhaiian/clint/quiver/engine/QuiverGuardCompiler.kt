@@ -41,14 +41,6 @@ sealed class CompileEvent {
     data class Completed(val result: CompileResult) : CompileEvent()
 }
 
-/**
- * Feeds each filter list's raw rule text into a native `FilterSet` builder one at a time (so
- * progress can be reported per-list, the same granularity the old compiler's dialog showed),
- * then finalizes it into a compiled, resource-bundled adblock-rust engine file. Parsing,
- * deduplication, and index-building all happen inside the single native finalize call - the
- * engine doesn't report progress at that granularity, so [CompileStage.FINALIZING] simply spans
- * however long that takes.
- */
 object QuiverGuardCompiler {
 
     fun compile(

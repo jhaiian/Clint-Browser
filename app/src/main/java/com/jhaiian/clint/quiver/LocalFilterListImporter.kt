@@ -7,7 +7,6 @@ import com.jhaiian.clint.R
 import java.io.File
 import java.util.UUID
 
-// Result of importing a user-picked file as a candidate filter list.
 internal sealed class LocalFilterListImportResult {
     data class Success(
         val file: File,
@@ -18,10 +17,6 @@ internal sealed class LocalFilterListImportResult {
     data class Error(val messageResId: Int) : LocalFilterListImportResult()
 }
 
-// Copies a file picked through the system file chooser into the app's cache
-// directory and validates it the same way CustomFilterListFetcher validates a
-// network download, so a bad local file is rejected before it ever reaches the
-// title-confirmation dialog.
 internal object LocalFilterListImporter {
 
     private fun tempFileFor(context: Context): File {
@@ -30,10 +25,6 @@ internal object LocalFilterListImporter {
         return File(dir, "import_${UUID.randomUUID()}.txt")
     }
 
-    // Resolves the picked URI's display name through the content resolver, since
-    // the URI's own path segment is often an opaque document ID rather than the
-    // real filename. Falls back to the path segment for providers that don't
-    // report OpenableColumns.DISPLAY_NAME.
     private fun displayNameFor(context: Context, uri: Uri): String? {
         val resolved = try {
             context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->

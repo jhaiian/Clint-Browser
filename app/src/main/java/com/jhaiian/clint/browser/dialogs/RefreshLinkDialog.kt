@@ -35,7 +35,7 @@ data class RefreshLinkDialogRequest(
 @Composable
 internal fun RefreshLinkDialog(request: RefreshLinkDialogRequest, hideStatusBar: Boolean, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
-    // The XML's radio_update_existing defaulted to android:checked="true".
+
     var updateExisting by remember(request) { mutableStateOf(true) }
 
     ClintDialog(

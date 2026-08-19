@@ -247,7 +247,6 @@ private fun exitConfirmationSummaryRes(value: String): Int = when (value) {
     else -> R.string.exit_confirmation_toast
 }
 
-/** Shows the selected language's own demonym (e.g. "Filipino"), or the localized "System" label. */
 @Composable
 private fun languageSummaryText(language: String): String {
     if (language == LocaleHelper.LANGUAGE_SYSTEM) return stringResource(R.string.language_system)

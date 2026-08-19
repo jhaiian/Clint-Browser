@@ -14,8 +14,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 
-/** Mirrors DownloadProgressCardView's three states: no fill, a proportional fill, or an
- *  animated sliding band while the exact progress isn't known yet. */
 sealed interface DownloadCardProgress {
     data object None : DownloadCardProgress
     data class Determinate(val fraction: Float) : DownloadCardProgress

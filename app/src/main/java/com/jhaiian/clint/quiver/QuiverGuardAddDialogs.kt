@@ -26,13 +26,6 @@ import com.jhaiian.clint.ui.ClintDialog
 import com.jhaiian.clint.ui.theme.LocalClintColors
 import com.jhaiian.clint.util.formatFileSize
 
-/**
- * Stage 1 (Fetch): user enters a URL; onFetch triggers the caller's download+validate
- * coroutine, reflected back through [fetchStatus]. Stage 2 (Add): the title field appears,
- * pre-filled from the list's metadata if it had a Title: comment, and confirming calls
- * onConfirm. Editing the URL after a fetch calls onUrlChanged so the caller can reset
- * fetchStatus back to Idle and discard the temp file, mirroring the original's Stage-1 reset.
- */
 @Composable
 fun AddFilterListFromLinkDialog(
     hideStatusBar: Boolean,
@@ -136,8 +129,6 @@ fun AddFilterListFromLinkDialog(
     }
 }
 
-/** Single-stage counterpart for a file already imported and validated: the user only
- *  confirms or edits the title, pre-filled from the picked file's name. */
 @Composable
 internal fun AddFilterListFromFileDialog(
     imported: LocalFilterListImportResult.Success,

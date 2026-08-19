@@ -35,11 +35,7 @@ internal fun MainActivity.setupLinkLongPress(webView: WebView) {
                 true
             }
             WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
-                // HitTestResult.extra returns the <img> src rather than the enclosing
-                // anchor's href for this hit type, so the href must be requested
-                // asynchronously via requestFocusNodeHref. This lets a linked icon,
-                // such as a search result favicon wrapped in an <a>, resolve to the
-                // link sheet instead of the image sheet.
+
                 val hrefHandler = Handler(Looper.getMainLooper()) { message ->
                     val linkUrl = message.data.getString("url")
                     if (!linkUrl.isNullOrEmpty()) showTrackedLinkLongPressSheet(webView, linkUrl)

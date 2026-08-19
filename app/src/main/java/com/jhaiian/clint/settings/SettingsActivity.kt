@@ -64,29 +64,12 @@ private const val DEST_MISC = "misc"
 private const val DEST_DEBUG = "debug"
 private const val DEST_ABOUT = "about"
 
-/**
- * Hosts every settings screen as Compose content behind a list-detail split driven by
- * [SettingsNavHost]: on a phone-width window only one pane shows at a time (list, then the chosen
- * detail screen, matching the old Fragment back-stack UX); once the window is Medium/Expanded
- * (tablet, unfolded foldable, split-screen, desktop freeform window) both panes show side by side,
- * per Android 17's adaptive-app guidance. Each individual settings screen's logic lives in the
- * `*Pane` composables in SettingsPanes.kt, ported 1:1 from the old fragments (same SharedPreferences
- * keys/behavior).
- */
 class SettingsActivity : ClintActivity(), OverlayHostActivity {
 
-    /** Full-window Compose overlay (document viewer, update flow) rendered inline in this
-     *  activity's own composition; see [OverlayHostActivity]. */
     override var overlayContent by mutableStateOf<(@Composable () -> Unit)?>(null)
 
-    /** Set true by a Look & Feel change that needs a restart to fully apply; if still true when
-     *  this Activity stops (i.e. the user backed out instead of tapping "Restart Now"), the
-     *  restart is applied silently on the way out rather than lost. */
     var pendingRestart = false
 
-    /** hide_status_bar is applied to the UI state immediately for a responsive toggle, but the
-     *  actual SharedPreferences write is deferred until the user commits to a restart (now or
-     *  on exit), matching the address-bar-position flow. Null once written/discarded. */
     var pendingHideStatusBar: Boolean? = null
 
     private var hideStatusBarAtLaunch = false
@@ -115,9 +98,6 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
         }
     }
 
-    /** Called after a Look & Feel change that was deferred via "Later" so the pending restart
-     *  is applied automatically once the user leaves Settings, instead of only on explicit
-     *  confirmation. */
     fun scheduleRestartIfChanged() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val effectiveHideStatusBar = pendingHideStatusBar ?: prefs.getBoolean("hide_status_bar", false)
@@ -147,13 +127,6 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
     }
 }
 
-/**
- * Drives the list/detail split off the window's own [WindowWidthSizeClass] on every recomposition,
- * instead of NavigableListDetailPaneScaffold's built-in pane collapsing, which was found to keep
- * both panes on screen (each squeezed into half the width) after the window dropped back to a
- * single-pane size. Compact stays single-pane with the list/detail swap the old fragments used;
- * Medium and Expanded show both panes side by side, matching Android's list-detail guidance.
- */
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun SettingsNavHost(activity: SettingsActivity, initialDestination: String?) {
@@ -266,9 +239,6 @@ private fun destinationTitleRes(destination: String): Int = when (destination) {
     else -> R.string.settings
 }
 
-/** The same toolbar shape every other Compose screen in the app uses (a status-bar-padded,
- *  elevated Surface with a 56dp Row), rather than Material3's TopAppBar, to stay visually
- *  consistent with HistoryScreen/DownloadsScreen/BookmarksScreen/etc. */
 @Composable
 private fun SettingsToolbar(title: String, onBack: () -> Unit) {
     val colors = LocalClintColors.current
@@ -288,7 +258,6 @@ private fun SettingsToolbar(title: String, onBack: () -> Unit) {
     }
 }
 
-/** Shown in the detail pane on a wide/dual-pane window before any category has been picked. */
 @Composable
 private fun SettingsEmptyDetailPane() {
     val colors = LocalClintColors.current

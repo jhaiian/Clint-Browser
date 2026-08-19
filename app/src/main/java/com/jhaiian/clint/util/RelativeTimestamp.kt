@@ -4,11 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-/**
- * Formats [millis] as a time for today ("3:41 PM"), "Yesterday, 3:41 PM", a date this year
- * ("Jul 28, 3:41 PM"), or a full date otherwise. Used by every list row that shows a visit/added
- * timestamp (history, bookmarks) — previously duplicated verbatim in each screen's own file.
- */
 fun formatRelativeTimestamp(millis: Long): String {
     val itemCal = Calendar.getInstance().apply { timeInMillis = millis }
     val nowCal = Calendar.getInstance()

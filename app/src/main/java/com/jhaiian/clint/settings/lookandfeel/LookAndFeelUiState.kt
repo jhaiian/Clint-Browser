@@ -4,16 +4,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
-/** Identifies which picker dialog, if any, is currently shown over the screen. */
 enum class LookAndFeelDialog {
     THEME, ACCENT, SURFACE_INTENSITY, ADDRESS_BAR_POSITION, MENU_STYLE, TAB_MENU_STYLE, SCROLL_HIDE_MODE, EXIT_CONFIRMATION, LANGUAGE
 }
 
-/**
- * Hoisted state for the Look & Feel screen. Owned by the fragment so it survives
- * recomposition but not process death; the fragment re-reads SharedPreferences into
- * a fresh instance whenever its view is recreated.
- */
 class LookAndFeelUiState(
     initialTheme: String,
     initialAccent: String,

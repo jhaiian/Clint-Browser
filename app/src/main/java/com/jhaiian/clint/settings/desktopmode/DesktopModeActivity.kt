@@ -34,12 +34,6 @@ import com.jhaiian.clint.settings.site.SiteListUiState
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * Desktop Mode: a global save/don't-save default (two cards) plus a list of sites where
- * desktop mode is force-enabled. Every saved site is always STATE_ALLOW, so unlike Site
- * Permissions there's no allow/deny choice in the add dialog and every row shows the same
- * "On" label regardless of its stored state.
- */
 class DesktopModeActivity : ClintActivity() {
 
     companion object {

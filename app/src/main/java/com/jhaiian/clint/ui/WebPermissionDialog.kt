@@ -25,9 +25,6 @@ import androidx.compose.ui.unit.sp
 import com.jhaiian.clint.R
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/** A permission prompt (camera/mic/location/notification) with an optional "remember this
- *  choice" checkbox — not shown for incognito, matching the original dialog_web_permission.xml's
- *  `checkWebPermissionRemember` visibility toggle. */
 data class WebPermissionDialogRequest(
     val title: String,
     val message: String,
@@ -39,14 +36,13 @@ data class WebPermissionDialogRequest(
 @Composable
 internal fun WebPermissionDialog(request: WebPermissionDialogRequest, hideStatusBar: Boolean, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
-    // The XML checkbox defaulted to android:checked="true".
+
     var remember by remember(request) { mutableStateOf(true) }
 
     ClintDialog(
         title = request.title,
         hideStatusBar = hideStatusBar,
-        // Dismissing via back-press/outside-tap resolves neither allow nor deny, matching the
-        // original MaterialAlertDialogBuilder (cancelable, no onCancelListener set).
+
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

@@ -34,12 +34,6 @@ import com.jhaiian.clint.settings.site.SiteListUiState
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
-/**
- * Per-permission-type exception manager (camera/mic/location/notifications): a default
- * behavior chosen from three cards, plus a searchable/sortable list of per-site overrides.
- * Built on the shared site-list screen; this class only supplies the type-specific config
- * and owns the SitePermissionManager reads/writes.
- */
 class SitePermissionActivity : ClintActivity() {
 
     companion object {
