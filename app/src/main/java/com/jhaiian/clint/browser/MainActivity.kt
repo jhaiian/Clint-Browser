@@ -515,13 +515,14 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         )
     }
 
-    fun onTabSelected(index: Int) { tabManager.switchTo(index); attachActiveWebView() }
+    fun onTabSelected(index: Int) { captureActiveTabThumbnail(); tabManager.switchTo(index); attachActiveWebView() }
     fun onTabClosed(index: Int) {
         val tab = tabManager.tabs.getOrNull(index)
         tab?.let {
             removeDesktopScript(it)
             onQuiverGuardTabClosed(it)
             if (!it.isIncognito) com.jhaiian.clint.ui.FaviconCache.evict(this, it.url)
+            com.jhaiian.clint.tabs.TabThumbnailCache.evict(this, it.id)
         }
         val wasActive = index == tabManager.activeIndex
         tabManager.closeTab(index)

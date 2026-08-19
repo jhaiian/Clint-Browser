@@ -186,7 +186,7 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun NewTabButton(text: String, iconRes: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun NewTabButton(text: String, iconRes: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val colors = LocalClintColors.current
     Button(
         onClick = onClick,
@@ -284,9 +284,10 @@ private fun TabRow(tab: TabPreview, isActive: Boolean, onClick: () -> Unit, onCl
 }
 
 /** Mirrors TabAdapter's old favicon logic: incognito tabs use the memory-only cache lookup so
- *  nothing about them ever touches disk, matching the original's privacy behavior exactly. */
+ *  nothing about them ever touches disk, matching the original's privacy behavior exactly. Also
+ *  used by the Tab Grid menu (TabMenuComponents.kt) so both tab menu styles share one favicon path. */
 @Composable
-private fun rememberTabFavicon(tab: TabPreview): Bitmap? {
+internal fun rememberTabFavicon(tab: TabPreview): Bitmap? {
     val context = LocalContext.current
     var bitmap by remember(tab.url, tab.isIncognito) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(tab.url, tab.isIncognito) {

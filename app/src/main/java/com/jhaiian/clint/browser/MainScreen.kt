@@ -4,6 +4,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -34,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.jhaiian.clint.tabs.TabSwitcherSheet
+import com.jhaiian.clint.tabs.TabMenuScreen
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,6 +66,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
     val density = LocalDensity.current
     val colors = LocalClintColors.current
     var tabSwitcherOpen by remember { mutableStateOf(false) }
+    var tabMenuStyle by remember { mutableStateOf("sheet") }
     val hideStatusBar = state.hideStatusBar
     val rawStatusBarPx = WindowInsets.statusBars.getTop(density)
     val rawNavBarPx = WindowInsets.navigationBars.getBottom(density)
@@ -95,12 +99,20 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             }
         )
 
+        // Snapshots the active tab and re-reads the style preference fresh each time, matching
+        // how the pop-up/bottom-sheet browser menu style is resolved (see MenuComposables.kt).
+        val openTabSwitcher: () -> Unit = {
+            activity.captureActiveTabThumbnail()
+            tabMenuStyle = activity.prefs.getString("tab_menu_style", "sheet") ?: "sheet"
+            tabSwitcherOpen = true
+        }
+
         if (!state.isFullscreen && (state.addressBarPosition == AddressBarPosition.TOP || state.addressBarPosition == AddressBarPosition.SPLIT)) {
             TopToolbar(
                 activity = activity,
                 state = state,
                 statusBarPaddingPx = effectiveStatusBarPx,
-                onTabCountClick = { tabSwitcherOpen = true },
+                onTabCountClick = openTabSwitcher,
                 modifier = Modifier.align(Alignment.TopStart)
             )
         }
@@ -119,7 +131,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
                 activity = activity,
                 state = state,
                 bottomPaddingPx = maxOf(rawImePx, state.navBarInsetPx),
-                onTabCountClick = { tabSwitcherOpen = true },
+                onTabCountClick = openTabSwitcher,
                 modifier = Modifier.align(Alignment.BottomStart)
             )
         }
@@ -161,8 +173,17 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             )
         }
 
-        if (tabSwitcherOpen) {
+        // The Tab Sheet handles its own show/hide animation as a ModalBottomSheet; the Tab
+        // Grid instead zooms in from the toolbar, echoing Chrome's own switcher transition.
+        if (tabSwitcherOpen && tabMenuStyle == "sheet") {
             TabSwitcherSheet(activity = activity, onDismiss = { tabSwitcherOpen = false })
+        }
+        AnimatedVisibility(
+            visible = tabSwitcherOpen && tabMenuStyle == "grid",
+            enter = fadeIn(tween(220)) + scaleIn(initialScale = 0.92f, animationSpec = tween(220)),
+            exit = fadeOut(tween(160)) + scaleOut(targetScale = 0.94f, animationSpec = tween(160))
+        ) {
+            TabMenuScreen(activity = activity, onDismiss = { tabSwitcherOpen = false })
         }
 
         state.imageLongPressRequest?.let { req ->

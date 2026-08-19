@@ -1,0 +1,86 @@
+package com.jhaiian.clint.ui
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.jhaiian.clint.R
+import com.jhaiian.clint.ui.listscreen.ListMenuItem
+import com.jhaiian.clint.ui.listscreen.PopupShape
+import com.jhaiian.clint.ui.theme.LocalClintColors
+
+/**
+ * Overflow menu anchored to the tab grid's top bar, consolidating the actions that used to be
+ * separate icon buttons (new tab, new incognito tab, close all, select mode) behind one control.
+ */
+@Composable
+fun TabMenuOverflowMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onNewTab: () -> Unit,
+    onNewIncognitoTab: () -> Unit,
+    onCloseAllTabs: () -> Unit,
+    onSelectTabs: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        shape = PopupShape,
+        containerColor = colors.popupBackground,
+        border = BorderStroke(1.dp, colors.popupStroke)
+    ) {
+        ListMenuItem(Icons.Filled.Add, stringResource(R.string.new_tab), checked = false) {
+            onDismiss(); onNewTab()
+        }
+        ListMenuItem(Icons.Filled.VisibilityOff, stringResource(R.string.new_incognito_tab), checked = false) {
+            onDismiss(); onNewIncognitoTab()
+        }
+        ListMenuItem(Icons.Filled.Close, stringResource(R.string.tab_menu_close_all_tabs), checked = false) {
+            onDismiss(); onCloseAllTabs()
+        }
+        ListMenuItem(Icons.Filled.SelectAll, stringResource(R.string.tab_menu_select_mode_desc), checked = false) {
+            onDismiss(); onSelectTabs()
+        }
+    }
+}
+
+/**
+ * Overflow menu anchored to the tab grid's top bar while in selection mode, replacing the
+ * individual Group/Close/Cancel controls with a single consolidated menu.
+ */
+@Composable
+fun TabSelectionOverflowMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onSelectAll: () -> Unit,
+    onInvertSelection: () -> Unit,
+    onDeleteSelected: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        shape = PopupShape,
+        containerColor = colors.popupBackground,
+        border = BorderStroke(1.dp, colors.popupStroke)
+    ) {
+        ListMenuItem(Icons.Filled.SelectAll, stringResource(R.string.tab_menu_select_all), checked = false) {
+            onDismiss(); onSelectAll()
+        }
+        ListMenuItem(Icons.Filled.SwapHoriz, stringResource(R.string.tab_menu_invert_selection), checked = false) {
+            onDismiss(); onInvertSelection()
+        }
+        ListMenuItem(Icons.Filled.Delete, stringResource(R.string.tab_menu_delete_selected), checked = false) {
+            onDismiss(); onDeleteSelected()
+        }
+    }
+}

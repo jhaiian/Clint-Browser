@@ -36,6 +36,28 @@ class TabManager {
         TabPreview(it.id, it.title.ifBlank { "New Tab" }, it.url, it.isIncognito)
     }
 
+    /** Moves the tab at [fromIndex] to sit at [toIndex], used by the Tab Grid menu's drag
+     *  reorder. Keeps [activeIndex] pointing at the same tab across the move. */
+    fun moveTab(fromIndex: Int, toIndex: Int) {
+        if (fromIndex !in tabs.indices || toIndex !in tabs.indices || fromIndex == toIndex) return
+        val activeTabId = activeTab?.id
+        val tab = tabs.removeAt(fromIndex)
+        tabs.add(toIndex, tab)
+        if (activeTabId != null) activeIndex = tabs.indexOfFirst { it.id == activeTabId }
+    }
+
+    /** Reorders [tabs] to match [orderedIds] exactly (every id must already be present). Used to
+     *  commit the Tab Grid menu's local drag state back onto the real tab list in one shot. */
+    fun reorderTo(orderedIds: List<String>) {
+        val activeTabId = activeTab?.id
+        val byId = tabs.associateBy { it.id }
+        val reordered = orderedIds.mapNotNull { byId[it] }
+        if (reordered.size != tabs.size) return
+        tabs.clear()
+        tabs.addAll(reordered)
+        if (activeTabId != null) activeIndex = tabs.indexOfFirst { it.id == activeTabId }
+    }
+
     fun destroyAll() {
         tabs.forEach {
             if (it.isIncognito) {

@@ -4,6 +4,18 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.0
+
+---
+
+## What's New
+
+- **Added a new tab menu: Tab Grid.**  
+  You can switch to it under **Settings → Look and Feel → Tab Menu → Tab Grid**.  
+  Tab Grid will be the default when the app is opened for the first time. The old tab sheet is still available as an option in the same setting.
+ 
+---
+
 # v1.0.9
 
 ---

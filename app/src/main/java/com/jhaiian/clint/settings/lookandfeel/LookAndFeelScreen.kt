@@ -4,6 +4,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.SwapVert
@@ -38,6 +39,7 @@ fun LookAndFeelScreen(
     onLanguageSelected: (String) -> Unit,
     onAddressBarPositionSelected: (String) -> Unit,
     onMenuStyleSelected: (String) -> Unit,
+    onTabMenuStyleSelected: (String) -> Unit,
     onScrollHideModeSelected: (String) -> Unit,
     onHideStatusBarRowClicked: () -> Unit,
     onExitConfirmationConfirmed: (String) -> Unit
@@ -68,6 +70,10 @@ fun LookAndFeelScreen(
                 LookAndFeelDialog.MENU_STYLE -> MenuStyleDialog(
                     current = state.menuStyle, addressBarPosition = state.addressBarPosition, theme = state.theme, accent = state.accent,
                     hideStatusBar = state.hideStatusBar, onSelect = onMenuStyleSelected, onDismiss = { state.openDialog = null }
+                )
+                LookAndFeelDialog.TAB_MENU_STYLE -> TabMenuStyleDialog(
+                    current = state.tabMenuStyle, theme = state.theme, accent = state.accent,
+                    hideStatusBar = state.hideStatusBar, onSelect = onTabMenuStyleSelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.SCROLL_HIDE_MODE -> ScrollHideModeDialog(
                     current = state.scrollHideMode, addressBarPosition = state.addressBarPosition, theme = state.theme, accent = state.accent,
@@ -167,6 +173,14 @@ fun LookAndFeelScreen(
             )
             RowDivider(colors.divider)
             SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.GridView,
+                title = stringResource(R.string.pref_tab_menu_style_title),
+                summary = stringResource(tabMenuStyleSummaryRes(state.tabMenuStyle)),
+                colors = colors,
+                onClick = { state.openDialog = LookAndFeelDialog.TAB_MENU_STYLE }
+            )
+            RowDivider(colors.divider)
+            SettingsRow(
                 icon = androidx.compose.material.icons.Icons.Filled.Fullscreen,
                 title = stringResource(R.string.hide_status_bar),
                 summary = stringResource(R.string.hide_status_bar_summary),
@@ -223,6 +237,9 @@ private fun addressBarPositionSummaryRes(position: String): Int = when (position
 
 private fun menuStyleSummaryRes(style: String): Int =
     if (style == "bottom_sheet") R.string.menu_style_bottom_sheet else R.string.menu_style_popup
+
+private fun tabMenuStyleSummaryRes(style: String): Int =
+    if (style == "grid") R.string.tab_menu_style_grid else R.string.tab_menu_style_sheet
 
 private fun exitConfirmationSummaryRes(value: String): Int = when (value) {
     "off" -> R.string.exit_confirmation_off

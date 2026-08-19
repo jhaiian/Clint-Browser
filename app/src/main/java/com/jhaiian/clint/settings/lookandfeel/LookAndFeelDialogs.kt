@@ -1,12 +1,20 @@
 package com.jhaiian.clint.settings.lookandfeel
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.jhaiian.clint.ui.ClintRadioButton
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -262,6 +270,105 @@ fun MenuStyleDialog(
                     Text(stringResource(option.descRes), color = colors.secondaryText, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
                 }
                 CheckSlot(current == option.key, colors.primary)
+            }
+        }
+    }
+}
+
+@Composable
+fun TabMenuStyleDialog(
+    current: String,
+    theme: String,
+    accent: String,
+    hideStatusBar: Boolean,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    val (bg, surface) = rememberBgSurface(theme, accent)
+
+    ClintDialog(title = stringResource(R.string.pref_tab_menu_style_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+        data class TabMenuOption(val key: String, val titleRes: Int, val descRes: Int)
+        listOf(
+            TabMenuOption("grid", R.string.tab_menu_style_grid, R.string.tab_menu_style_grid_desc),
+            TabMenuOption("sheet", R.string.tab_menu_style_sheet, R.string.tab_menu_style_sheet_desc)
+        ).forEach { option ->
+            SelectableCard(
+                selected = current == option.key, onClick = { onSelect(option.key) },
+                cardBackground = colors.surfaceVariant, primary = colors.primary,
+                contentPadding = OptionContentPadding, bottomSpacing = OptionBottomSpacing
+            ) {
+                TabMenuStylePreview(option.key, bg, surface, colors.primary)
+                Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
+                    Text(stringResource(option.titleRes), color = colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(option.descRes), color = colors.secondaryText, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+                }
+                CheckSlot(current == option.key, colors.primary)
+            }
+        }
+    }
+}
+
+/** Small hand-drawn mockup distinguishing the two tab menu styles: a grid of cards for "grid",
+ *  a bottom panel with stacked rows for "sheet" (mirroring the existing Tab Sheet's own look). */
+@Composable
+private fun TabMenuStylePreview(variant: String, bg: Color, surface: Color, accent: Color) {
+    Box(
+        Modifier
+            .size(52.dp, 64.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+    ) {
+        if (variant == "grid") {
+            Column(
+                Modifier.fillMaxWidth().padding(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                repeat(2) { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        repeat(2) { col ->
+                            Box(
+                                Modifier
+                                    .weight(1f)
+                                    .height(20.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(surface)
+                                    .then(
+                                        if (row == 0 && col == 0)
+                                            Modifier.padding(2.dp)
+                                        else Modifier
+                                    )
+                            ) {
+                                if (row == 0 && col == 0) {
+                                    Box(
+                                        Modifier
+                                            .size(6.dp)
+                                            .align(Alignment.TopStart)
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(accent)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(34.dp)
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        .background(surface)
+                        .padding(6.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Spacer(Modifier.width(28.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(accent))
+                        Spacer(Modifier.width(22.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(bg))
+                        Spacer(Modifier.width(24.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(bg))
+                    }
+                }
             }
         }
     }

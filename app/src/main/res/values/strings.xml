@@ -96,6 +96,11 @@
     <string name="menu_style_popup_desc">Compact menu floating near the toolbar</string>
     <string name="menu_style_bottom_sheet">Bottom Sheet</string>
     <string name="menu_style_bottom_sheet_desc">Full-width menu sliding up from the bottom</string>
+    <string name="pref_tab_menu_style_title">Tab Menu</string>
+    <string name="tab_menu_style_grid">Tab Grid</string>
+    <string name="tab_menu_style_grid_desc">Browse open tabs as a scrollable grid of live previews</string>
+    <string name="tab_menu_style_sheet">Tab Sheet</string>
+    <string name="tab_menu_style_sheet_desc">The classic list that slides up from the bottom</string>
     <string name="pref_updates_title">Updates</string>
     <string name="download_settings_title">Downloads</string>
     <string name="download_settings_summary">Download location, notifications, and behavior</string>
@@ -787,6 +792,22 @@
         <item quantity="one">up to %1$d part at a time</item>
         <item quantity="other">up to %1$d parts at a time</item>
     </plurals>
+    <plurals name="tab_menu_tab_count">
+        <item quantity="one">%1$d tab</item>
+        <item quantity="other">%1$d tabs</item>
+    </plurals>
+    <plurals name="tab_menu_selected_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="tab_menu_select_mode_desc">Select tabs</string>
+    <string name="tab_menu_overflow_desc">More options</string>
+    <string name="tab_menu_close_all_tabs">Close All Tabs</string>
+    <string name="tab_menu_select_all">Select All</string>
+    <string name="tab_menu_invert_selection">Invert Selection</string>
+    <string name="tab_menu_delete_selected">Delete Selected Tabs</string>
+    <string name="tab_menu_drag_handle_desc">Drag to reorder</string>
+    <string name="tab_menu_select_tab_desc">Select tab</string>
 
     <string name="privacy_section_privacy">PRIVACY &amp; SECURITY</string>
     <string name="privacy_section_history">HISTORY</string>

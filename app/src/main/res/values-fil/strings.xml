@@ -96,6 +96,11 @@
     <string name="menu_style_popup_desc">Compact na menu na lumulutang malapit sa toolbar</string>
     <string name="menu_style_bottom_sheet">Bottom Sheet</string>
     <string name="menu_style_bottom_sheet_desc">Full-width na menu na dumudulas paitaas mula sa ibaba</string>
+    <string name="pref_tab_menu_style_title">Menu ng Tab</string>
+    <string name="tab_menu_style_grid">Grid ng Tab</string>
+    <string name="tab_menu_style_grid_desc">Tingnan ang mga bukas na tab bilang isang scrollable grid ng live na preview</string>
+    <string name="tab_menu_style_sheet">Tab Sheet</string>
+    <string name="tab_menu_style_sheet_desc">Ang klasikong listahan na dumudulas paitaas mula sa ibaba</string>
     <string name="pref_updates_title">Mga Update</string>
     <string name="download_settings_title">Mga Download</string>
     <string name="download_settings_summary">Lokasyon ng download, notification, at behavior</string>
@@ -783,6 +788,20 @@
     <plurals name="download_multithreading_value">
         <item quantity="other">hanggang %1$d parts nang sabay-sabay</item>
     </plurals>
+    <plurals name="tab_menu_tab_count">
+        <item quantity="other">%1$d na tab</item>
+    </plurals>
+    <plurals name="tab_menu_selected_count">
+        <item quantity="other">%1$d ang napili</item>
+    </plurals>
+    <string name="tab_menu_select_mode_desc">Pumili ng mga tab</string>
+    <string name="tab_menu_overflow_desc">Higit pang mga opsyon</string>
+    <string name="tab_menu_close_all_tabs">Isara Lahat ng Tab</string>
+    <string name="tab_menu_select_all">Piliin Lahat</string>
+    <string name="tab_menu_invert_selection">Baligtarin ang Pagpili</string>
+    <string name="tab_menu_delete_selected">Tanggalin ang mga Napiling Tab</string>
+    <string name="tab_menu_drag_handle_desc">I-drag para ayusin muli</string>
+    <string name="tab_menu_select_tab_desc">Piliin ang tab</string>
 
     <string name="privacy_section_privacy">PRIVACY &amp; SEGURIDAD</string>
     <string name="privacy_section_history">KASAYSAYAN</string>

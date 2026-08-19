@@ -301,6 +301,7 @@ internal fun MainActivity.onPageFinished(url: String) {
 
     tabManager.activeTab?.let { tab ->
         onQuiverGuardPageFinished(tab, url)
+        com.jhaiian.clint.tabs.TabThumbnailCache.capture(tab.id, tab.webView, tab.isIncognito)
     }
 
     val activeTab = tabManager.activeTab

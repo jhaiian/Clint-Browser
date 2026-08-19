@@ -7,7 +7,8 @@ data class SavedTab(
     val position: Int,
     val url: String,
     val title: String,
-    val isActive: Boolean
+    val isActive: Boolean,
+    val tabId: String
 )
 
 object TabSessionManager {
@@ -31,6 +32,7 @@ object TabSessionManager {
                     put(TabDatabase.COL_URL, tab.url)
                     put(TabDatabase.COL_TITLE, tab.title)
                     put(TabDatabase.COL_ACTIVE, if (tab.isActive) 1 else 0)
+                    put(TabDatabase.COL_TAB_ID, tab.tabId)
                 }
                 writable.insert(TabDatabase.TABLE, null, values)
             }
@@ -47,7 +49,8 @@ object TabSessionManager {
                 TabDatabase.COL_POSITION,
                 TabDatabase.COL_URL,
                 TabDatabase.COL_TITLE,
-                TabDatabase.COL_ACTIVE
+                TabDatabase.COL_ACTIVE,
+                TabDatabase.COL_TAB_ID
             ),
             null, null, null, null,
             "${TabDatabase.COL_POSITION} ASC"
@@ -60,7 +63,8 @@ object TabSessionManager {
                         position = it.getInt(0),
                         url = it.getString(1),
                         title = it.getString(2),
-                        isActive = it.getInt(3) == 1
+                        isActive = it.getInt(3) == 1,
+                        tabId = it.getString(4) ?: java.util.UUID.randomUUID().toString()
                     )
                 )
             }

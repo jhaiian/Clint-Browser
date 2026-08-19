@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import com.jhaiian.clint.tabs.BrowserTab
 import com.jhaiian.clint.tabs.SavedTab
 import com.jhaiian.clint.tabs.TabSessionManager
+import com.jhaiian.clint.tabs.TabThumbnailCache
 import com.jhaiian.clint.browser.webview.ClintWebChromeClient
 import com.jhaiian.clint.browser.webview.ClintWebViewClient
 import com.jhaiian.clint.quiver.engine.BlockedRequestCounter
@@ -22,7 +23,8 @@ internal fun MainActivity.saveTabs() {
                 position = index,
                 url = url,
                 title = tab.title,
-                isActive = tab == tabManager.activeTab
+                isActive = tab == tabManager.activeTab,
+                tabId = tab.id
             )
         }
     Thread { TabSessionManager.save(this, savedTabs) }.start()
@@ -33,10 +35,19 @@ internal fun MainActivity.restoreTabs(): Boolean {
     val savedTabs = TabSessionManager.load(this)
     if (savedTabs.isEmpty()) return false
     val activeIndex = savedTabs.indexOfFirst { it.isActive }.coerceAtLeast(0)
-    savedTabs.forEach { openNewTabSilent(it.url) }
+    savedTabs.forEach { openNewTabSilent(it.url, it.tabId) }
     tabManager.switchTo(activeIndex)
     attachActiveWebView()
+    TabThumbnailCache.pruneDisk(this, savedTabs.map { it.tabId }.toSet())
     return true
+}
+
+/** Captures a snapshot of the currently active tab's WebView into [TabThumbnailCache], for the
+ *  Tab Grid menu to show as that tab's preview. Must be called while the tab's WebView is still
+ *  attached and laid out, i.e. right before switching away from it or closing it. */
+internal fun MainActivity.captureActiveTabThumbnail() {
+    val tab = tabManager.activeTab ?: return
+    TabThumbnailCache.capture(tab.id, tab.webView, tab.isIncognito)
 }
 
 private fun MainActivity.migrateTabsFromPrefsIfNeeded() {
@@ -52,7 +63,8 @@ private fun MainActivity.migrateTabsFromPrefsIfNeeded() {
             position = index,
             url = url,
             title = "",
-            isActive = index == activeIdx
+            isActive = index == activeIdx,
+            tabId = java.util.UUID.randomUUID().toString()
         )
     }
     TabSessionManager.save(this, migratedTabs)
@@ -63,9 +75,9 @@ private fun MainActivity.migrateTabsFromPrefsIfNeeded() {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-internal fun MainActivity.openNewTabSilent(url: String) {
+internal fun MainActivity.openNewTabSilent(url: String, id: String = java.util.UUID.randomUUID().toString()) {
     val webView = createWebView(false)
-    val tab = BrowserTab(url = url, webView = webView)
+    val tab = BrowserTab(id = id, url = url, webView = webView)
     tabManager.add(tab)
     if (isDesktopMode) addDesktopScript(tab)
     webView.webViewClient = ClintWebViewClient(
@@ -98,6 +110,7 @@ internal fun MainActivity.openNewTabSilent(url: String) {
 }
 
 internal fun MainActivity.openNewTab(isIncognito: Boolean, url: String = getSearchEngineHomeUrl(), openerTabId: String? = null) {
+    captureActiveTabThumbnail()
     val webView = createWebView(isIncognito)
     val tab = BrowserTab(isIncognito = isIncognito, openerTabId = openerTabId, webView = webView)
     val index = tabManager.add(tab)
@@ -167,6 +180,7 @@ internal fun MainActivity.attachActiveWebView() {
 
 @SuppressLint("SetJavaScriptEnabled")
 internal fun MainActivity.openRefreshLinkTab(url: String) {
+    captureActiveTabThumbnail()
     val webView = createWebView(false)
     val tab = BrowserTab(url = url, isRefreshLinkTab = true, webView = webView)
     val index = tabManager.add(tab)
@@ -231,6 +245,7 @@ internal fun MainActivity.closePopupTabToOpener(tab: BrowserTab): Boolean {
     removeDesktopScript(tab)
     onQuiverGuardTabClosed(tab)
     if (!tab.isIncognito) com.jhaiian.clint.ui.FaviconCache.evict(this, tab.url)
+    TabThumbnailCache.evict(this, tab.id)
     tabManager.closeTab(closingIndex)
     resetProgressBar()
 

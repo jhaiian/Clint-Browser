@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 
 /** Identifies which picker dialog, if any, is currently shown over the screen. */
 enum class LookAndFeelDialog {
-    THEME, ACCENT, SURFACE_INTENSITY, ADDRESS_BAR_POSITION, MENU_STYLE, SCROLL_HIDE_MODE, EXIT_CONFIRMATION, LANGUAGE
+    THEME, ACCENT, SURFACE_INTENSITY, ADDRESS_BAR_POSITION, MENU_STYLE, TAB_MENU_STYLE, SCROLL_HIDE_MODE, EXIT_CONFIRMATION, LANGUAGE
 }
 
 /**
@@ -23,6 +23,7 @@ class LookAndFeelUiState(
     initialScrollHideMode: String,
     initialAddressBarPosition: String,
     initialMenuStyle: String,
+    initialTabMenuStyle: String,
     initialHideStatusBar: Boolean,
     initialExitConfirmation: String
 ) {
@@ -35,6 +36,7 @@ class LookAndFeelUiState(
     var scrollHideMode by mutableStateOf(initialScrollHideMode)
     var addressBarPosition by mutableStateOf(initialAddressBarPosition)
     var menuStyle by mutableStateOf(initialMenuStyle)
+    var tabMenuStyle by mutableStateOf(initialTabMenuStyle)
     var hideStatusBar by mutableStateOf(initialHideStatusBar)
 
     var exitConfirmation by mutableStateOf(initialExitConfirmation)
