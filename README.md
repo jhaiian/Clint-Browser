@@ -74,7 +74,7 @@ Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo de
 
 Clint is built with **Material 3** and **Jetpack Compose**, with a highly customizable interface.
 
-- 8+ accent colors
+- 8 accent colors
 - Light, Dark
 - Multiple surface intensities
 
