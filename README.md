@@ -48,7 +48,7 @@ Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo de
 
 ### 🌐 Browser
 
-- Multi-tab browsing and tab groups
+- Multi-tab browsing
 - Incognito mode
 - Reader Mode
 - Desktop Mode
