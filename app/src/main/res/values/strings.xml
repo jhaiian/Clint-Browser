@@ -446,6 +446,9 @@
     <string name="download_error_unknown">Unknown error</string>
     <string name="download_error_saf_no_access">Cannot access the selected download folder</string>
     <string name="download_error_saf_not_writable">Selected download folder is not writable</string>
+    <string name="download_location_invalid_title">Download folder unavailable</string>
+    <string name="download_location_invalid_message">The custom download folder is no longer accessible. It may have been moved, deleted, or the permission may have been revoked.</string>
+    <string name="download_location_use_default_action">Use Default Folder</string>
     <string name="download_error_saf_create_failed">Failed to create file in download folder</string>
     <string name="download_error_saf_no_stream">Cannot open output stream for download folder</string>
     <string name="download_error_blob_expired">Embedded image data is no longer available</string>
@@ -581,6 +584,13 @@
     <string name="setup_terms_read">Read</string>
     <string name="setup_terms_agree">I have read and agree to the Privacy Policy and Terms of Service</string>
     <string name="setup_terms_continue">Agree &amp; Continue</string>
+
+    <string name="setup_restore_title">Restore from Backup</string>
+    <string name="setup_restore_subtitle">Have a Clint backup? Restore it now to bring back your settings and data, or skip to set up as new.</string>
+    <string name="setup_restore_card_title">Restore Backup</string>
+    <string name="setup_restore_card_desc">Choose a .clintbackup file from your device</string>
+    <string name="setup_restore_button">Restore Backup</string>
+    <string name="setup_restore_skip">Set Up as New</string>
 
     <string name="bookmarks_title">Bookmarks</string>
     <string name="content_desc_bookmark">Bookmark</string>
@@ -1016,4 +1026,87 @@
     <string name="quiver_guard_manual_filter_delete_selected_confirm_title">Delete rules</string>
     <string name="quiver_guard_manual_filter_delete_selected_confirm_message">Remove %1$d rule(s) from your manual filter?</string>
 
+    <string name="backup_restore_title">Backup &amp; Restore</string>
+    <string name="backup_restore_summary">Back up or restore your app data</string>
+    <string name="backup_row_title">Backup</string>
+    <string name="backup_row_summary">Save your data to a single backup file</string>
+    <string name="restore_row_title">Restore</string>
+    <string name="restore_row_summary">Restore your data from a backup file</string>
+
+    <string name="backup_category_settings">Settings</string>
+    <string name="backup_category_settings_desc">App preferences and configuration</string>
+    <string name="backup_category_tabs">Tabs</string>
+    <string name="backup_category_tabs_desc">Your currently open tabs</string>
+    <string name="backup_category_downloads">Downloads</string>
+    <string name="backup_category_downloads_desc">Download history and related metadata</string>
+    <string name="backup_category_quiver_guard">Quiver Guard</string>
+    <string name="backup_category_quiver_guard_desc">Filter lists, rules, and settings</string>
+    <string name="backup_category_cookies">Browser Cookies</string>
+    <string name="backup_category_cookies_desc">Cookies stored by websites you visit</string>
+    <string name="backup_category_bookmarks">Bookmarks</string>
+    <string name="backup_category_bookmarks_desc">Saved bookmarks</string>
+    <string name="backup_category_search_history">Search History</string>
+    <string name="backup_category_search_history_desc">Your search suggestion history</string>
+    <string name="backup_category_site_permissions">Site Permissions</string>
+    <string name="backup_category_site_permissions_desc">Per-site permission choices</string>
+    <string name="backup_category_update_settings">Update Settings</string>
+    <string name="backup_category_update_settings_desc">Update check preferences</string>
+
+    <string name="backup_select_categories_title">Choose What to Back Up</string>
+    <string name="backup_select_all">Select All</string>
+    <string name="backup_deselect_all">Deselect All</string>
+    <string name="backup_protect_title">Protect Your Backup</string>
+    <string name="backup_protect_no_password">No password</string>
+    <string name="backup_protect_with_password">Encrypt with password</string>
+    <string name="backup_password_label">Password</string>
+    <string name="backup_password_confirm_label">Confirm password</string>
+    <string name="backup_password_hint">Anyone with this file will need this password to restore it. If you forget it, your backup can\'t be recovered.</string>
+    <string name="backup_password_show">Show password</string>
+    <string name="backup_password_hide">Hide password</string>
+    <string name="backup_password_mismatch">Passwords do not match</string>
+    <string name="backup_password_too_short">Password must be at least 6 characters</string>
+    <string name="backup_action_create">Create Backup</string>
+
+    <string name="backup_auth_title">Authentication Required</string>
+    <string name="backup_auth_subtitle_backup">Confirm it\'s you to create a backup</string>
+    <string name="backup_auth_subtitle_restore">Confirm it\'s you to restore a backup</string>
+    <string name="backup_auth_unavailable_title">Screen Lock Required</string>
+    <string name="backup_auth_unavailable_message">Set up a screen lock (PIN, pattern, password, or biometrics) in your device settings to use Backup &amp; Restore.</string>
+
+    <string name="backup_progress_creating">Creating backup…</string>
+    <string name="backup_progress_reading">Reading backup file…</string>
+    <string name="backup_progress_restoring">Restoring data…</string>
+
+    <string name="backup_result_success_title">Backup Complete</string>
+    <string name="backup_result_success_message">Your backup has been saved.</string>
+    <string name="backup_result_skipped_note">Not included (no data found): %1$s</string>
+    <string name="backup_result_error_title">Backup Failed</string>
+    <string name="backup_result_error_message">Something went wrong while creating the backup.</string>
+
+    <string name="restore_password_title">Enter Password</string>
+    <string name="restore_password_message">This backup is encrypted. Enter the password to continue.</string>
+    <string name="restore_password_wrong">Incorrect password. Please try again.</string>
+    <string name="restore_action_continue">Continue</string>
+
+    <string name="restore_invalid_title">Invalid Backup File</string>
+    <string name="restore_invalid_message">This file isn\'t a supported Clint backup, or it\'s corrupted.</string>
+    <string name="restore_unsupported_title">Unsupported Backup Version</string>
+    <string name="restore_unsupported_message">This backup was created with a newer version of Clint and can\'t be restored here.</string>
+    <string name="restore_generic_error_title">Couldn\'t Open Backup</string>
+    <string name="restore_generic_error_message">Something went wrong while reading the backup file.</string>
+
+    <string name="restore_select_categories_title">Choose What to Restore</string>
+    <string name="restore_action_restore">Restore</string>
+
+    <string name="restore_confirm_title">Restore Data?</string>
+    <string name="restore_confirm_message">Restoring will overwrite your current data for the selected categories. This can\'t be undone.</string>
+
+    <string name="restore_result_success_title">Restore Complete</string>
+    <string name="restore_result_success_message">Your data has been restored. Clint needs to restart to apply the changes.</string>
+    <string name="restore_result_partial_note">Not found in this backup: %1$s</string>
+    <string name="restore_result_error_title">Restore Failed</string>
+    <string name="restore_result_error_message">Something went wrong while restoring your data.</string>
+    <string name="restore_action_restart_now">Restart Now</string>
+
+    <string name="backup_generic_ok">OK</string>
 </resources>

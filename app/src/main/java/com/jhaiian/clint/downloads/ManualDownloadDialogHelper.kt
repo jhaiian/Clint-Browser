@@ -132,6 +132,24 @@ private fun DownloadsActivity.checkConflictAndEnqueueManual(
     checkFilenameConflictAndEnqueueManual(url, filename, userAgent, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss, onRename)
 }
 
+private fun DownloadsActivity.enqueueManualDownload(
+    url: String,
+    filename: String,
+    userAgent: String,
+    retryEnabled: Boolean,
+    unmeteredOnly: Boolean,
+    splitParts: Int,
+    multithreadingParts: Int,
+    speedLimitBytesPerSec: Long,
+    locationMode: String,
+    customLocationUri: String?,
+    scheduledStartAtMillis: Long,
+    onDismiss: () -> Unit
+) {
+    if (DownloadFileHelper.isCustomLocationAccessible(this, locationMode, customLocationUri)) onDismiss()
+    ClintDownloadManager.enqueue(this, url, filename, userAgent, "", "", retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
+}
+
 private fun DownloadsActivity.checkFilenameConflictAndEnqueueManual(
     url: String,
     filename: String,
@@ -155,19 +173,16 @@ private fun DownloadsActivity.checkFilenameConflictAndEnqueueManual(
         File(DownloadFileHelper.resolveDownloadDir(), filename).exists()
     }
     if (!fileExists) {
-        onDismiss()
-        ClintDownloadManager.enqueue(this, url, filename, userAgent, "", "", retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
+        enqueueManualDownload(url, filename, userAgent, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss)
         return
     }
     uiState.conflictDialogRequest = DownloadConflictDialogRequest(
         onAddDuplicate = {
-            onDismiss()
-            ClintDownloadManager.enqueue(this, url, filename, userAgent, "", "", retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
+            enqueueManualDownload(url, filename, userAgent, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss)
         },
         onOverride = {
             deleteExistingManual(filename, locationMode, customLocationUri)
-            onDismiss()
-            ClintDownloadManager.enqueue(this, url, filename, userAgent, "", "", retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis)
+            enqueueManualDownload(url, filename, userAgent, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri, scheduledStartAtMillis, onDismiss)
         },
         onRename = onRename
     )

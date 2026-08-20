@@ -4,6 +4,119 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.1
+
+---
+
+## What's New
+
+### Backup & Restore
+
+Backup & Restore has been added to Settings. You can now back up and restore your important browser data using a single backup file.
+
+You can choose exactly what you want to include in your backup:
+
+- Settings
+- Tabs
+- Downloads
+- Quiver Guard
+- Browser Cookies
+- Bookmarks
+- Search History
+- Update Settings
+- Other supported app data
+
+You don't have to back up everything. A selection dialog lets you choose which categories you want to include.
+
+### Secure Backup & Restore
+
+Because backups can contain sensitive information, especially browser cookies, Clint requires device authentication whenever you perform a backup or restore.
+
+Before starting a backup or restore, Clint will ask you to verify your identity using your device's available security method, such as:
+
+- PIN
+- Password
+- Pattern
+- Fingerprint
+- Face authentication
+
+This helps prevent someone else with access to your unlocked device from performing a backup or restoring potentially sensitive data.
+
+### Encrypted Backups
+
+You can also choose to encrypt your backup with a password.
+
+When encryption is enabled, your password is not used directly as the encryption key. Instead, Clint derives a strong 256-bit encryption key using Argon2id, a password-hashing algorithm designed to make password-guessing attacks more expensive.
+
+The encryption process works like this:
+
+```
+
+Your Password
+↓
+Argon2id
+↓
+256-bit Encryption Key
+↓
+AES-256-GCM
+↓
+Encrypted Backup File
+
+```
+
+AES-256-GCM is used to encrypt the actual backup data. It provides both encryption and authentication, meaning that unauthorized modifications to the backup can be detected.
+
+Each encrypted backup also uses unique cryptographic values, such as a randomly generated salt and encryption nonce. The information required to derive the encryption key and decrypt the backup is stored as metadata in the backup file, but your password is never stored.
+
+### Why Argon2id + AES-256-GCM?
+
+The two algorithms have different jobs:
+
+- **Argon2id** protects against password-guessing attacks by making each password attempt more computationally and memory intensive.
+- **AES-256-GCM** encrypts the actual backup data and provides authentication to detect tampering.
+
+This means that even if someone obtains your encrypted backup file, they still need your password to decrypt it.
+
+However, encryption cannot make a weak password strong. Avoid passwords such as "password123" or other easily guessed passwords. A long, unique passphrase provides much better protection.
+
+> **Important:** If you forget the password used to encrypt a backup, the encrypted data cannot be recovered by Clint. Keep your backup password somewhere safe.
+
+### Portable Backup
+
+All selected data is packaged into one backup file, making it easy to store, transfer, or restore later.
+
+Encrypted backups remain protected even when the backup file is copied to another device or stored somewhere outside your phone.
+
+**Your data stays yours. Your backup stays under your control.**
+
+---
+
+### Custom Download Location Check
+
+Clint now checks whether the configured custom download location still exists and whether the app still has the required SAF permission to access it.
+
+This helps prevent download failures when the selected folder has been deleted, moved, or when access to it has been revoked.
+
+---
+
+## Bug Fixes
+
+- Fixed an issue where Download Settings was opened when pressing Back from Settings instead of returning directly to the Download page.
+- Fixed the same issue in the Browser menu. Long-pressing Download or Data Saver now correctly returns to the Browser menu instead of opening their respective settings pages.
+- Fixed the Skip button in the setup page appearing too dark. It now uses the same color as the other buttons.
+- Fixed an issue where the download Snackbar appeared even when the download had not actually started. The Snackbar now only appears when the download successfully starts.
+
+---
+
+## Dependency Updates
+
+- Bump `androidx.compose:compose-bom` from 2026.06.01 to 2026.08.00 by @dependabot[bot] in #24
+- Bump `androidx.webkit:webkit` from 1.16.0 to 1.17.0 by @dependabot[bot] in #23
+- Bump `androidx.appcompat:appcompat` from 1.7.1 to 1.8.0 by @dependabot[bot] in #22
+- Bump `com.squareup.okhttp3:okhttp` from 5.4.0 to 5.5.0
+
+---
+
 # v1.1.0
 
 ---

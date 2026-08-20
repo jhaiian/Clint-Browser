@@ -375,7 +375,7 @@ fun SetupDefaultBrowserPage(
         SetupPrimaryButton(
             text = stringResource(R.string.setup_default_browser_skip),
             onClick = onSkip,
-            backgroundColor = colors.cardBackground,
+            backgroundColor = colors.buttonBackground,
             modifier = Modifier.padding(top = 10.dp, bottom = 24.dp)
         )
     }

@@ -1,0 +1,80 @@
+package com.jhaiian.clint.backup
+
+import android.content.Context
+import com.jhaiian.clint.bookmarks.BookmarkDatabase
+import com.jhaiian.clint.downloads.DownloadDatabase
+import com.jhaiian.clint.history.SearchHistoryDatabase
+import com.jhaiian.clint.quiver.FilterListDatabase
+import com.jhaiian.clint.quiver.ManualFilterDatabase
+import com.jhaiian.clint.quiver.engine.QuiverGuardPaths
+import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
+import com.jhaiian.clint.tabs.TabDatabase
+import java.io.File
+
+enum class BackupEntryType { DATABASE, PREFS, DIRECTORY }
+
+data class BackupEntryTarget(
+    val id: String,
+    val category: BackupCategory,
+    val type: BackupEntryType,
+    val zipPath: String,
+    val file: (Context) -> File
+)
+
+object BackupTargets {
+
+    const val LEGACY_DOWNLOAD_PREFS_NAME = "clint_downloads_prefs"
+    const val LEGACY_BOOKMARK_PREFS_NAME = "clint_bookmarks"
+    const val UPDATE_PREFS_NAME = "update_prefs"
+    const val QUIVER_GUARD_FILES_DIR_NAME = "quiver_guard"
+
+    private fun Context.prefsFile(name: String): File = File(applicationInfo.dataDir, "shared_prefs/$name.xml")
+
+    private fun defaultPrefsFile(context: Context): File =
+        context.prefsFile("${context.packageName}_preferences")
+
+    private fun webviewCookiesFile(context: Context): File? {
+        val dataDir = context.applicationInfo.dataDir
+        val candidates = listOf(
+            File(dataDir, "app_webview/Default/Cookies"),
+            File(dataDir, "app_webview/Cookies")
+        )
+        return candidates.firstOrNull { it.exists() && it.length() > 0 }
+    }
+
+    val ALL: List<BackupEntryTarget> = listOf(
+        BackupEntryTarget("settings_default_prefs", BackupCategory.SETTINGS, BackupEntryType.PREFS, "settings/default_prefs.xml") { defaultPrefsFile(it) },
+
+        BackupEntryTarget("tabs_db", BackupCategory.TABS, BackupEntryType.DATABASE, "tabs/${TabDatabase.DB_NAME}") { it.getDatabasePath(TabDatabase.DB_NAME) },
+
+        BackupEntryTarget("downloads_db", BackupCategory.DOWNLOADS, BackupEntryType.DATABASE, "downloads/${DownloadDatabase.DB_NAME}") { it.getDatabasePath(DownloadDatabase.DB_NAME) },
+        BackupEntryTarget("downloads_legacy_prefs", BackupCategory.DOWNLOADS, BackupEntryType.PREFS, "downloads/legacy_prefs.xml") { it.prefsFile(LEGACY_DOWNLOAD_PREFS_NAME) },
+
+        BackupEntryTarget("quiver_guard_filter_lists_db", BackupCategory.QUIVER_GUARD, BackupEntryType.DATABASE, "quiver_guard/${FilterListDatabase.DB_NAME}") { it.getDatabasePath(FilterListDatabase.DB_NAME) },
+        BackupEntryTarget("quiver_guard_manual_filter_db", BackupCategory.QUIVER_GUARD, BackupEntryType.DATABASE, "quiver_guard/${ManualFilterDatabase.DB_NAME}") { it.getDatabasePath(ManualFilterDatabase.DB_NAME) },
+        BackupEntryTarget("quiver_guard_files", BackupCategory.QUIVER_GUARD, BackupEntryType.DIRECTORY, "quiver_guard/files") { File(it.filesDir, QUIVER_GUARD_FILES_DIR_NAME) },
+        BackupEntryTarget("quiver_guard_compiled_db", BackupCategory.QUIVER_GUARD, BackupEntryType.DATABASE, "quiver_guard/${QuiverGuardPaths.DATABASE_FILE_NAME}") { QuiverGuardPaths.databaseFile(it) },
+        BackupEntryTarget("quiver_guard_compiled_manifest", BackupCategory.QUIVER_GUARD, BackupEntryType.DATABASE, "quiver_guard/${QuiverGuardPaths.MANIFEST_FILE_NAME}") { QuiverGuardPaths.manifestFile(it) },
+
+        BackupEntryTarget("cookies_db", BackupCategory.COOKIES, BackupEntryType.DATABASE, "cookies/Cookies") { webviewCookiesFile(it) ?: File(it.applicationInfo.dataDir, "app_webview/Default/Cookies") },
+
+        BackupEntryTarget("bookmarks_db", BackupCategory.BOOKMARKS, BackupEntryType.DATABASE, "bookmarks/${BookmarkDatabase.DB_NAME}") { it.getDatabasePath(BookmarkDatabase.DB_NAME) },
+        BackupEntryTarget("bookmarks_legacy_prefs", BackupCategory.BOOKMARKS, BackupEntryType.PREFS, "bookmarks/legacy_prefs.xml") { it.prefsFile(LEGACY_BOOKMARK_PREFS_NAME) },
+
+        BackupEntryTarget("search_history_db", BackupCategory.SEARCH_HISTORY, BackupEntryType.DATABASE, "search_history/${SearchHistoryDatabase.DB_NAME}") { it.getDatabasePath(SearchHistoryDatabase.DB_NAME) },
+
+        BackupEntryTarget("site_permissions_db", BackupCategory.SITE_PERMISSIONS, BackupEntryType.DATABASE, "site_permissions/${SitePermissionDatabase.DB_NAME}") { it.getDatabasePath(SitePermissionDatabase.DB_NAME) },
+
+        BackupEntryTarget("update_settings_prefs", BackupCategory.UPDATE_SETTINGS, BackupEntryType.PREFS, "update_settings/prefs.xml") { it.prefsFile(UPDATE_PREFS_NAME) }
+    )
+
+    fun forCategory(category: BackupCategory): List<BackupEntryTarget> = ALL.filter { it.category == category }
+
+    fun byId(id: String): BackupEntryTarget? = ALL.firstOrNull { it.id == id }
+
+    fun quiverGuardCompiledArtifacts(context: Context): List<File> = listOf(
+        QuiverGuardPaths.databaseFile(context),
+        QuiverGuardPaths.tempDatabaseFile(context),
+        QuiverGuardPaths.manifestFile(context)
+    )
+}

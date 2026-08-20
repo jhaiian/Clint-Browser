@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Update
@@ -32,6 +33,7 @@ fun MainSettingsScreen(
     onSiteSettingsClick: () -> Unit,
     onDataSaverClick: () -> Unit,
     onDownloadsClick: () -> Unit,
+    onBackupRestoreClick: () -> Unit,
     onUpdatesClick: () -> Unit,
     onMiscClick: () -> Unit,
     onDebugClick: () -> Unit,
@@ -95,6 +97,14 @@ fun MainSettingsScreen(
                 summary = stringResource(R.string.download_settings_summary),
                 colors = colors,
                 onClick = onDownloadsClick
+            )
+            RowDivider(colors.divider)
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.SettingsBackupRestore,
+                title = stringResource(R.string.backup_restore_title),
+                summary = stringResource(R.string.backup_restore_summary),
+                colors = colors,
+                onClick = onBackupRestoreClick
             )
             RowDivider(colors.divider)
             if (BuildConfig.IS_FDROID) {

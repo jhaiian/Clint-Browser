@@ -94,10 +94,11 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
             initialHideStatusBar = hideStatusBar,
             initialEngine = "duckduckgo"
         )
-        if (uiState.currentPage == 4) refreshDefaultBrowserState()
+        if (uiState.currentPage == 5) refreshDefaultBrowserState()
 
         setContent {
             SetupScreen(
+                activity = this,
                 state = uiState,
                 onPrivacyClick = {
                     DocumentViewer.show(this, getString(R.string.document_viewer_privacy_policy_title), DocumentViewer.PRIVACY_POLICY_URL)
@@ -120,6 +121,8 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
                 onScrollHideModeSelected = { mode -> uiState.scrollHideMode = mode },
                 onEngineSelected = { engine -> uiState.engine = engine },
                 onContinueFromWelcome = { uiState.currentPage = 1 },
+                onSkipRestore = { uiState.currentPage = 2 },
+                onRestoreComplete = { restartAppAfterRestore() },
                 onNextFromLayoutPage = { onNextFromLayoutPage() },
                 onNextFromEnginePage = { onNextFromEnginePage() },
                 onSetDefaultBrowser = {
@@ -134,7 +137,14 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
 
     override fun onResume() {
         super.onResume()
-        if (::uiState.isInitialized && uiState.currentPage == 4) refreshDefaultBrowserState()
+        if (::uiState.isInitialized && uiState.currentPage == 5) refreshDefaultBrowserState()
+    }
+
+    fun restartAppAfterRestore() {
+        val restartIntent = packageManager.getLaunchIntentForPackage(packageName)
+        restartIntent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (restartIntent != null) startActivity(restartIntent)
+        android.os.Process.killProcess(android.os.Process.myPid())
     }
 
     private fun refreshDefaultBrowserState() {
@@ -167,11 +177,11 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
                 title = getString(R.string.nested_scroll_warning_title),
                 message = getString(R.string.nested_scroll_warning_message),
                 positiveLabel = getString(R.string.action_enable_anyway),
-                onPositive = { uiState.currentPage = 3 },
+                onPositive = { uiState.currentPage = 4 },
                 negativeLabel = getString(R.string.action_cancel)
             )
         } else {
-            uiState.currentPage = 3
+            uiState.currentPage = 4
         }
     }
 
@@ -190,12 +200,12 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
     }
 
     private fun goToDefaultBrowserPage() {
-        uiState.currentPage = 4
+        uiState.currentPage = 5
         refreshDefaultBrowserState()
     }
 
     private fun onSetupThemeSelected(theme: String) {
-        if (theme == uiState.theme) { uiState.currentPage = 2; return }
+        if (theme == uiState.theme) { uiState.currentPage = 3; return }
         savePendingNavigationState()
         captureAndRecreate(theme)
     }
@@ -215,7 +225,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
     private fun savePendingNavigationState() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         prefs.edit()
-            .putInt(KEY_PENDING_PAGE, 1)
+            .putInt(KEY_PENDING_PAGE, 2)
             .putInt(KEY_PENDING_SCROLL, uiState.themePageScrollState.value)
             .putBoolean(KEY_PENDING_HIDE_STATUS_BAR, uiState.hideStatusBar)
             .apply()

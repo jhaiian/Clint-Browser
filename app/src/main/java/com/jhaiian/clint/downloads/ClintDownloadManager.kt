@@ -188,7 +188,41 @@ object ClintDownloadManager {
         activeSpeedLimiters[id]?.updateLimit(speedLimitBytesPerSec)
     }
 
+    private fun promptInvalidLocation(context: Context, onUseDefault: () -> Unit) {
+        val config = com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig(
+            title = context.getString(R.string.download_location_invalid_title),
+            message = context.getString(R.string.download_location_invalid_message),
+            positiveLabel = context.getString(R.string.action_open_settings),
+            onPositive = {
+                context.startActivity(
+                    android.content.Intent(context, com.jhaiian.clint.settings.SettingsActivity::class.java)
+                        .putExtra(com.jhaiian.clint.settings.SettingsActivity.EXTRA_OPEN_FRAGMENT, "download_settings")
+                )
+            },
+            negativeLabel = context.getString(R.string.download_location_use_default_action),
+            onNegative = {
+                PreferenceManager.getDefaultSharedPreferences(context).edit()
+                    .putString(DownloadSettingsKeys.PREF_DOWNLOAD_LOCATION_MODE, DownloadSettingsKeys.MODE_DEFAULT)
+                    .apply()
+                onUseDefault()
+            },
+            neutralLabel = context.getString(R.string.action_cancel)
+        )
+        when (context) {
+            is com.jhaiian.clint.downloads.DownloadsActivity -> context.uiState.confirmDialogConfig = config
+            is com.jhaiian.clint.browser.MainActivity -> context.uiState.confirmDialogConfig = config
+        }
+    }
+
     fun enqueueBlob(context: Context, base64: String, filename: String, mimeType: String) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val locationMode = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_LOCATION_MODE, DownloadSettingsKeys.MODE_DEFAULT)
+            ?: DownloadSettingsKeys.MODE_DEFAULT
+        val customLocationUri = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_CUSTOM_URI, null)
+        if (!DownloadFileHelper.isCustomLocationAccessible(context, locationMode, customLocationUri)) {
+            promptInvalidLocation(context) { enqueueBlob(context, base64, filename, mimeType) }
+            return
+        }
         val id = idCounter.getAndIncrement()
         val item = DownloadItem(
             id = id, url = "blob:", filename = filename, userAgent = "",
@@ -253,6 +287,16 @@ object ClintDownloadManager {
         customLocationUri: String? = null,
         scheduledStartAtMillis: Long = 0L
     ) {
+        if (!DownloadFileHelper.isCustomLocationAccessible(context, locationMode, customLocationUri)) {
+            promptInvalidLocation(context) {
+                enqueue(
+                    context, url, filename, userAgent, referer, cookies, retryEnabled, unmeteredOnly,
+                    splitParts, multithreadingParts, speedLimitBytesPerSec,
+                    DownloadSettingsKeys.MODE_DEFAULT, null, scheduledStartAtMillis
+                )
+            }
+            return
+        }
         val id = idCounter.getAndIncrement()
         val baseItem = DownloadItem(
             id = id, url = url, filename = filename, userAgent = userAgent, referer = referer,

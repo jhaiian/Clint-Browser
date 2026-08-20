@@ -44,11 +44,13 @@ internal fun MainActivity.showDownloadDialog(
         initialSpeedLimitAmount = prefs.getInt(DownloadSettingsKeys.PREF_SPEED_LIMIT_AMOUNT, DownloadSettingsKeys.DEFAULT_SPEED_LIMIT_AMOUNT),
         initialSpeedLimitUnit = prefs.getString(DownloadSettingsKeys.PREF_SPEED_LIMIT_UNIT, DEFAULT_SPEED_LIMIT_UNIT) ?: DEFAULT_SPEED_LIMIT_UNIT,
         onSubmit = { submission, dismiss, onRename ->
-            showClintSnackbar(
-                message = getString(R.string.toast_downloading, submission.filename),
-                actionLabel = getString(R.string.download_started_view_action),
-                onAction = { DownloadsActivity.open(this) }
-            )
+            if (com.jhaiian.clint.downloads.DownloadFileHelper.isCustomLocationAccessible(this, submission.locationMode, submission.customLocationUri)) {
+                showClintSnackbar(
+                    message = getString(R.string.toast_downloading, submission.filename),
+                    actionLabel = getString(R.string.download_started_view_action),
+                    onAction = { DownloadsActivity.open(this) }
+                )
+            }
             initiateDownload(
                 url, submission.filename, userAgent, referer, cookies,
                 submission.retryEnabled, submission.unmeteredOnly, submission.splitParts, submission.multithreadingParts, submission.speedLimitBytesPerSec,
@@ -80,11 +82,16 @@ internal fun MainActivity.showDownloadDialogForBlob(
         initialCustomUri = PreferenceManager.getDefaultSharedPreferences(this)
             .getString(DownloadSettingsKeys.PREF_DOWNLOAD_CUSTOM_URI, null)?.let { Uri.parse(it) },
         onSubmit = { submission, dismiss, _ ->
-            showClintSnackbar(
-                message = getString(R.string.toast_downloading, submission.filename),
-                actionLabel = getString(R.string.download_started_view_action),
-                onAction = { DownloadsActivity.open(this) }
-            )
+            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+            val locationMode = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_LOCATION_MODE, DownloadSettingsKeys.MODE_DEFAULT) ?: DownloadSettingsKeys.MODE_DEFAULT
+            val customLocationUri = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_CUSTOM_URI, null)
+            if (com.jhaiian.clint.downloads.DownloadFileHelper.isCustomLocationAccessible(this, locationMode, customLocationUri)) {
+                showClintSnackbar(
+                    message = getString(R.string.toast_downloading, submission.filename),
+                    actionLabel = getString(R.string.download_started_view_action),
+                    onAction = { DownloadsActivity.open(this) }
+                )
+            }
             dismiss()
             ClintDownloadManager.enqueueBlob(this, base64, submission.filename, mimeType)
         }

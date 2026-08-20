@@ -446,6 +446,9 @@
     <string name="download_error_unknown">Hindi kilalang error</string>
     <string name="download_error_saf_no_access">Hindi ma-access ang piniling download folder</string>
     <string name="download_error_saf_not_writable">Hindi puwedeng i-write ang piniling download folder</string>
+    <string name="download_location_invalid_title">Hindi available ang download folder</string>
+    <string name="download_location_invalid_message">Hindi na ma-access ang custom download folder. Maaaring nailipat, naburang, o na-revoke na ang pahintulot dito.</string>
+    <string name="download_location_use_default_action">Gamitin ang Default na Folder</string>
     <string name="download_error_saf_create_failed">Nabigong gumawa ng file sa download folder</string>
     <string name="download_error_saf_no_stream">Hindi mabuksan ang output stream para sa download folder</string>
     <string name="download_error_blob_expired">Hindi na available ang embedded na image data</string>
@@ -581,6 +584,13 @@
     <string name="setup_terms_read">Basahin</string>
     <string name="setup_terms_agree">Nabasa ko at sumasang-ayon ako sa Patakaran sa Privacy at Mga Tuntunin ng Serbisyo</string>
     <string name="setup_terms_continue">Sumang-ayon &amp; Magpatuloy</string>
+
+    <string name="setup_restore_title">I-restore mula sa Backup</string>
+    <string name="setup_restore_subtitle">May backup ka ba ng Clint? I-restore ito ngayon para maibalik ang iyong mga setting at data, o laktawan para mag-set up bilang bago.</string>
+    <string name="setup_restore_card_title">I-restore ang Backup</string>
+    <string name="setup_restore_card_desc">Pumili ng .clintbackup file mula sa iyong device</string>
+    <string name="setup_restore_button">I-restore ang Backup</string>
+    <string name="setup_restore_skip">Mag-set Up bilang Bago</string>
 
     <string name="bookmarks_title">Mga Bookmark</string>
     <string name="content_desc_bookmark">Bookmark</string>
@@ -1010,4 +1020,87 @@
     <string name="quiver_guard_manual_filter_delete_selected_confirm_title">Burahin ang mga rule</string>
     <string name="quiver_guard_manual_filter_delete_selected_confirm_message">Alisin ang %1$d rule sa iyong manual filter?</string>
 
+    <string name="backup_restore_title">Backup at Restore</string>
+    <string name="backup_restore_summary">I-back up o ibalik ang data ng iyong app</string>
+    <string name="backup_row_title">Backup</string>
+    <string name="backup_row_summary">I-save ang iyong data sa iisang backup file</string>
+    <string name="restore_row_title">Restore</string>
+    <string name="restore_row_summary">Ibalik ang iyong data mula sa isang backup file</string>
+
+    <string name="backup_category_settings">Mga Setting</string>
+    <string name="backup_category_settings_desc">Mga preference at configuration ng app</string>
+    <string name="backup_category_tabs">Mga Tab</string>
+    <string name="backup_category_tabs_desc">Mga kasalukuyang bukas na tab</string>
+    <string name="backup_category_downloads">Mga Download</string>
+    <string name="backup_category_downloads_desc">History ng download at kaugnay na metadata</string>
+    <string name="backup_category_quiver_guard">Quiver Guard</string>
+    <string name="backup_category_quiver_guard_desc">Mga filter list, panuntunan, at setting</string>
+    <string name="backup_category_cookies">Mga Cookie ng Browser</string>
+    <string name="backup_category_cookies_desc">Mga cookie na naka-store mula sa mga site na binisita mo</string>
+    <string name="backup_category_bookmarks">Mga Bookmark</string>
+    <string name="backup_category_bookmarks_desc">Mga naka-save na bookmark</string>
+    <string name="backup_category_search_history">History ng Paghahanap</string>
+    <string name="backup_category_search_history_desc">Ang history ng iyong mga mungkahi sa paghahanap</string>
+    <string name="backup_category_site_permissions">Mga Permiso ng Site</string>
+    <string name="backup_category_site_permissions_desc">Mga pinili mong permiso kada site</string>
+    <string name="backup_category_update_settings">Mga Setting ng Update</string>
+    <string name="backup_category_update_settings_desc">Mga preference sa pag-check ng update</string>
+
+    <string name="backup_select_categories_title">Piliin ang I-ba-back Up</string>
+    <string name="backup_select_all">Piliin Lahat</string>
+    <string name="backup_deselect_all">Alisin ang Lahat</string>
+    <string name="backup_protect_title">Protektahan ang Iyong Backup</string>
+    <string name="backup_protect_no_password">Walang password</string>
+    <string name="backup_protect_with_password">I-encrypt gamit ang password</string>
+    <string name="backup_password_label">Password</string>
+    <string name="backup_password_confirm_label">Kumpirmahin ang password</string>
+    <string name="backup_password_hint">Kakailanganin ng password na ito ng sinumang may hawak ng file para ma-restore ito. Kung nakalimutan mo ito, hindi na maibabalik ang iyong backup.</string>
+    <string name="backup_password_show">Ipakita ang password</string>
+    <string name="backup_password_hide">Itago ang password</string>
+    <string name="backup_password_mismatch">Hindi magkatugma ang mga password</string>
+    <string name="backup_password_too_short">Dapat hindi bababa sa 6 na character ang password</string>
+    <string name="backup_action_create">Gumawa ng Backup</string>
+
+    <string name="backup_auth_title">Kinakailangan ang Authentication</string>
+    <string name="backup_auth_subtitle_backup">Kumpirmahin na ikaw ito para gumawa ng backup</string>
+    <string name="backup_auth_subtitle_restore">Kumpirmahin na ikaw ito para mag-restore ng backup</string>
+    <string name="backup_auth_unavailable_title">Kailangan ng Screen Lock</string>
+    <string name="backup_auth_unavailable_message">Mag-set up ng screen lock (PIN, pattern, password, o biometrics) sa mga setting ng iyong device para magamit ang Backup at Restore.</string>
+
+    <string name="backup_progress_creating">Gumagawa ng backup…</string>
+    <string name="backup_progress_reading">Binabasa ang backup file…</string>
+    <string name="backup_progress_restoring">Ibinabalik ang data…</string>
+
+    <string name="backup_result_success_title">Kumpleto na ang Backup</string>
+    <string name="backup_result_success_message">Na-save na ang iyong backup.</string>
+    <string name="backup_result_skipped_note">Hindi kasama (walang nakitang data): %1$s</string>
+    <string name="backup_result_error_title">Nabigo ang Backup</string>
+    <string name="backup_result_error_message">May naganap na error habang ginagawa ang backup.</string>
+
+    <string name="restore_password_title">Ilagay ang Password</string>
+    <string name="restore_password_message">Naka-encrypt ang backup na ito. Ilagay ang password para magpatuloy.</string>
+    <string name="restore_password_wrong">Maling password. Pakisubukang muli.</string>
+    <string name="restore_action_continue">Magpatuloy</string>
+
+    <string name="restore_invalid_title">Di-Wastong Backup File</string>
+    <string name="restore_invalid_message">Ang file na ito ay hindi suportadong Clint backup, o sira ito.</string>
+    <string name="restore_unsupported_title">Hindi Suportadong Bersyon ng Backup</string>
+    <string name="restore_unsupported_message">Ginawa ang backup na ito gamit ang mas bagong bersyon ng Clint at hindi ito maibabalik dito.</string>
+    <string name="restore_generic_error_title">Hindi Mabuksan ang Backup</string>
+    <string name="restore_generic_error_message">May naganap na error habang binabasa ang backup file.</string>
+
+    <string name="restore_select_categories_title">Piliin ang I-re-restore</string>
+    <string name="restore_action_restore">I-restore</string>
+
+    <string name="restore_confirm_title">I-restore ang Data?</string>
+    <string name="restore_confirm_message">Ang pag-restore ay magpapalit sa kasalukuyan mong data para sa mga napiling kategorya. Hindi na ito maibabalik pa.</string>
+
+    <string name="restore_result_success_title">Kumpleto na ang Restore</string>
+    <string name="restore_result_success_message">Naibalik na ang iyong data. Kailangang mag-restart ng Clint para maipatupad ang mga pagbabago.</string>
+    <string name="restore_result_partial_note">Hindi nakita sa backup na ito: %1$s</string>
+    <string name="restore_result_error_title">Nabigo ang Restore</string>
+    <string name="restore_result_error_message">May naganap na error habang ibinabalik ang iyong data.</string>
+    <string name="restore_action_restart_now">I-restart Ngayon</string>
+
+    <string name="backup_generic_ok">OK</string>
 </resources>

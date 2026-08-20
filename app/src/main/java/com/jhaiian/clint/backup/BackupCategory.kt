@@ -1,0 +1,27 @@
+package com.jhaiian.clint.backup
+
+import com.jhaiian.clint.BuildConfig
+
+enum class BackupCategory(val id: String) {
+    SETTINGS("settings"),
+    TABS("tabs"),
+    DOWNLOADS("downloads"),
+    QUIVER_GUARD("quiver_guard"),
+    COOKIES("cookies"),
+    BOOKMARKS("bookmarks"),
+    SEARCH_HISTORY("search_history"),
+    SITE_PERMISSIONS("site_permissions"),
+    UPDATE_SETTINGS("update_settings");
+
+    companion object {
+        fun fromId(id: String): BackupCategory? = entries.firstOrNull { it.id == id }
+
+        /**
+         * Categories that make sense to offer for backup on the current build flavor.
+         * UPDATE_SETTINGS is excluded on F-Droid, since that flavor has no in-app
+         * update checker and therefore no update preferences to save or restore.
+         */
+        fun available(): List<BackupCategory> =
+            entries.filter { it != UPDATE_SETTINGS || !BuildConfig.IS_FDROID }
+    }
+}

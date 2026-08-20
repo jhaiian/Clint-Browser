@@ -77,6 +77,22 @@ internal object DownloadFileHelper {
         return File(root, relativePath)
     }
 
+    fun isCustomLocationAccessible(context: Context, locationMode: String, customLocationUri: String?): Boolean {
+        if (locationMode != DownloadSettingsKeys.MODE_CUSTOM) return true
+        val uriStr = customLocationUri ?: return false
+        return try {
+            val treeUri = Uri.parse(uriStr)
+            val hasGrant = context.contentResolver.persistedUriPermissions.any {
+                it.uri == treeUri && it.isWritePermission
+            }
+            if (!hasGrant) return false
+            val docDir = DocumentFile.fromTreeUri(context, treeUri) ?: return false
+            docDir.exists() && docDir.canWrite()
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun resolveDirectCustomDir(context: Context, item: DownloadItem? = null): File? {
         if (!canWriteSharedStorageDirectly(context) || !isSafCustomMode(context, item)) return null
         val treeUri = getSafTreeUri(context, item) ?: return null

@@ -1,6 +1,6 @@
 # Terms of Service for Clint Browser
 
-*Last updated: June 4, 2026*
+*Last updated: August 20, 2026*
 
 ## 1. What These Terms Cover
 
@@ -43,7 +43,15 @@ Clint Browser does **not** collect any personal information, browsing history, u
 
 However, websites you visit may set cookies or collect data according to their own privacy policies. Those websites are not under our control.
 
-## 6. No Warranty
+## 6. Backups Are Your Responsibility
+
+Clint Browser lets you create backup files of your browsing data, optionally protected with a password you choose. Because we never see or store that password, we have no way to recover it if you forget it. If that happens, the backup cannot be unlocked by us or by anyone else. Please keep your password somewhere safe.
+
+Backup files are saved wherever you choose to save them, using your device's own file picker. Once a backup file exists, keeping it safe (backing it up further, not losing the storage device it's on, not sharing it carelessly) is up to you. We're not responsible for backup files that are lost, deleted, corrupted, or accessed by someone else after they leave the app.
+
+Before you can back up or restore, the app will also ask you to unlock it with your fingerprint, face unlock, or your device's own PIN/pattern/password. This check happens entirely on your device through Android's own security system; we never see or receive it. It exists so that someone who picks up your unlocked phone can't export or overwrite your data without your say-so. If your device has no lock screen or biometrics set up at all, Backup & Restore won't be available until you set one up in your device settings, since there's simply nothing for Android to check against.
+
+## 7. No Warranty
 
 Clint Browser is provided **"as is"** and **"as available"**. To the maximum extent permitted by law, the developer disclaims all warranties, express or implied, including:
 
@@ -54,7 +62,7 @@ Clint Browser is provided **"as is"** and **"as available"**. To the maximum ext
 
 You use the app entirely at your own risk.
 
-## 7. Limitation of Liability
+## 8. Limitation of Liability
 
 In no event shall the developer be liable for any damages arising from your use of Clint Browser, including but not limited to:
 
@@ -66,7 +74,7 @@ In no event shall the developer be liable for any damages arising from your use 
 
 Some jurisdictions do not allow certain liability exclusions. In those cases, this limitation applies to the fullest extent permitted by law.
 
-## 8. Third‑Party Content
+## 9. Third‑Party Content
 
 Clint Browser is a **browser** – it renders content from websites, search engines, and online services that are completely outside the developer's control. We do not:
 
@@ -75,15 +83,15 @@ Clint Browser is a **browser** – it renders content from websites, search engi
 
 You are responsible for your own browsing choices.
 
-## 9. Changes to These Terms
+## 10. Changes to These Terms
 
 These Terms may be updated occasionally. Changes will be posted on the GitHub repository. The app will always link to the latest version. If you continue using Clint Browser after an update, you accept the new Terms.
 
-## 10. Governing Law
+## 11. Governing Law
 
 These Terms are governed by the laws of the Philippines. If you live elsewhere, your local consumer rights may also apply.
 
-## 11. Contact
+## 12. Contact
 
 For questions or permission requests:
 

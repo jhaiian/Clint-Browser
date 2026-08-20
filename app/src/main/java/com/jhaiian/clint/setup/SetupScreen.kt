@@ -30,6 +30,7 @@ private val CenteredContentMaxWidth = 480.dp
 
 @Composable
 fun SetupScreen(
+    activity: SetupActivity,
     state: SetupUiState,
     onPrivacyClick: () -> Unit,
     onTermsClick: () -> Unit,
@@ -42,6 +43,8 @@ fun SetupScreen(
     onScrollHideModeSelected: (String) -> Unit,
     onEngineSelected: (String) -> Unit,
     onContinueFromWelcome: () -> Unit,
+    onSkipRestore: () -> Unit,
+    onRestoreComplete: () -> Unit,
     onNextFromLayoutPage: () -> Unit,
     onNextFromEnginePage: () -> Unit,
     onSetDefaultBrowser: () -> Unit,
@@ -87,7 +90,13 @@ fun SetupScreen(
                                     onTermsClick = onTermsClick,
                                     onContinue = onContinueFromWelcome
                                 )
-                                1 -> SetupThemePage(
+                                1 -> SetupRestorePage(
+                                    activity = activity,
+                                    hideStatusBar = state.hideStatusBar,
+                                    onSkip = onSkipRestore,
+                                    onRestoreComplete = onRestoreComplete
+                                )
+                                2 -> SetupThemePage(
                                     scrollState = state.themePageScrollState,
                                     theme = state.theme,
                                     accent = state.accent,
@@ -95,9 +104,9 @@ fun SetupScreen(
                                     onThemeSelected = onThemeSelected,
                                     onAccentSelected = onAccentSelected,
                                     onIntensitySelected = onIntensitySelected,
-                                    onNext = { state.currentPage = 2 }
+                                    onNext = { state.currentPage = 3 }
                                 )
-                                2 -> SetupLayoutPage(
+                                3 -> SetupLayoutPage(
                                     addressBarPosition = state.addressBarPosition,
                                     menuStyle = state.menuStyle,
                                     scrollHideMode = state.scrollHideMode,
@@ -110,7 +119,7 @@ fun SetupScreen(
                                     onHideStatusBarToggled = onHideStatusBarToggled,
                                     onNext = onNextFromLayoutPage
                                 )
-                                3 -> SetupEnginePage(
+                                4 -> SetupEnginePage(
                                     engine = state.engine,
                                     onEngineSelected = onEngineSelected,
                                     onNext = onNextFromEnginePage

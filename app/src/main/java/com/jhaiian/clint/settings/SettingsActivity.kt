@@ -47,6 +47,7 @@ import com.jhaiian.clint.BuildConfig
 import com.jhaiian.clint.R
 import com.jhaiian.clint.base.ClintActivity
 import com.jhaiian.clint.quiver.QuiverGuardActivity
+import com.jhaiian.clint.settings.backuprestore.BackupRestorePane
 import com.jhaiian.clint.settings.main.MainSettingsScreen
 import com.jhaiian.clint.ui.DocumentViewer
 import com.jhaiian.clint.ui.OverlayHostActivity
@@ -59,6 +60,7 @@ private const val DEST_PRIVACY = "privacy"
 private const val DEST_SITE_SETTINGS = "site_settings"
 private const val DEST_DATA_SAVER = "data_saver"
 private const val DEST_DOWNLOADS = "downloads"
+private const val DEST_BACKUP_RESTORE = "backup_restore"
 private const val DEST_UPDATES = "updates"
 private const val DEST_MISC = "misc"
 private const val DEST_DEBUG = "debug"
@@ -122,6 +124,13 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
         if (pendingRestart) restartApp()
     }
 
+    fun restartAppAfterRestore() {
+        val restartIntent = packageManager.getLaunchIntentForPackage(packageName)
+        restartIntent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (restartIntent != null) startActivity(restartIntent)
+        android.os.Process.killProcess(android.os.Process.myPid())
+    }
+
     companion object {
         const val EXTRA_OPEN_FRAGMENT = "extra_open_fragment"
     }
@@ -131,6 +140,7 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
 @Composable
 private fun SettingsNavHost(activity: SettingsActivity, initialDestination: String?) {
     var selectedDestination by rememberSaveable { mutableStateOf(initialDestination) }
+    var hasShownList by rememberSaveable { mutableStateOf(initialDestination == null) }
     val isTwoPane = calculateWindowSizeClass(activity).widthSizeClass != WindowWidthSizeClass.Compact
 
     if (isTwoPane) {
@@ -147,8 +157,11 @@ private fun SettingsNavHost(activity: SettingsActivity, initialDestination: Stri
             }
         }
     } else {
+        val handleBack: () -> Unit = {
+            if (hasShownList) selectedDestination = null else activity.finish()
+        }
         if (selectedDestination != null) {
-            BackHandler { selectedDestination = null }
+            BackHandler(onBack = handleBack)
         }
         AnimatedContent(
             targetState = selectedDestination,
@@ -156,9 +169,12 @@ private fun SettingsNavHost(activity: SettingsActivity, initialDestination: Stri
             label = "settings_pane"
         ) { destination ->
             if (destination == null) {
-                SettingsListPane(activity = activity) { newDestination -> selectedDestination = newDestination }
+                SettingsListPane(activity = activity) { newDestination ->
+                    hasShownList = true
+                    selectedDestination = newDestination
+                }
             } else {
-                SettingsDetailPane(activity = activity, destination = destination, onBack = { selectedDestination = null })
+                SettingsDetailPane(activity = activity, destination = destination, onBack = handleBack)
             }
         }
     }
@@ -181,6 +197,7 @@ private fun SettingsListPane(activity: SettingsActivity, onNavigate: (String) ->
                 onSiteSettingsClick = { onNavigate(DEST_SITE_SETTINGS) },
                 onDataSaverClick = { onNavigate(DEST_DATA_SAVER) },
                 onDownloadsClick = { onNavigate(DEST_DOWNLOADS) },
+                onBackupRestoreClick = { onNavigate(DEST_BACKUP_RESTORE) },
                 onUpdatesClick = {
                     if (BuildConfig.IS_FDROID) {
                         DocumentViewer.show(
@@ -216,6 +233,7 @@ private fun SettingsDetailPane(activity: SettingsActivity, destination: String?,
                 DEST_SITE_SETTINGS -> SiteSettingsPane(activity)
                 DEST_DATA_SAVER -> DataSaverPane(activity)
                 DEST_DOWNLOADS -> DownloadSettingsPane(activity)
+                DEST_BACKUP_RESTORE -> BackupRestorePane(activity)
                 DEST_UPDATES -> UpdateSettingsPane(activity)
                 DEST_MISC -> MiscPane(activity)
                 DEST_DEBUG -> DebugPane(activity)
@@ -232,6 +250,7 @@ private fun destinationTitleRes(destination: String): Int = when (destination) {
     DEST_SITE_SETTINGS -> R.string.site_settings
     DEST_DATA_SAVER -> R.string.data_saver_title
     DEST_DOWNLOADS -> R.string.download_settings_title
+    DEST_BACKUP_RESTORE -> R.string.backup_restore_title
     DEST_UPDATES -> R.string.pref_updates_title
     DEST_MISC -> R.string.pref_misc_title
     DEST_DEBUG -> R.string.debug_title

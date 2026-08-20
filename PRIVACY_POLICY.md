@@ -1,10 +1,24 @@
 # Privacy Policy for Clint Browser
 
-*Last updated: June 4, 2026*
+*Last updated: August 20, 2026*
 
 ## Overview
 
 Clint Browser is an open-source Android web browser built with privacy in mind. This policy explains what data is collected, what isn't, and how the app handles your information.
+
+---
+
+## WebView Implementation
+
+Clint Browser doesn't have its own rendering engine. Instead, it uses whatever Android WebView implementation is installed and set as the active provider on your device. On most phones that's Android System WebView from Google, based on Chromium. But Android lets the WebView provider be swapped out, and some devices or custom ROMs use a different one entirely, for example GrapheneOS ships its own hardened WebView called Vanadium instead of Google's. Clint Browser doesn't choose, bundle, or ship a WebView itself; it simply asks Android for "the system WebView" and renders pages through whichever one you or your device has set.
+
+This matters for privacy because whoever provides your WebView, whether that's Google, GrapheneOS, or another vendor, handles the actual page rendering, JavaScript execution, and some networking behavior at a level below the app itself. We have no visibility into and no control over what that component does internally. If you want to know exactly how your WebView provider handles data, you'll need to check their privacy policy, not ours, since it's a separate piece of software maintained outside of Clint Browser.
+
+A few things we do control on top of it, though:
+
+- We explicitly disable Safe Browsing inside the WebView (`safeBrowsingEnabled = false`), so page URLs aren't sent off for a Safe Browsing check as you browse, regardless of which provider you're using.
+- We turn off WebView's local storage and caching in Incognito tabs, so incognito browsing doesn't persist to disk through the engine.
+- Keeping the WebView component itself updated (for security patches and new web standards) is handled by your device, typically through system updates or your WebView provider's own update channel, not by Clint Browser.
 
 ---
 
@@ -61,6 +75,21 @@ You can review DuckDuckGo's privacy policy at https://duckduckgo.com/privacy
 ## Bookmarks
 
 Bookmarks are stored locally on your device only using SQLite. They are never synced, uploaded, or shared. You can delete them at any time through the app or by clearing app storage.
+
+---
+
+## Backup & Restore
+
+Clint Browser lets you back up your data, things like bookmarks, history, and settings, into a single file you keep for yourself. Here's how it actually works, in plain terms:
+
+- **You choose where it goes.** When you create a backup, Android's own file picker opens and you pick the folder: your device storage, an SD card, wherever. Clint Browser doesn't send the file anywhere on its own, and there's no cloud sync tied to it.
+- **Password protection is optional, and it's real encryption.** If you set a password, the backup is locked with AES‑256‑GCM, the same kind of encryption used by banks and messaging apps. Your password itself is never used directly. It's run through Argon2id first, which is specifically designed to make password-guessing slow and expensive, even for someone with serious hardware. If you leave the password blank, the backup is saved without encryption, which is convenient but means anyone with the file can read it, so treat it like any other unprotected file.
+- **We can't help you recover a lost password.** Because the encryption key comes entirely from your password, and we never store or see that password, there's no "forgot password" option and no backdoor. If it's lost, the backup is gone. Please choose something you'll remember, or write it down somewhere safe.
+- **Restoring works the same way in reverse.** You pick a backup file, enter the password if it has one, and everything gets read and restored locally on your device. Nothing is uploaded to check the password or verify the file. It either decrypts correctly or it doesn't.
+
+In short: your backups never leave your control unless you move them somewhere yourself.
+
+**Why we ask for your phone's password or biometric unlock first.** Before you can create or restore a backup, Clint Browser asks you to confirm it's really you, using your fingerprint, face unlock, or your device PIN/pattern/password, whichever you already use to unlock your phone. This isn't sent anywhere or stored by us; Android checks it locally and just tells the app "yes, this is the device owner." We added this step because a backup can contain sensitive stuff, like saved history and cookies that keep you logged into sites, and we didn't want someone who picks up your unlocked phone to be able to quietly export all of that or overwrite it with a restore in a few taps. It's an extra lock on top of the backup password, not a replacement for it.
 
 ---
 

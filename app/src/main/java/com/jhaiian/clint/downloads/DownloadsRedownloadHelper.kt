@@ -90,6 +90,10 @@ private fun DownloadsActivity.performRedownload(
     customLocationUri: String?,
     onDismiss: () -> Unit
 ) {
+    fun startRedownload(effectiveUnmeteredOnly: Boolean) {
+        if (DownloadFileHelper.isCustomLocationAccessible(this, locationMode, customLocationUri)) onDismiss()
+        ClintDownloadManager.enqueue(this, item.url, filename, item.userAgent, item.referer, item.cookies, retryEnabled, effectiveUnmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri)
+    }
     val cm = getSystemService(android.net.ConnectivityManager::class.java)
     val isMetered = cm?.isActiveNetworkMetered ?: false
     if (unmeteredOnly && isMetered) {
@@ -97,19 +101,12 @@ private fun DownloadsActivity.performRedownload(
             title = getString(R.string.download_metered_warning_title),
             message = getString(R.string.download_metered_warning_message),
             positiveLabel = getString(R.string.action_yes),
-            onPositive = {
-                onDismiss()
-                ClintDownloadManager.enqueue(this, item.url, filename, item.userAgent, item.referer, item.cookies, retryEnabled, false, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri)
-            },
+            onPositive = { startRedownload(false) },
             negativeLabel = getString(R.string.action_no),
-            onNegative = {
-                onDismiss()
-                ClintDownloadManager.enqueue(this, item.url, filename, item.userAgent, item.referer, item.cookies, retryEnabled, true, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri)
-            },
+            onNegative = { startRedownload(true) },
             neutralLabel = getString(R.string.action_cancel)
         )
         return
     }
-    onDismiss()
-    ClintDownloadManager.enqueue(this, item.url, filename, item.userAgent, item.referer, item.cookies, retryEnabled, unmeteredOnly, splitParts, multithreadingParts, speedLimitBytesPerSec, locationMode, customLocationUri)
+    startRedownload(unmeteredOnly)
 }
