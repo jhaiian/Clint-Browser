@@ -25,7 +25,9 @@ object BackupManager {
         context: Context,
         categories: Set<BackupCategory>,
         password: CharArray?,
-        output: OutputStream
+        output: OutputStream,
+        onProgress: (completed: Int, total: Int) -> Unit = { _, _ -> },
+        onEncryptStart: () -> Unit = {}
     ): BackupResult = withContext(Dispatchers.IO) {
         val appContext = context.applicationContext
         if (BackupCategory.COOKIES in categories) {
@@ -33,37 +35,44 @@ object BackupManager {
         }
         val tempZip = File.createTempFile("clint_backup_", ".zip", appContext.cacheDir)
         try {
-            val manifestEntries = mutableListOf<BackupManifestEntry>()
-            val includedCategories = mutableSetOf<BackupCategory>()
-            val skippedCategories = mutableSetOf<BackupCategory>()
+            data class PlannedFile(val entryId: String, val category: BackupCategory, val file: File, val zipPath: String)
 
-            ZipOutputStream(FileOutputStream(tempZip)).use { zip ->
-                for (category in categories) {
-                    var addedAny = false
-                    for (target in BackupTargets.forCategory(category)) {
-                        when (target.type) {
-                            BackupEntryType.DATABASE, BackupEntryType.PREFS -> {
-                                val file = target.file(appContext)
-                                if (file.exists() && file.length() > 0) {
-                                    addFileToZip(zip, file, target.zipPath)
-                                    manifestEntries.add(BackupManifestEntry(target.id, category.id, target.zipPath, file.length()))
-                                    addedAny = true
-                                }
+            val planned = mutableListOf<PlannedFile>()
+            for (category in categories) {
+                for (target in BackupTargets.forCategory(category)) {
+                    when (target.type) {
+                        BackupEntryType.DATABASE, BackupEntryType.PREFS -> {
+                            val file = target.file(appContext)
+                            if (file.exists() && file.length() > 0) {
+                                planned.add(PlannedFile(target.id, category, file, target.zipPath))
                             }
-                            BackupEntryType.DIRECTORY -> {
-                                val dir = target.file(appContext)
-                                if (dir.exists() && dir.isDirectory) {
-                                    dir.listFiles()?.filter { it.isFile }?.forEach { child ->
-                                        val childZipPath = "${target.zipPath}/${child.name}"
-                                        addFileToZip(zip, child, childZipPath)
-                                        manifestEntries.add(BackupManifestEntry("${target.id}:${child.name}", category.id, childZipPath, child.length()))
-                                        addedAny = true
-                                    }
+                        }
+                        BackupEntryType.DIRECTORY -> {
+                            val dir = target.file(appContext)
+                            if (dir.exists() && dir.isDirectory) {
+                                dir.listFiles()?.filter { it.isFile }?.forEach { child ->
+                                    planned.add(PlannedFile("${target.id}:${child.name}", category, child, "${target.zipPath}/${child.name}"))
                                 }
                             }
                         }
                     }
-                    if (addedAny) includedCategories.add(category) else skippedCategories.add(category)
+                }
+            }
+
+            val total = planned.size
+            var completed = 0
+            onProgress(completed, total)
+
+            val manifestEntries = mutableListOf<BackupManifestEntry>()
+            val includedCategories = mutableSetOf<BackupCategory>()
+
+            ZipOutputStream(FileOutputStream(tempZip)).use { zip ->
+                for (planFile in planned) {
+                    addFileToZip(zip, planFile.file, planFile.zipPath)
+                    manifestEntries.add(BackupManifestEntry(planFile.entryId, planFile.category.id, planFile.zipPath, planFile.file.length()))
+                    includedCategories.add(planFile.category)
+                    completed++
+                    onProgress(completed, total)
                 }
 
                 val packageInfo = appContext.packageManager.getPackageInfo(appContext.packageName, 0)
@@ -81,10 +90,13 @@ object BackupManager {
                 zip.closeEntry()
             }
 
+            val skippedCategories = categories - includedCategories
+
             var encrypted = false
             if (password != null && password.isNotEmpty()) {
                 val salt = BackupCrypto.randomSalt()
                 val iv = BackupCrypto.randomIv()
+                onEncryptStart()
                 val key = BackupCrypto.deriveKey(password, salt, ARGON2_MEMORY_KB, ARGON2_ITERATIONS, ARGON2_PARALLELISM)
                 BackupCrypto.writeEncryptedHeader(output, salt, iv, ARGON2_MEMORY_KB, ARGON2_ITERATIONS, ARGON2_PARALLELISM)
                 FileInputStream(tempZip).use { input ->

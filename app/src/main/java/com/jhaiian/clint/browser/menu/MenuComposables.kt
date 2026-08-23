@@ -16,7 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -337,7 +337,7 @@ private fun BrowserMenuContent(
             onLongClick = actions.onOpenDownloadSettings
         )
         MenuItemRow(
-            androidx.compose.material.icons.Icons.Filled.Shield,
+            androidx.compose.material.icons.Icons.Filled.Security,
             stringResource(R.string.menu_quiver_guard),
             checked = snapshot.isQuiverGuardEnabled,
             badge = if (snapshot.isQuiverGuardEnabled && !snapshot.isQuiverGuardExceptionForSite && snapshot.quiverGuardBlockedCount > 0L) {
@@ -347,7 +347,7 @@ private fun BrowserMenuContent(
             onLongClick = actions.onOpenQuiverGuardSettings
         )
         MenuItemRow(
-            androidx.compose.material.icons.Icons.Filled.Shield,
+            androidx.compose.material.icons.Icons.Filled.Security,
             stringResource(R.string.menu_disable_quiver_guard_for_site),
             checked = snapshot.isQuiverGuardExceptionForSite,
             onClick = actions.onDisableQuiverGuardForSite

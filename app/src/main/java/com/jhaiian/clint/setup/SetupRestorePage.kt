@@ -193,7 +193,14 @@ fun SetupRestorePage(
                 val staged = uiState.stagedFile.value ?: return@RestorePasswordDialog
                 uiState.stage.value = BackupRestoreStage.RESTORE_LOADING
                 scope.launch {
-                    handleUnlockResult(RestoreManager.unlock(activity, staged, uiState.restorePassword.value.toCharArray()))
+                    handleUnlockResult(
+                        RestoreManager.unlock(
+                            activity,
+                            staged,
+                            uiState.restorePassword.value.toCharArray(),
+                            onDecryptStart = { uiState.stage.value = BackupRestoreStage.DECRYPTING_BACKUP }
+                        )
+                    )
                 }
             }
         )
@@ -219,10 +226,19 @@ fun SetupRestorePage(
         )
     }
 
-    if (uiState.stage.value == BackupRestoreStage.RESTORE_LOADING || uiState.stage.value == BackupRestoreStage.RESTORING) {
+    if (uiState.stage.value == BackupRestoreStage.RESTORE_LOADING ||
+        uiState.stage.value == BackupRestoreStage.DECRYPTING_BACKUP ||
+        uiState.stage.value == BackupRestoreStage.RESTORING
+    ) {
         ProgressDialog(
             hideStatusBar = hideStatusBar,
-            message = stringResource(if (uiState.stage.value == BackupRestoreStage.RESTORING) R.string.backup_progress_restoring else R.string.backup_progress_reading)
+            message = stringResource(
+                when (uiState.stage.value) {
+                    BackupRestoreStage.RESTORING -> R.string.backup_progress_restoring
+                    BackupRestoreStage.DECRYPTING_BACKUP -> R.string.backup_progress_decrypting
+                    else -> R.string.backup_progress_reading
+                }
+            )
         )
     }
 

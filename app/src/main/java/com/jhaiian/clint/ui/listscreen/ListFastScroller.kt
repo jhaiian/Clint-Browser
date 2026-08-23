@@ -1,7 +1,13 @@
 package com.jhaiian.clint.ui.listscreen
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -9,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -47,6 +54,7 @@ fun ListFastScroller(
     val thumbWidth = 4.dp
     val thumbHeight = 44.dp
     val thumbPaddingEnd = 6.dp
+    val thumbHitWidth = 32.dp
     val trackPaddingV = 20.dp
     val bubbleRadius = 26.dp
     val bubbleGap = 8.dp
@@ -85,38 +93,44 @@ fun ListFastScroller(
 
     val fraction = if (isDragging) dragFraction else passiveFraction()
 
-    DrawFastScrollerTrack(
-        modifier = modifier.pointerInput(itemCount) {
-            val trackTopPx = (trackPaddingV + thumbHeight / 2f).toPx()
-            detectDragGestures(
-                onDragStart = { offset ->
-                    val bottom = size.height - (trackPaddingV + thumbHeight / 2f).toPx()
-                    val range = (bottom - trackTopPx).coerceAtLeast(1f)
-                    val clamped = offset.y.coerceIn(trackTopPx, bottom)
-                    isDragging = true
-                    dragFraction = (clamped - trackTopPx) / range
-                    jumpTo(dragFraction)
-                },
-                onDrag = { change, _ ->
-                    change.consume()
-                    val bottom = size.height - (trackPaddingV + thumbHeight / 2f).toPx()
-                    val range = (bottom - trackTopPx).coerceAtLeast(1f)
-                    val clamped = change.position.y.coerceIn(trackTopPx, bottom)
-                    dragFraction = (clamped - trackTopPx) / range
-                    jumpTo(dragFraction)
-                },
-                onDragEnd = { isDragging = false },
-                onDragCancel = { isDragging = false }
-            )
-        },
-        fraction = fraction,
-        isDragging = isDragging,
-        currentLetter = currentLetter,
-        thumbWidth = thumbWidth, thumbHeight = thumbHeight, thumbPaddingEnd = thumbPaddingEnd,
-        trackPaddingV = trackPaddingV, bubbleRadius = bubbleRadius, bubbleGap = bubbleGap,
-        thumbColor = colors.primary, bubbleColor = colors.primary, textColor = colors.background,
-        textMeasurer = textMeasurer
-    )
+    Box(modifier = modifier) {
+        DrawFastScrollerTrack(
+            modifier = Modifier.fillMaxSize(),
+            fraction = fraction,
+            isDragging = isDragging,
+            currentLetter = currentLetter,
+            thumbWidth = thumbWidth, thumbHeight = thumbHeight, thumbPaddingEnd = thumbPaddingEnd,
+            trackPaddingV = trackPaddingV, bubbleRadius = bubbleRadius, bubbleGap = bubbleGap,
+            thumbColor = colors.primary, bubbleColor = colors.primary, textColor = colors.background,
+            textMeasurer = textMeasurer
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(thumbHitWidth)
+                .pointerInput(itemCount) {
+                    val trackTopPx = (trackPaddingV + thumbHeight / 2f).toPx()
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        down.consume()
+                        val bottom = size.height - (trackPaddingV + thumbHeight / 2f).toPx()
+                        val range = (bottom - trackTopPx).coerceAtLeast(1f)
+                        isDragging = true
+                        dragFraction = (down.position.y.coerceIn(trackTopPx, bottom) - trackTopPx) / range
+                        jumpTo(dragFraction)
+
+                        drag(down.id) { change ->
+                            change.consume()
+                            val clamped = change.position.y.coerceIn(trackTopPx, bottom)
+                            dragFraction = (clamped - trackTopPx) / range
+                            jumpTo(dragFraction)
+                        }
+                        isDragging = false
+                    }
+                }
+        )
+    }
 }
 
 @Composable

@@ -91,7 +91,8 @@ internal fun MainActivity.onSearchQueryChanged(query: String) {
         val history = SearchHistoryManager.search(this, query).take(SUGGESTION_HISTORY_LIMIT)
         val bookmarks = BookmarkManager.search(this, query).take(SUGGESTION_BOOKMARK_LIMIT)
         runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
-        suggestionFetcher?.fetch(query) { suggestions ->
+        val suggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo"
+        suggestionFetcher?.fetch(query, suggestionsApi) { suggestions ->
             runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, suggestions) }
         }
     }

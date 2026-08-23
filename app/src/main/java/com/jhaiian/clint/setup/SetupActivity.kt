@@ -97,6 +97,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
         if (uiState.currentPage == 5) refreshDefaultBrowserState()
 
         setContent {
+          com.jhaiian.clint.ui.theme.ClintComposeTheme(theme = uiState.theme) {
             SetupScreen(
                 activity = this,
                 state = uiState,
@@ -132,6 +133,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
             )
             com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(uiState.confirmDialogConfig, uiState.hideStatusBar) { uiState.confirmDialogConfig = null }
             overlayContent?.invoke()
+          }
         }
     }
 

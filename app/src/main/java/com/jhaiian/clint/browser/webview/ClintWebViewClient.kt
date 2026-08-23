@@ -15,6 +15,8 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.jhaiian.clint.R
+import com.jhaiian.clint.blocker.engine.WebsiteBlockerEngine
+import com.jhaiian.clint.blocker.engine.WebsiteBlockerWebIntegration
 import com.jhaiian.clint.quiver.engine.QuiverGuardWebIntegration
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionManager
@@ -26,6 +28,7 @@ class ClintWebViewClient(
     private val onPageStartedCallback: (String) -> Unit = {},
     private val onPageFinishedCallback: (String) -> Unit = {},
     private val onTabUrlUpdatedCallback: (WebView, String) -> Unit = { _, _ -> },
+    private val onWebsiteBlockedCallback: (String) -> Unit = {},
     private val getDesktopHeaders: () -> Map<String, String>? = { null },
     private val getTabId: () -> String = { "" }
 ) : WebViewClient() {
@@ -332,6 +335,14 @@ class ClintWebViewClient(
         request: WebResourceRequest
     ): WebResourceResponse? {
         if (request.url.host == null) return super.shouldInterceptRequest(view, request)
+
+        val websiteBlockerEnabled = prefs.getBoolean("website_blocker_enabled", false)
+        if (request.isForMainFrame && WebsiteBlockerEngine.isActive && websiteBlockerEnabled) {
+            if (WebsiteBlockerWebIntegration.isHostBlocked(request.url.host)) {
+                onWebsiteBlockedCallback(request.url.toString())
+                return WebResourceResponse("text/html", "utf-8", java.io.ByteArrayInputStream(ByteArray(0)))
+            }
+        }
 
         val quiverGuardEnabled = prefs.getBoolean("quiver_guard_enabled", false)
         if (quiverGuardEnabled) {

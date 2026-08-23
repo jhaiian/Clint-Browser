@@ -68,4 +68,5 @@ internal class MainUiState {
     var popupAlertRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.PopupAlertRequest?>(null)
     var refreshLinkDialogRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.RefreshLinkDialogRequest?>(null)
     var openInAppRequest by mutableStateOf<com.jhaiian.clint.browser.webview.OpenInAppRequest?>(null)
+    var websiteBlockedRequest by mutableStateOf<com.jhaiian.clint.blocker.blockedpage.WebsiteBlockedRequest?>(null)
 }

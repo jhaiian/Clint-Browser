@@ -310,6 +310,7 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         ClintDownloadManager.createNotificationChannel(this)
         ClintDownloadManager.init(this)
         initializeQuiverGuardEngine()
+        initializeWebsiteBlockerEngine()
         observeQuiverGuardCounter()
         createWebNotificationChannel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -456,6 +457,10 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
     private fun setupBackPressedDispatcher() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (uiState.websiteBlockedRequest != null) {
+                    dismissWebsiteBlockedOverlay()
+                    return
+                }
                 if (fullscreenView != null) {
                     exitFullscreen()
                     return

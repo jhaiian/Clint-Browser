@@ -200,6 +200,12 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
         state.openInAppRequest?.let { req ->
             com.jhaiian.clint.browser.webview.OpenInAppDialog(req, hideStatusBarPref) { state.openInAppRequest = null }
         }
+        state.websiteBlockedRequest?.let { req ->
+            com.jhaiian.clint.blocker.blockedpage.WebsiteBlockedOverlay(
+                request = req,
+                onReturnToPrevious = { activity.dismissWebsiteBlockedOverlay() }
+            )
+        }
 
         if (!state.isFullscreen && effectiveStatusBarPx > 0) {
             Box(

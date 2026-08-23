@@ -270,6 +270,7 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
     val uiState = remember {
         BrowserSettingsUiState(
             initialSearchEngine = prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo",
+            initialSearchSuggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo",
             initialJavascriptEnabled = prefs.getBoolean("javascript_enabled", true),
             initialHideStatusBar = prefs.getBoolean("hide_status_bar", false)
         )
@@ -278,6 +279,7 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
 
     OnResume {
         uiState.searchEngine = prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo"
+        uiState.searchSuggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo"
         uiState.javascriptEnabled = prefs.getBoolean("javascript_enabled", true)
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
     }
@@ -303,6 +305,27 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
         }
     }
 
+    fun confirmSuggestionsApi(api: String) {
+        prefs.edit().putString("search_suggestions_api", api).apply()
+        uiState.searchSuggestionsApi = api
+    }
+
+    fun onSearchSuggestionsApiConfirmed(selected: String) {
+        val current = uiState.searchSuggestionsApi
+        uiState.searchSuggestionsApiDialogOpen = false
+        if (selected == "google" && current != "google") {
+            confirmDialog = ConfirmDialogConfig(
+                title = activity.getString(R.string.google_warning_title),
+                message = activity.getString(R.string.suggestions_google_warning_message),
+                positiveLabel = activity.getString(R.string.use_google_anyway),
+                onPositive = { confirmSuggestionsApi("google") },
+                negativeLabel = activity.getString(R.string.choose_another)
+            )
+        } else {
+            confirmSuggestionsApi(selected)
+        }
+    }
+
     fun onJavascriptRowClicked() {
         val current = prefs.getBoolean("javascript_enabled", true)
         if (current) {
@@ -325,7 +348,14 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
     BrowserSettingsScreen(
         state = uiState,
         onSearchEngineConfirmed = ::onSearchEngineConfirmed,
-        onJavascriptRowClicked = ::onJavascriptRowClicked
+        onSearchSuggestionsApiConfirmed = ::onSearchSuggestionsApiConfirmed,
+        onJavascriptRowClicked = ::onJavascriptRowClicked,
+        onWebsiteBlockerRowClicked = {
+            activity.startActivity(android.content.Intent(activity, com.jhaiian.clint.blocker.WebsiteBlockerActivity::class.java))
+        },
+        onQuiverGuardRowClicked = {
+            activity.startActivity(android.content.Intent(activity, com.jhaiian.clint.quiver.QuiverGuardActivity::class.java))
+        }
     )
     ConfirmDialogHost(confirmDialog, uiState.hideStatusBar) { confirmDialog = null }
 }

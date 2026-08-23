@@ -22,7 +22,7 @@ internal class SuggestionFetcher {
     private var pendingCall: Call? = null
     private var debounceRunnable: Runnable? = null
 
-    fun fetch(query: String, onResult: (List<String>) -> Unit) {
+    fun fetch(query: String, provider: String = "duckduckgo", onResult: (List<String>) -> Unit) {
         debounceRunnable?.let { handler.removeCallbacks(it) }
         pendingCall?.cancel()
         pendingCall = null
@@ -34,8 +34,13 @@ internal class SuggestionFetcher {
 
         val runnable = Runnable {
             val encodedQuery = android.net.Uri.encode(query)
+            val url = if (provider == "google") {
+                "https://www.google.com/complete/search?client=firefox&q=$encodedQuery"
+            } else {
+                "https://duckduckgo.com/ac/?q=$encodedQuery&type=list"
+            }
             val request = Request.Builder()
-                .url("https://duckduckgo.com/ac/?q=$encodedQuery&type=list")
+                .url(url)
                 .build()
             val call = client.newCall(request)
             pendingCall = call

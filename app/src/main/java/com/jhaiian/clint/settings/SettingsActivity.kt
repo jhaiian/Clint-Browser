@@ -46,7 +46,6 @@ import androidx.preference.PreferenceManager
 import com.jhaiian.clint.BuildConfig
 import com.jhaiian.clint.R
 import com.jhaiian.clint.base.ClintActivity
-import com.jhaiian.clint.quiver.QuiverGuardActivity
 import com.jhaiian.clint.settings.backuprestore.BackupRestorePane
 import com.jhaiian.clint.settings.main.MainSettingsScreen
 import com.jhaiian.clint.ui.DocumentViewer
@@ -193,7 +192,6 @@ private fun SettingsListPane(activity: SettingsActivity, onNavigate: (String) ->
                 onLookAndFeelClick = { onNavigate(DEST_LOOK_AND_FEEL) },
                 onBrowserClick = { onNavigate(DEST_BROWSER) },
                 onPrivacyClick = { onNavigate(DEST_PRIVACY) },
-                onQuiverGuardClick = { activity.startActivity(Intent(activity, QuiverGuardActivity::class.java)) },
                 onSiteSettingsClick = { onNavigate(DEST_SITE_SETTINGS) },
                 onDataSaverClick = { onNavigate(DEST_DATA_SAVER) },
                 onDownloadsClick = { onNavigate(DEST_DOWNLOADS) },

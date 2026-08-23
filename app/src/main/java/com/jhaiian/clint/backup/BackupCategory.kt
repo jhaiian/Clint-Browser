@@ -6,6 +6,7 @@ enum class BackupCategory(val id: String) {
     SETTINGS("settings"),
     TABS("tabs"),
     DOWNLOADS("downloads"),
+    WEBSITE_BLOCKER("website_blocker"),
     QUIVER_GUARD("quiver_guard"),
     COOKIES("cookies"),
     BOOKMARKS("bookmarks"),

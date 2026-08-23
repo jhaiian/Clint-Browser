@@ -21,7 +21,7 @@ Material Design Android Browser with ADM and an Ad Blocker
 
 ## What is Clint?
 
-Clint is a free and open-source Android browser with no dedicated backend infrastructure, meaning it does not collect any of your data. It features a clean, customizable Material Design interface, the built-in **Quiver Guard** content blocker for ads and trackers, and an advanced download manager. Every feature is designed around the philosophy that your browsing data belongs to you and only you.
+Clint is a free and open-source Android browser with no dedicated backend infrastructure, meaning it does not collect any of your data. It features a clean, customizable Material Design interface, the built-in Quiver Guard content blocker for ads and trackers, and an advanced download manager and website blocker.
 
 Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo developer from the Philippines 🇵🇭
 

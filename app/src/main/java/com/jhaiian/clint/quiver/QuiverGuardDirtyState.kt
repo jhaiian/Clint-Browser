@@ -15,8 +15,15 @@ internal fun QuiverGuardActivity.refreshFilterListDisplay() {
 }
 
 internal fun QuiverGuardActivity.setPendingEnabled(id: Long, enabled: Boolean) {
-    uiState.pendingEnabledOverrides = uiState.pendingEnabledOverrides + (id to enabled)
-    refreshFilterListDisplay()
+    val all = database().getAllFilterLists()
+    val baseline = all.firstOrNull { it.id == id }?.isEnabled
+    uiState.pendingEnabledOverrides = if (enabled == baseline) {
+        uiState.pendingEnabledOverrides - id
+    } else {
+        uiState.pendingEnabledOverrides + (id to enabled)
+    }
+    uiState.filterLists = all.filterNot { it.id in uiState.pendingRemovedIds }
+        .map { row -> uiState.pendingEnabledOverrides[row.id]?.let { row.copy(isEnabled = it) } ?: row }
 }
 
 internal fun QuiverGuardActivity.stagePendingRemoval(id: Long) {

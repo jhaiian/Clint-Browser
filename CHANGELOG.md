@@ -4,6 +4,96 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.2
+
+---
+
+## What's New
+
+### Website Blocker
+
+Added a high-performance website blocker that compiles domain blocklists into a compact 64-bit hash database. It blocks websites before they even load.
+
+The engine is written in C++, so it's fast and uses very little RAM.
+
+To find it, go to **Settings → Browser Settings → Website Blocker**.
+
+The UI is very similar to Quiver Guard.
+
+The goal is to allow users to block websites they don't want to access. You can block websites by category, including:
+
+- Abuse
+- Ads
+- Crypto
+- Drugs
+- Fraud
+- Gambling
+- Malware
+- Phishing
+- Piracy
+- Pornography
+- Ransomware
+- Redirects
+- Scams
+- Social
+- Torrents
+- Tracking
+
+You can also manually add additional websites.
+
+Unlike Quiver Guard, the Website Blocker blocks the entire website/page, rather than individual resources or sub-resources on a page.
+
+---
+
+### Quiver Guard
+
+Quiver Guard has been moved to **Browser Settings**, alongside the new Website Blocker.
+
+Changed the Quiver Guard icon to a security icon, while the Website Blocker uses the shield icon.
+
+---
+
+### Search Suggestions API
+
+Added a new Search Suggestions API setting under **Browser Settings**.
+
+You can now choose between:
+
+- DuckDuckGo — Default
+- Google
+
+---
+
+### Backup & Restore
+
+- Improved Backup & Restore with a real progress bar instead of a spinner, allowing you to see the actual progress of the operation.
+- Backup encryption and decryption now display real-time progress instead of showing generic messages such as "Creating backup" or "Reading backup."
+- Improved backup decryption speed.
+- Backup & Restore now includes Website Blocker data, including downloaded blocklists, compiled hosts, and other Website Blocker data.
+
+---
+
+## Other Changes
+
+- Changed the download link update check from requiring an exact byte-for-byte file size match to allowing a 0.1% difference.
+
+This helps prevent issues when a download link expires or its headers change, causing a small difference in the reported file size even though the downloaded file is still valid.
+
+- Updated the Privacy Policy and Terms of Service.
+- Updated the About page to include the new library information.
+- Updated ATTRIBUTION.md.
+- Added Keep Android Open to the About page.
+
+---
+
+## Bug Fixes
+
+- Fixed an issue where the fast scroller indicator could trigger when simply scrolling instead of holding the indicator.
+- Fixed visual glitch in quiver guard
+- Fixed crush on setup activity
+
+---
+
 # v1.1.1
 
 ---

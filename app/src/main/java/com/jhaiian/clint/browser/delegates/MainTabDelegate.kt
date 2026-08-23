@@ -83,6 +83,7 @@ internal fun MainActivity.openNewTabSilent(url: String, id: String = java.util.U
         onPageStartedCallback = { url -> if (tabManager.activeTab?.id == tab.id) onPageStarted(url) },
         onPageFinishedCallback = { url -> if (tabManager.activeTab?.id == tab.id) onPageFinished(url) },
         onTabUrlUpdatedCallback = { wv, url -> onTabUrlUpdated(wv, url) },
+        onWebsiteBlockedCallback = { blockedUrl -> onWebsiteBlocked(blockedUrl, tab.url, tab.id) },
         getDesktopHeaders = { buildDesktopHeaders() },
         getTabId = { tab.id }
     )
@@ -118,6 +119,7 @@ internal fun MainActivity.openNewTab(isIncognito: Boolean, url: String = getSear
         onPageStartedCallback = { url -> if (tabManager.activeTab?.id == tab.id) onPageStarted(url) },
         onPageFinishedCallback = { url -> if (tabManager.activeTab?.id == tab.id) onPageFinished(url) },
         onTabUrlUpdatedCallback = { wv, url -> onTabUrlUpdated(wv, url) },
+        onWebsiteBlockedCallback = { blockedUrl -> onWebsiteBlocked(blockedUrl, tab.url, tab.id) },
         getDesktopHeaders = { buildDesktopHeaders() },
         getTabId = { tab.id }
     )
@@ -188,6 +190,7 @@ internal fun MainActivity.openRefreshLinkTab(url: String) {
         onPageStartedCallback = { u -> if (tabManager.activeTab?.id == tab.id) onPageStarted(u) },
         onPageFinishedCallback = { u -> if (tabManager.activeTab?.id == tab.id) onPageFinished(u) },
         onTabUrlUpdatedCallback = { wv, u -> onTabUrlUpdated(wv, u) },
+        onWebsiteBlockedCallback = { blockedUrl -> onWebsiteBlocked(blockedUrl, tab.url, tab.id) },
         getDesktopHeaders = { buildDesktopHeaders() },
         getTabId = { tab.id }
     )

@@ -1,6 +1,9 @@
 package com.jhaiian.clint.backup
 
 import android.content.Context
+import com.jhaiian.clint.blocker.WebsiteBlockerCategoryDatabase
+import com.jhaiian.clint.blocker.additional.AdditionalWebsitesDatabase
+import com.jhaiian.clint.blocker.engine.WebsiteBlockerPaths
 import com.jhaiian.clint.bookmarks.BookmarkDatabase
 import com.jhaiian.clint.downloads.DownloadDatabase
 import com.jhaiian.clint.history.SearchHistoryDatabase
@@ -50,6 +53,12 @@ object BackupTargets {
         BackupEntryTarget("downloads_db", BackupCategory.DOWNLOADS, BackupEntryType.DATABASE, "downloads/${DownloadDatabase.DB_NAME}") { it.getDatabasePath(DownloadDatabase.DB_NAME) },
         BackupEntryTarget("downloads_legacy_prefs", BackupCategory.DOWNLOADS, BackupEntryType.PREFS, "downloads/legacy_prefs.xml") { it.prefsFile(LEGACY_DOWNLOAD_PREFS_NAME) },
 
+        BackupEntryTarget("website_blocker_categories_db", BackupCategory.WEBSITE_BLOCKER, BackupEntryType.DATABASE, "website_blocker/${WebsiteBlockerCategoryDatabase.DB_NAME}") { it.getDatabasePath(WebsiteBlockerCategoryDatabase.DB_NAME) },
+        BackupEntryTarget("website_blocker_additional_websites_db", BackupCategory.WEBSITE_BLOCKER, BackupEntryType.DATABASE, "website_blocker/${AdditionalWebsitesDatabase.DB_NAME}") { it.getDatabasePath(AdditionalWebsitesDatabase.DB_NAME) },
+        BackupEntryTarget("website_blocker_category_files", BackupCategory.WEBSITE_BLOCKER, BackupEntryType.DIRECTORY, "website_blocker/categories") { WebsiteBlockerPaths.categoriesDir(it) },
+        BackupEntryTarget("website_blocker_compiled_engine", BackupCategory.WEBSITE_BLOCKER, BackupEntryType.DATABASE, "website_blocker/engine.dat") { WebsiteBlockerPaths.engineFile(it) },
+        BackupEntryTarget("website_blocker_compiled_manifest", BackupCategory.WEBSITE_BLOCKER, BackupEntryType.DATABASE, "website_blocker/manifest.json") { WebsiteBlockerPaths.manifestFile(it) },
+
         BackupEntryTarget("quiver_guard_filter_lists_db", BackupCategory.QUIVER_GUARD, BackupEntryType.DATABASE, "quiver_guard/${FilterListDatabase.DB_NAME}") { it.getDatabasePath(FilterListDatabase.DB_NAME) },
         BackupEntryTarget("quiver_guard_manual_filter_db", BackupCategory.QUIVER_GUARD, BackupEntryType.DATABASE, "quiver_guard/${ManualFilterDatabase.DB_NAME}") { it.getDatabasePath(ManualFilterDatabase.DB_NAME) },
         BackupEntryTarget("quiver_guard_files", BackupCategory.QUIVER_GUARD, BackupEntryType.DIRECTORY, "quiver_guard/files") { File(it.filesDir, QUIVER_GUARD_FILES_DIR_NAME) },
@@ -76,5 +85,11 @@ object BackupTargets {
         QuiverGuardPaths.databaseFile(context),
         QuiverGuardPaths.tempDatabaseFile(context),
         QuiverGuardPaths.manifestFile(context)
+    )
+
+    fun websiteBlockerCompiledArtifacts(context: Context): List<File> = listOf(
+        WebsiteBlockerPaths.engineFile(context),
+        WebsiteBlockerPaths.engineTempFile(context),
+        WebsiteBlockerPaths.manifestFile(context)
     )
 }

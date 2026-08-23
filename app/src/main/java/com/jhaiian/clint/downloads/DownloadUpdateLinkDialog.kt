@@ -33,6 +33,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
+private const val SIZE_TOLERANCE_MIN_BYTES = 64L * 1024
+private const val SIZE_TOLERANCE_MAX_BYTES = 10L * 1024 * 1024
+private const val SIZE_TOLERANCE_FRACTION = 0.001
+
+private fun sizesWithinTolerance(a: Long, b: Long): Boolean {
+    val diff = kotlin.math.abs(a - b)
+    val tolerance = (maxOf(a, b) * SIZE_TOLERANCE_FRACTION).toLong()
+        .coerceIn(SIZE_TOLERANCE_MIN_BYTES, SIZE_TOLERANCE_MAX_BYTES)
+    return diff <= tolerance
+}
+
 @Composable
 fun DownloadUpdateLinkDialog(item: DownloadItem, hideStatusBar: Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -94,7 +105,7 @@ fun DownloadUpdateLinkDialog(item: DownloadItem, hideStatusBar: Boolean, onDismi
                 helperText = context.getString(R.string.download_update_link_dialog_size_unverifiable)
                 verifiedUrl = typed
             }
-            item.totalBytes <= 0 || remoteSize == item.totalBytes -> {
+            item.totalBytes <= 0 || sizesWithinTolerance(remoteSize, item.totalBytes) -> {
                 errorText = null
                 helperText = null
                 verifiedUrl = typed

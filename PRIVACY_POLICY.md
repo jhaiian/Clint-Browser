@@ -1,6 +1,6 @@
 # Privacy Policy for Clint Browser
 
-*Last updated: August 20, 2026*
+*Last updated: August 23, 2026*
 
 ## Overview
 
@@ -46,16 +46,19 @@ You can clear your search history at any time through the app's settings or by c
 
 When you type in the address or search bar, Clint Browser shows real-time search suggestions to help you find what you're looking for faster.
 
-These suggestions are fetched from DuckDuckGo using their public suggestion API endpoint at `https://duckduckgo.com/ac/?q=`.
+You can choose which provider these suggestions come from in Settings:
+
+- **DuckDuckGo** (default) — fetched from `https://duckduckgo.com/ac/?q=`
+- **Google** — fetched from `https://www.google.com/complete/search?client=firefox&q=`
 
 **What this means for your privacy:**
-- The text you type is sent to DuckDuckGo only to retrieve suggestion results  
+- The text you type is sent only to whichever suggestion provider you've selected, and only to retrieve suggestion results  
 - No search history, cookies, or personal identifiers from Clint Browser are included  
-- DuckDuckGo does not store or associate these requests with your identity in a personally identifiable way  
+- Neither provider receives requests associated with your Clint Browser identity, since the app has none to send  
 
-Your saved search history is completely separate and never sent to DuckDuckGo or any other service.
+Your saved search history is completely separate and never sent to DuckDuckGo, Google, or any other service.
 
-You can review DuckDuckGo's privacy policy at https://duckduckgo.com/privacy
+You can review DuckDuckGo's privacy policy at https://duckduckgo.com/privacy and Google's privacy policy at https://policies.google.com/privacy
 
 ---
 
@@ -96,6 +99,17 @@ In short: your backups never leave your control unless you move them somewhere y
 ## Downloads
 
 Files you download are saved directly to your device. Clint Browser does not upload, scan, or transmit downloaded files.
+
+---
+
+## Website Blocker
+
+Website Blocker lets you block entire categories of sites (ads, malware, piracy, tracking, and more) at the domain level.
+
+- **Downloading category lists requires network access.** When you enable a category, Clint Browser downloads that category's host list directly from its source on GitHub (either `blocklistproject.github.io` or `raw.githubusercontent.com`, depending on the category). This means your device's IP address is visible to GitHub for that request, the same as visiting any website. No personal data, browsing history, or identifiers from Clint Browser are sent along with it.
+- **Everything else happens locally.** Once downloaded, host lists are compiled into a local blocking engine entirely on your device. Checking whether a site should be blocked never involves a network request or a third-party server.
+- **Custom websites you add yourself** are stored locally on your device and are never uploaded anywhere.
+- You can review exactly which sources are used in `Attribution.md` in the app's repository.
 
 ---
 
@@ -190,7 +204,7 @@ Clint Browser does not knowingly collect any personal information from anyone, i
 
 Clint Browser does not include analytics, advertising, or tracking SDKs.
 
-However, the search engine or services you choose (such as DuckDuckGo, Brave Search, or Google) may collect data according to their own privacy policies. Clint Browser has no control over those services. Additionally, the search suggestion and favicon fallback features use DuckDuckGo’s public APIs as described above.
+However, the search engine or services you choose (such as DuckDuckGo, Brave Search, or Google) may collect data according to their own privacy policies. Clint Browser has no control over those services. Additionally, the search suggestions feature uses either DuckDuckGo's or Google's public suggestion API, depending on which provider you've selected, and the favicon fallback feature uses DuckDuckGo's public API, as described above.
 
 ---
 

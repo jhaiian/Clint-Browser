@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Cookie
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
@@ -24,9 +25,9 @@ import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -76,6 +77,7 @@ private fun categoryTitleRes(category: BackupCategory): Int = when (category) {
     BackupCategory.SETTINGS -> R.string.backup_category_settings
     BackupCategory.TABS -> R.string.backup_category_tabs
     BackupCategory.DOWNLOADS -> R.string.backup_category_downloads
+    BackupCategory.WEBSITE_BLOCKER -> R.string.backup_category_website_blocker
     BackupCategory.QUIVER_GUARD -> R.string.backup_category_quiver_guard
     BackupCategory.COOKIES -> R.string.backup_category_cookies
     BackupCategory.BOOKMARKS -> R.string.backup_category_bookmarks
@@ -88,6 +90,7 @@ private fun categoryDescRes(category: BackupCategory): Int = when (category) {
     BackupCategory.SETTINGS -> R.string.backup_category_settings_desc
     BackupCategory.TABS -> R.string.backup_category_tabs_desc
     BackupCategory.DOWNLOADS -> R.string.backup_category_downloads_desc
+    BackupCategory.WEBSITE_BLOCKER -> R.string.backup_category_website_blocker_desc
     BackupCategory.QUIVER_GUARD -> R.string.backup_category_quiver_guard_desc
     BackupCategory.COOKIES -> R.string.backup_category_cookies_desc
     BackupCategory.BOOKMARKS -> R.string.backup_category_bookmarks_desc
@@ -100,11 +103,12 @@ private fun categoryIcon(category: BackupCategory): ImageVector = when (category
     BackupCategory.SETTINGS -> Icons.Filled.Settings
     BackupCategory.TABS -> Icons.Filled.Tab
     BackupCategory.DOWNLOADS -> Icons.Filled.Download
-    BackupCategory.QUIVER_GUARD -> Icons.Filled.Shield
+    BackupCategory.WEBSITE_BLOCKER -> Icons.Filled.Shield
+    BackupCategory.QUIVER_GUARD -> Icons.Filled.Security
     BackupCategory.COOKIES -> Icons.Filled.Cookie
     BackupCategory.BOOKMARKS -> Icons.Filled.Bookmark
     BackupCategory.SEARCH_HISTORY -> Icons.Filled.History
-    BackupCategory.SITE_PERMISSIONS -> Icons.Filled.Security
+    BackupCategory.SITE_PERMISSIONS -> Icons.Filled.PrivacyTip
     BackupCategory.UPDATE_SETTINGS -> Icons.Filled.SystemUpdate
 }
 
@@ -193,7 +197,10 @@ fun BackupRestorePane(activity: SettingsActivity) {
         uiState.stage.value = BackupRestoreStage.RESTORING
         scope.launch {
             runCatching {
-                RestoreManager.performRestore(activity, zipFile, manifest, uiState.selectedRestoreCategories.toSet())
+                RestoreManager.performRestore(activity, zipFile, manifest, uiState.selectedRestoreCategories.toSet()) { completed, total ->
+                    uiState.restoreProgressCompleted.value = completed
+                    uiState.restoreProgressTotal.value = total
+                }
             }.onSuccess { outcome ->
                 uiState.restoredCategories.value = outcome.restoredCategories
                 uiState.unavailableCategories.value = outcome.unavailableCategories
@@ -288,7 +295,14 @@ fun BackupRestorePane(activity: SettingsActivity) {
         scope.launch {
             runCatching {
                 activity.contentResolver.openOutputStream(uri)?.use { out ->
-                    BackupManager.createBackup(activity, categories, password, out)
+                    BackupManager.createBackup(
+                        activity, categories, password, out,
+                        onProgress = { completed, total ->
+                            uiState.backupProgressCompleted.value = completed
+                            uiState.backupProgressTotal.value = total
+                        },
+                        onEncryptStart = { uiState.stage.value = BackupRestoreStage.ENCRYPTING_BACKUP }
+                    )
                 } ?: throw IllegalStateException("Unable to open output stream")
             }.onSuccess { result ->
                 uiState.stage.value = BackupRestoreStage.IDLE
@@ -363,7 +377,14 @@ fun BackupRestorePane(activity: SettingsActivity) {
                         val staged = uiState.stagedFile.value ?: return@RestorePasswordDialog
                         uiState.stage.value = BackupRestoreStage.RESTORE_LOADING
                         scope.launch {
-                            handleUnlockResult(RestoreManager.unlock(activity, staged, uiState.restorePassword.value.toCharArray()))
+                            handleUnlockResult(
+                                RestoreManager.unlock(
+                                    activity,
+                                    staged,
+                                    uiState.restorePassword.value.toCharArray(),
+                                    onDecryptStart = { uiState.stage.value = BackupRestoreStage.DECRYPTING_BACKUP }
+                                )
+                            )
                         }
                     }
                 )
@@ -390,16 +411,38 @@ fun BackupRestorePane(activity: SettingsActivity) {
             }
 
             if (uiState.stage.value == BackupRestoreStage.CREATING_BACKUP ||
+                uiState.stage.value == BackupRestoreStage.ENCRYPTING_BACKUP ||
                 uiState.stage.value == BackupRestoreStage.RESTORE_LOADING ||
+                uiState.stage.value == BackupRestoreStage.DECRYPTING_BACKUP ||
                 uiState.stage.value == BackupRestoreStage.RESTORING
             ) {
+                val completed: Int
+                val total: Int
+                when (uiState.stage.value) {
+                    BackupRestoreStage.CREATING_BACKUP -> {
+                        completed = uiState.backupProgressCompleted.value
+                        total = uiState.backupProgressTotal.value
+                    }
+                    BackupRestoreStage.RESTORING -> {
+                        completed = uiState.restoreProgressCompleted.value
+                        total = uiState.restoreProgressTotal.value
+                    }
+                    else -> {
+                        completed = 0
+                        total = 0
+                    }
+                }
                 ProgressDialog(
                     hideStatusBar = hideStatusBar,
                     message = when (uiState.stage.value) {
                         BackupRestoreStage.CREATING_BACKUP -> stringResource(R.string.backup_progress_creating)
+                        BackupRestoreStage.ENCRYPTING_BACKUP -> stringResource(R.string.backup_progress_encrypting)
+                        BackupRestoreStage.DECRYPTING_BACKUP -> stringResource(R.string.backup_progress_decrypting)
                         BackupRestoreStage.RESTORING -> stringResource(R.string.backup_progress_restoring)
                         else -> stringResource(R.string.backup_progress_reading)
-                    }
+                    },
+                    completed = completed,
+                    total = total
                 )
             }
         }
@@ -425,14 +468,30 @@ fun BackupRestorePane(activity: SettingsActivity) {
 }
 
 @Composable
-fun ProgressDialog(hideStatusBar: Boolean, message: String) {
+fun ProgressDialog(hideStatusBar: Boolean, message: String, completed: Int = 0, total: Int = 0) {
     val colors = LocalClintColors.current
     ClintDialog(title = message, hideStatusBar = hideStatusBar, onDismiss = {}, cancelable = false, footer = {}) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center
-        ) {
-            CircularProgressIndicator(color = colors.primary)
+        if (total > 0) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
+                LinearProgressIndicator(
+                    progress = { completed.toFloat() / total.toFloat() },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = colors.primary,
+                    trackColor = colors.surfaceVariant
+                )
+                Text(
+                    stringResource(R.string.filter_list_update_progress_counter, completed, total),
+                    color = colors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
+                )
+            }
+        } else {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = colors.primary,
+                    trackColor = colors.surfaceVariant
+                )
+            }
         }
     }
 }

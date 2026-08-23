@@ -62,8 +62,8 @@ class QuiverGuardUiState {
 
     var searchQuery by mutableStateOf("")
     var isSearchMode by mutableStateOf(false)
-    var sortKey by mutableStateOf(ListSortKey.DATE_ADDED)
-    var sortOrder by mutableStateOf(ListSortOrder.DESCENDING)
+    var sortKey by mutableStateOf(ListSortKey.TITLE)
+    var sortOrder by mutableStateOf(ListSortOrder.ASCENDING)
     var selectedIds by mutableStateOf<Set<Long>>(emptySet())
     var isInSelectionMode by mutableStateOf(false)
 

@@ -158,6 +158,18 @@
             android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".quiver.QuiverGuardActivity" />
 
+        <activity
+            android:name=".blocker.WebsiteBlockerActivity"
+            android:exported="false"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:parentActivityName=".settings.SettingsActivity" />
+
+        <activity
+            android:name=".blocker.additional.AdditionalWebsitesActivity"
+            android:exported="false"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:parentActivityName=".blocker.WebsiteBlockerActivity" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

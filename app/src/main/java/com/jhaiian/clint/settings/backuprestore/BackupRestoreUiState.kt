@@ -11,8 +11,10 @@ enum class BackupRestoreStage {
     IDLE,
     SELECT_BACKUP_CATEGORIES,
     CREATING_BACKUP,
+    ENCRYPTING_BACKUP,
     BACKUP_RESULT,
     RESTORE_LOADING,
+    DECRYPTING_BACKUP,
     RESTORE_PASSWORD,
     SELECT_RESTORE_CATEGORIES,
     RESTORE_CONFIRM,
@@ -50,6 +52,11 @@ class BackupRestoreUiState(val hideStatusBar: Boolean) {
     var unavailableCategories = mutableStateOf<Set<BackupCategory>>(emptySet())
     var restoreErrorMessage = mutableStateOf<String?>(null)
 
+    var backupProgressCompleted = mutableStateOf(0)
+    var backupProgressTotal = mutableStateOf(0)
+    var restoreProgressCompleted = mutableStateOf(0)
+    var restoreProgressTotal = mutableStateOf(0)
+
     fun resetBackupFlow() {
         stage.value = BackupRestoreStage.IDLE
         selectedBackupCategories.clear()
@@ -61,6 +68,8 @@ class BackupRestoreUiState(val hideStatusBar: Boolean) {
         backupPasswordVisible.value = false
         backupPasswordConfirmVisible.value = false
         backupErrorMessage.value = null
+        backupProgressCompleted.value = 0
+        backupProgressTotal.value = 0
     }
 
     fun resetRestoreFlow() {
@@ -75,6 +84,8 @@ class BackupRestoreUiState(val hideStatusBar: Boolean) {
         availableRestoreCategories.clear()
         selectedRestoreCategories.clear()
         restoreErrorMessage.value = null
+        restoreProgressCompleted.value = 0
+        restoreProgressTotal.value = 0
     }
 }
 

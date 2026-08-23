@@ -7,8 +7,6 @@ import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import javax.crypto.Cipher
-import javax.crypto.CipherInputStream
-import javax.crypto.CipherOutputStream
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
@@ -17,6 +15,7 @@ private const val SALT_SIZE = 16
 private const val IV_SIZE = 12
 private const val GCM_TAG_BITS = 128
 private const val AES_KEY_SIZE = 32
+private const val STREAM_BUFFER_SIZE = 1 shl 16
 
 const val ARGON2_MEMORY_KB = 19456
 const val ARGON2_ITERATIONS = 2
@@ -100,17 +99,25 @@ object BackupCrypto {
     fun encryptStream(input: InputStream, output: OutputStream, key: ByteArray, iv: ByteArray) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(GCM_TAG_BITS, iv))
-        CipherOutputStream(output, cipher).use { cipherOut ->
-            input.copyTo(cipherOut)
-        }
+        pumpCipher(input, output, cipher)
     }
 
     fun decryptStream(input: InputStream, output: OutputStream, key: ByteArray, iv: ByteArray) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(GCM_TAG_BITS, iv))
-        CipherInputStream(input, cipher).use { cipherIn ->
-            cipherIn.copyTo(output)
+        pumpCipher(input, output, cipher)
+    }
+
+    private fun pumpCipher(input: InputStream, output: OutputStream, cipher: Cipher) {
+        val buffer = ByteArray(STREAM_BUFFER_SIZE)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            val processed = cipher.update(buffer, 0, read)
+            if (processed != null && processed.isNotEmpty()) output.write(processed)
         }
+        val finalBlock = cipher.doFinal()
+        if (finalBlock.isNotEmpty()) output.write(finalBlock)
     }
 
     private fun writeInt(output: OutputStream, value: Int) {

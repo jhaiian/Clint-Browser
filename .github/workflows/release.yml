@@ -142,9 +142,10 @@ jobs:
           CB_BASE_URL: "https://github.com/${{ github.repository }}/releases/download/${{ steps.info.outputs.tag }}"
           CB_SPLIT: ${{ steps.mode.outputs.split }}
           VERSION_CODE: ${{ steps.read_version.outputs.version_code }}
+          APK_DIR: ${{ steps.apks.outputs.apk_dir }}
         run: |
           python3 - <<'PYEOF'
-          import json, os, re
+          import glob, hashlib, json, os, re
 
           version = os.environ["CB_VERSION"]
           version_code = int(os.environ["VERSION_CODE"])
@@ -152,6 +153,7 @@ jobs:
           manifest = os.environ["CB_MANIFEST"]
           base_url = os.environ["CB_BASE_URL"]
           is_split = os.environ["CB_SPLIT"] == "true"
+          apk_dir = os.environ["APK_DIR"]
 
           with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
               changelog_raw = fh.read()
@@ -186,8 +188,23 @@ jobs:
               json.dump(data, fh, indent=2, ensure_ascii=False)
               fh.write("\n")
 
+          def sha256_of(path):
+              digest = hashlib.sha256()
+              with open(path, "rb") as fh:
+                  for chunk in iter(lambda: fh.read(1 << 20), b""):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          apk_paths = sorted(glob.glob(os.path.join(apk_dir, "*.apk")))
+          checksum_lines = ["## APKs (SHA-256)", "", "| File | SHA-256 |", "| --- | --- |"]
+          for apk_path in apk_paths:
+              checksum_lines.append(f"| `{os.path.basename(apk_path)}` | `{sha256_of(apk_path)}` |")
+          checksums_text = "\n".join(checksum_lines)
+
+          release_notes = f"{changelog_text}\n\n{checksums_text}\n"
+
           with open("release_notes.md", "w", encoding="utf-8") as fh:
-              fh.write(changelog_text)
+              fh.write(release_notes)
           PYEOF
 
       - name: Commit and push updated manifest

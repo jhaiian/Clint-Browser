@@ -50,7 +50,12 @@ object RestoreManager {
         }
     }
 
-    suspend fun unlock(context: Context, staged: StagedBackupFile, password: CharArray?): UnlockResult = withContext(Dispatchers.IO) {
+    suspend fun unlock(
+        context: Context,
+        staged: StagedBackupFile,
+        password: CharArray?,
+        onDecryptStart: () -> Unit = {}
+    ): UnlockResult = withContext(Dispatchers.IO) {
         val appContext = context.applicationContext
         val plainZip = File.createTempFile("clint_restore_plain_", ".zip", appContext.cacheDir)
         try {
@@ -59,6 +64,7 @@ object RestoreManager {
                     plainZip.delete()
                     return@withContext UnlockResult.Error("Password required")
                 }
+                onDecryptStart()
                 val key = BackupCrypto.deriveKey(
                     password,
                     staged.header.salt,
@@ -112,11 +118,26 @@ object RestoreManager {
         context: Context,
         plainZipFile: File,
         manifest: BackupManifest,
-        selectedCategories: Set<BackupCategory>
+        selectedCategories: Set<BackupCategory>,
+        onProgress: (completed: Int, total: Int) -> Unit = { _, _ -> }
     ): RestoreOutcome = withContext(Dispatchers.IO) {
         val appContext = context.applicationContext
         val restored = mutableSetOf<BackupCategory>()
         val unavailable = mutableSetOf<BackupCategory>()
+
+        var total = 0
+        for (category in selectedCategories) {
+            for (target in BackupTargets.forCategory(category)) {
+                total += when (target.type) {
+                    BackupEntryType.DATABASE, BackupEntryType.PREFS ->
+                        if (manifest.entries.any { it.id == target.id && it.category == category.id }) 1 else 0
+                    BackupEntryType.DIRECTORY ->
+                        manifest.entries.count { it.category == category.id && it.id.startsWith("${target.id}:") }
+                }
+            }
+        }
+        var completed = 0
+        onProgress(completed, total)
 
         ZipFile(plainZipFile).use { zip ->
             for (category in selectedCategories) {
@@ -130,6 +151,8 @@ object RestoreManager {
                                 val destFile = target.file(appContext)
                                 restoreSingleFile(appContext, zip, zipEntry, destFile, target.type)
                                 restoredAny = true
+                                completed++
+                                onProgress(completed, total)
                             }
                         }
                         BackupEntryType.DIRECTORY -> {
@@ -144,6 +167,8 @@ object RestoreManager {
                                     val destFile = File(destDir, safeName)
                                     restoreSingleFile(appContext, zip, zipEntry, destFile, BackupEntryType.DIRECTORY)
                                     restoredAny = true
+                                    completed++
+                                    onProgress(completed, total)
                                 }
                             }
                         }
@@ -160,6 +185,16 @@ object RestoreManager {
             }
             if (!compiledArtifactsRestored) {
                 BackupTargets.quiverGuardCompiledArtifacts(appContext).forEach { it.delete() }
+            }
+        }
+
+        if (BackupCategory.WEBSITE_BLOCKER in restored) {
+            val compiledArtifactsRestored = manifest.entries.any {
+                it.category == BackupCategory.WEBSITE_BLOCKER.id &&
+                    (it.id == "website_blocker_compiled_engine" || it.id == "website_blocker_compiled_manifest")
+            }
+            if (!compiledArtifactsRestored) {
+                BackupTargets.websiteBlockerCompiledArtifacts(appContext).forEach { it.delete() }
             }
         }
 

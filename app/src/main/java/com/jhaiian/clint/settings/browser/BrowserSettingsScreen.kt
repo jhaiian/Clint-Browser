@@ -1,6 +1,9 @@
 package com.jhaiian.clint.settings.browser
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Shield
 
 import androidx.compose.foundation.layout.padding
 import com.jhaiian.clint.ui.ClintSwitch
@@ -19,7 +22,10 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 fun BrowserSettingsScreen(
     state: BrowserSettingsUiState,
     onSearchEngineConfirmed: (String) -> Unit,
-    onJavascriptRowClicked: () -> Unit
+    onSearchSuggestionsApiConfirmed: (String) -> Unit,
+    onJavascriptRowClicked: () -> Unit,
+    onWebsiteBlockerRowClicked: () -> Unit,
+    onQuiverGuardRowClicked: () -> Unit
 ) {
     val colors = LocalClintColors.current
 
@@ -33,6 +39,14 @@ fun BrowserSettingsScreen(
                     onDismiss = { state.searchEngineDialogOpen = false }
                 )
             }
+            if (state.searchSuggestionsApiDialogOpen) {
+                SearchSuggestionsApiDialog(
+                    current = state.searchSuggestionsApi,
+                    hideStatusBar = state.hideStatusBar,
+                    onConfirm = onSearchSuggestionsApiConfirmed,
+                    onDismiss = { state.searchSuggestionsApiDialogOpen = false }
+                )
+            }
         }
     ) {
         SectionLabel(stringResource(R.string.pref_category_search).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
@@ -43,6 +57,13 @@ fun BrowserSettingsScreen(
                 summary = stringResource(engineSummaryRes(state.searchEngine)),
                 colors = colors,
                 onClick = { state.searchEngineDialogOpen = true }
+            )
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ManageSearch,
+                title = stringResource(R.string.search_suggestions_api),
+                summary = stringResource(engineSummaryRes(state.searchSuggestionsApi)),
+                colors = colors,
+                onClick = { state.searchSuggestionsApiDialogOpen = true }
             )
         }
 
@@ -57,6 +78,24 @@ fun BrowserSettingsScreen(
                 trailing = {
                     ClintSwitch(checked = state.javascriptEnabled)
                 }
+            )
+        }
+
+        SectionLabel(stringResource(R.string.pref_category_protection).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
+        SettingsSection(colors.cardBackground) {
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.Shield,
+                title = stringResource(R.string.website_blocker_title),
+                summary = stringResource(R.string.website_blocker_settings_summary),
+                colors = colors,
+                onClick = onWebsiteBlockerRowClicked
+            )
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.Security,
+                title = stringResource(R.string.quiver_guard),
+                summary = stringResource(R.string.quiver_guard_description),
+                colors = colors,
+                onClick = onQuiverGuardRowClicked
             )
         }
     }

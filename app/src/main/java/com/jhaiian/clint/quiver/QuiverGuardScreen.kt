@@ -6,9 +6,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Update
@@ -251,7 +251,7 @@ fun QuiverGuardScreen(
 private fun MasterSwitchRow(masterEnabled: Boolean, onToggle: (Boolean) -> Unit) {
     val colors = LocalClintColors.current
     SettingsRow(
-        icon = androidx.compose.material.icons.Icons.Filled.Shield,
+        icon = androidx.compose.material.icons.Icons.Filled.Security,
         title = stringResource(R.string.quiver_guard_master_switch_title),
         summary = stringResource(R.string.quiver_guard_description),
         colors = colors,
@@ -399,10 +399,10 @@ private fun ManualFilterRow(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 3.dp)
+            .alpha(if (masterEnabled) 1f else 0.38f)
             .clip(RoundedCornerShape(14.dp))
             .background(colors.cardBackground)
             .clickable(enabled = masterEnabled && !interactionLocked, onClick = onClick)
-            .alpha(if (masterEnabled) 1f else 0.38f)
             .padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -458,10 +458,10 @@ private fun FilterListRow(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 3.dp)
+            .alpha(rowAlpha)
             .clip(RoundedCornerShape(14.dp))
             .background(cardColor)
             .combinedClickable(enabled = masterEnabled && !interactionLocked, onClick = onClick, onLongClick = onLongClick)
-            .alpha(rowAlpha)
             .padding(start = 14.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -470,7 +470,7 @@ private fun FilterListRow(
             if (favicon != null) {
                 Image(bitmap = favicon.asImageBitmap(), contentDescription = null, modifier = Modifier.size(22.dp))
             } else {
-                Icon(androidx.compose.material.icons.Icons.Filled.Shield, contentDescription = null, tint = colors.iconTint, modifier = Modifier.size(20.dp))
+                Icon(androidx.compose.material.icons.Icons.Filled.Security, contentDescription = null, tint = colors.iconTint, modifier = Modifier.size(20.dp))
             }
         }
         Column(Modifier.weight(1f).padding(start = 12.dp, end = 4.dp)) {

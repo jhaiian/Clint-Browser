@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.SettingsBackupRestore
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.WebAsset
@@ -29,7 +28,6 @@ fun MainSettingsScreen(
     onLookAndFeelClick: () -> Unit,
     onBrowserClick: () -> Unit,
     onPrivacyClick: () -> Unit,
-    onQuiverGuardClick: () -> Unit,
     onSiteSettingsClick: () -> Unit,
     onDataSaverClick: () -> Unit,
     onDownloadsClick: () -> Unit,
@@ -65,14 +63,6 @@ fun MainSettingsScreen(
                 summary = stringResource(R.string.privacy_settings_summary),
                 colors = colors,
                 onClick = onPrivacyClick
-            )
-            RowDivider(colors.divider)
-            SettingsRow(
-                icon = androidx.compose.material.icons.Icons.Filled.Shield,
-                title = stringResource(R.string.quiver_guard),
-                summary = stringResource(R.string.quiver_guard_description),
-                colors = colors,
-                onClick = onQuiverGuardClick
             )
             RowDivider(colors.divider)
             SettingsRow(

@@ -29,6 +29,7 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 
 private const val AUTHOR_URL = "https://linktr.ee/jhaiian"
 private const val GITHUB_URL = "https://github.com/jhaiian/ClintBrowser"
+private const val KEEP_ANDROID_OPEN_URL = "https://keepandroidopen.org"
 private const val DISCORD_URL = "https://discord.gg/4kUe4yPQ32"
 private const val REDDIT_URL = "https://www.reddit.com/r/ClintBrowser"
 private const val PATREON_URL = "https://www.patreon.com/Jhaiian"
@@ -48,6 +49,8 @@ private const val ANDROIDSVG_URL = "https://github.com/BigBadaboom/androidsvg"
 private const val COROUTINES_URL = "https://github.com/Kotlin/kotlinx.coroutines"
 private const val ADBLOCK_RUST_URL = "https://github.com/brave/adblock-rust"
 private const val ADBLOCK_RUST_LICENSE_URL = "https://www.mozilla.org/en-US/MPL/2.0/"
+private const val BOUNCYCASTLE_URL = "https://www.bouncycastle.org"
+private const val BOUNCYCASTLE_LICENSE_URL = "https://www.bouncycastle.org/licence.html"
 
 @Composable
 private fun AboutCard(label: String, colors: ClintColors, content: @Composable () -> Unit) {
@@ -223,6 +226,17 @@ fun AboutScreen(
             AboutStandaloneLink(stringResource(R.string.about_github_url), colors) { onLinkClick(GITHUB_URL) }
         }
 
+        AboutCard(stringResource(R.string.about_section_keep_android_open), colors) {
+            Text(
+                stringResource(R.string.about_keep_android_open_text),
+                color = colors.onSurface,
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+            AboutStandaloneLink(stringResource(R.string.about_keep_android_open_url), colors) { onLinkClick(KEEP_ANDROID_OPEN_URL) }
+        }
+
         AboutCard(stringResource(R.string.about_section_legal), colors) {
             AboutLinkRow(stringResource(R.string.document_viewer_privacy_policy_title), stringResource(R.string.about_legal_view), colors, onPrivacyPolicyClick)
             AboutThinDivider(colors.surfaceVariant)
@@ -319,6 +333,12 @@ fun AboutScreen(
                 stringResource(R.string.about_library_adblockrust_label), stringResource(R.string.about_library_adblockrust_license),
                 stringResource(R.string.about_library_adblockrust_usage), colors,
                 { onLinkClick(ADBLOCK_RUST_URL) }, { onLinkClick(ADBLOCK_RUST_LICENSE_URL) }
+            )
+            AboutThinDivider(colors.surfaceVariant)
+            AboutLibraryEntry(
+                stringResource(R.string.about_library_bouncycastle_label), stringResource(R.string.about_library_bouncycastle_license),
+                stringResource(R.string.about_library_bouncycastle_usage), colors,
+                { onLinkClick(BOUNCYCASTLE_URL) }, { onLinkClick(BOUNCYCASTLE_LICENSE_URL) }
             )
         }
 
