@@ -62,6 +62,12 @@ Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo de
 - Multiple filter lists
 - Per-site controls
 
+### 🚫 Website Blocker
+
+- Blocks pornography, gambling, and other unwanted categories
+- Category-based filter lists (abuse, ads, crypto, drugs, fraud, gambling, and more)
+- Add your own custom websites to block
+
 ### ⬇️ Download Manager
 
 - Multi-threaded and multi-part downloads
