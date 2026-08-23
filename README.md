@@ -6,12 +6,12 @@
 
 **Customizable Layered Internet Navigation Tool**
 
-Material Design Android Browser with ADM and an Ad Blocker
+Material Design Android Browser with ADM and an Content Blocker
  
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blueviolet.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-blueviolet.svg)](https://developer.android.com)
-[![Stable](https://img.shields.io/badge/Stable-1.1.1-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.1)
-[![Beta](https://img.shields.io/badge/Beta-1.1.1-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.1)
+[![Stable](https://img.shields.io/badge/Stable-1.1.2-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.2)
+[![Beta](https://img.shields.io/badge/Beta-1.1.2-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.2)
 [![Downloads](https://img.shields.io/github/downloads/jhaiian/ClintBrowser/total?color=blueviolet)](https://github.com/jhaiian/ClintBrowser/releases)
 [![Open Source](https://img.shields.io/badge/Open%20Source-Yes-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser)
 
