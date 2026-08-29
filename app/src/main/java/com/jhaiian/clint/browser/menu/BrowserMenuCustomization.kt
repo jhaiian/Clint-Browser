@@ -5,7 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ChromeReaderMode
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddToHomeScreen
+import androidx.compose.material.icons.automirrored.filled.AddToHomeScreen
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.DataSaverOn
 import androidx.compose.material.icons.filled.DesktopWindows
@@ -45,7 +45,7 @@ fun CustomizableMenuItem.icon(): ImageVector = when (this) {
     CustomizableMenuItem.NEW_INCOGNITO_TAB -> Icons.Filled.VisibilityOff
     CustomizableMenuItem.SHARE -> Icons.Filled.Share
     CustomizableMenuItem.OPEN_IN_APP -> Icons.AutoMirrored.Filled.OpenInNew
-    CustomizableMenuItem.CREATE_SHORTCUT -> Icons.Filled.AddToHomeScreen
+    CustomizableMenuItem.CREATE_SHORTCUT -> Icons.AutoMirrored.Filled.AddToHomeScreen
     CustomizableMenuItem.DOWNLOADS -> Icons.Filled.Download
     CustomizableMenuItem.QUIVER_GUARD -> Icons.Filled.Security
     CustomizableMenuItem.DISABLE_QUIVER_GUARD_FOR_SITE -> Icons.Filled.Security

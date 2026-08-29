@@ -6,7 +6,7 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.DriveFileMove
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
@@ -135,7 +135,7 @@ fun BookmarksSelectionItemOptionsMenu(
         containerColor = colors.popupBackground,
         border = BorderStroke(1.dp, colors.popupStroke)
     ) {
-        ListMenuItem(androidx.compose.material.icons.Icons.Filled.DriveFileMove, stringResource(R.string.bookmarks_move_to), checked = false) {
+        ListMenuItem(androidx.compose.material.icons.Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.bookmarks_move_to), checked = false) {
             onDismiss(); onMoveTo()
         }
         if (showRename) {

@@ -1,7 +1,7 @@
 package com.jhaiian.clint.settings.browser
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.DesktopWindows
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
@@ -88,7 +88,7 @@ fun BrowserSettingsScreen(
         SectionLabel(stringResource(R.string.pref_category_shortcuts).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
         SettingsSection(colors.cardBackground) {
             SettingsRow(
-                icon = androidx.compose.material.icons.Icons.Filled.OpenInNew,
+                icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.OpenInNew,
                 title = stringResource(R.string.frameless_shortcut_title),
                 summary = stringResource(R.string.frameless_shortcut_summary),
                 colors = colors,
