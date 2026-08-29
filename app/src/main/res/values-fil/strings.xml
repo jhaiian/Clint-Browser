@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Clint</string>
+    <string name="clint_downloader_label">Clint Downloader</string>
     <string name="back">Bumalik</string>
     <string name="forward">Pasulong</string>
     <string name="refresh">I-refresh</string>
@@ -22,6 +23,12 @@
     <string name="pref_category_protection">Content Blocker</string>
     <string name="pref_category_navigation">Navigation</string>
     <string name="pref_category_language">Wika</string>
+    <string name="pref_category_shortcuts">Shortcuts</string>
+    <string name="frameless_shortcut_title">Frameless</string>
+    <string name="frameless_shortcut_summary">Itago ang search bar at bottom bar kapag binuksan ang isang shortcut mula sa home screen</string>
+    <string name="pref_category_incognito">Incognito</string>
+    <string name="incognito_search_history_title">Ipakita ang history ng paghahanap sa Incognito Mode</string>
+    <string name="incognito_search_history_summary">Isama ang iyong naka-save na history ng paghahanap bilang mga suhestyon habang naka-browse sa Incognito</string>
     <string name="privacy_settings_summary">Cookies, User-Agent, HTTPS, at kasaysayan</string>
     <string name="javascript_enabled">I-enable ang JavaScript</string>
     <string name="javascript_enabled_summary">Payagan ang mga website na mag-execute ng JavaScript</string>
@@ -100,6 +107,8 @@
     <string name="theme_dark_desc">Madilim na background </string>
     <string name="hide_status_bar">Itago ang status bar</string>
     <string name="hide_status_bar_summary">Itago ang status bar ng system para sa mas immersive na karanasan sa pag-browse</string>
+    <string name="hide_system_navigation">Itago ang navigation bar</string>
+    <string name="hide_system_navigation_summary">Itago ang navigation bar ng system para sa mas immersive na karanasan sa pag-browse</string>
     <string name="pref_menu_style_title">Istilo ng Menu</string>
     <string name="menu_style_popup">Pop-up na Menu</string>
     <string name="menu_style_popup_desc">Compact na menu na lumulutang malapit sa toolbar</string>
@@ -110,6 +119,15 @@
     <string name="tab_menu_style_grid_desc">Tingnan ang mga bukas na tab bilang isang scrollable grid ng live na preview</string>
     <string name="tab_menu_style_sheet">Tab Sheet</string>
     <string name="tab_menu_style_sheet_desc">Ang klasikong listahan na dumudulas paitaas mula sa ibaba</string>
+    <string name="menu_customization_title">I-customize ang Menu</string>
+    <string name="menu_customization_settings_summary">Itago, ipakita, at ayusin muli ang mga item sa menu</string>
+    <string name="menu_customization_description">I-drag ang hawakan para muling ayusin. I-off ang mga item na hindi mo gustong makita sa menu.</string>
+    <string name="menu_customization_reset_desc">I-reset sa default</string>
+    <string name="menu_customization_drag_handle_desc">I-drag para muling ayusin</string>
+    <string name="menu_customization_pinned_note">Palaging ipinapakita sa menu para hindi ka na ma-lock out sa mga setting na ito</string>
+    <string name="menu_customization_reset_confirm_title">I-reset ang menu?</string>
+    <string name="menu_customization_reset_confirm_message">Ibabalik nito ang default na ayos at ipapakita muli ang lahat ng item sa menu.</string>
+    <string name="menu_customization_reset_action">I-reset</string>
     <string name="pref_updates_title">Mga Update</string>
     <string name="download_settings_title">Mga Download</string>
     <string name="download_settings_summary">Lokasyon ng download, notification, at behavior</string>
@@ -253,12 +271,18 @@
     <string name="open_in_app_chooser_message">Pumili ng app para buksan ang %1$s.</string>
     <string name="menu_open_in_app">Buksan sa app</string>
     <string name="menu_open_in_named_app">Buksan sa %1$s</string>
+    <string name="menu_create_shortcut">Gumawa ng Shortcut</string>
+    <string name="create_shortcut_dialog_title">Gumawa ng Shortcut</string>
+    <string name="create_shortcut_name_hint">Pangalan ng shortcut</string>
+    <string name="create_shortcut_change_icon">Palitan ang icon</string>
+    <string name="create_shortcut_unsupported">Hindi sinusuportahan ng launcher na ito ang mga shortcut</string>
     <string name="menu_downloads">Mga Download</string>
     <string name="menu_bookmarks">Mga Bookmark</string>
     <string name="menu_history">Kasaysayan</string>
     <string name="reader_mode">Reader Mode</string>
 
     <string name="action_ok">OK</string>
+    <string name="action_add">Idagdag</string>
     <string name="action_close">Isara</string>
     <string name="action_close_search">Isara ang paghahanap</string>
     <string name="action_clear_search">I-clear ang paghahanap</string>
@@ -616,6 +640,35 @@
     <string name="bookmarks_delete_confirm_message">Burahin ang %d bookmark?</string>
     <string name="bookmarks_items_deleted">Nabura ang mga bookmark</string>
     <string name="bookmarks_sort_by_date_added">Petsa Idinagdag</string>
+    <string name="bookmarks_new_folder_desc">Bagong folder</string>
+    <string name="bookmarks_new_folder_title">Bagong Folder</string>
+    <string name="bookmarks_folder_name_hint">Pangalan ng folder</string>
+    <string name="bookmarks_folder_create">Gumawa</string>
+    <string name="bookmarks_rename_folder">Palitan ang pangalan ng folder</string>
+    <string name="bookmarks_move_to">Ilipat sa…</string>
+    <string name="bookmarks_move_to_title">Ilipat sa</string>
+    <string name="bookmarks_save_to_title">I-save sa</string>
+    <string name="bookmarks_delete_confirm_message_folders">Burahin ang %d item? Mabubura rin ang mga bookmark at folder sa loob ng mga piniling folder.</string>
+    <string name="bookmarks_folder_empty">Walang laman ang folder na ito</string>
+    <string name="bookmarks_folder_item_count">%d na item</string>
+    <string name="bookmarks_add_fab_desc">Magdagdag ng bookmark o folder</string>
+    <string name="bookmarks_fab_add_folder">Magdagdag ng Folder</string>
+    <string name="bookmarks_fab_add_bookmark">Magdagdag ng Bookmark</string>
+    <string name="bookmarks_new_bookmark_title">Magdagdag ng Bookmark</string>
+    <string name="bookmarks_bookmark_title_hint">Pamagat</string>
+    <string name="bookmarks_bookmark_url_hint">URL</string>
+    <string name="bookmarks_import">I-import ang mga bookmark</string>
+    <string name="bookmarks_export">I-export ang mga bookmark</string>
+    <string name="bookmarks_import_title">I-import ang mga Bookmark</string>
+    <string name="bookmarks_export_title">I-export ang mga Bookmark</string>
+    <string name="bookmarks_format_html">HTML</string>
+    <string name="bookmarks_format_html_desc">Compatible sa Chrome, Firefox, Safari, at Edge</string>
+    <string name="bookmarks_format_sqlite">SQLite Database</string>
+    <string name="bookmarks_format_sqlite_desc">Kumpletong backup kasama ang mga folder at petsa</string>
+    <string name="bookmarks_import_success">%d bookmark ang na-import</string>
+    <string name="bookmarks_import_error">Nabigong mag-import ng mga bookmark</string>
+    <string name="bookmarks_export_success">Na-export ang mga bookmark</string>
+    <string name="bookmarks_export_error">Nabigong mag-export ng mga bookmark</string>
 
     <string name="downloads_title">Mga Download</string>
     <string name="downloads_tab_all">LAHAT</string>
@@ -700,6 +753,7 @@
     <string name="data_saver_disable_autoplay_summary">Hindi awtomatikong tutugtugin ang mga video at media. Maaaring hindi gumana sa lahat ng website</string>
     <string name="menu_data_saver">Data Saver</string>
     <string name="menu_quiver_guard">Quiver Guard</string>
+    <string name="menu_website_blocker">Website Blocker</string>
     <string name="about_webview_label">WEBVIEW</string>
     <string name="about_webview_info">%1$s\n%2$s\nv%3$s</string>
     <string name="about_webview_unavailable">Hindi Available</string>
@@ -1206,4 +1260,5 @@
     <string name="additional_websites_invalid_host">Maglagay ng wastong domain, tulad ng example.com</string>
     <string name="additional_websites_delete_confirm_title">Tanggalin ang website?</string>
     <string name="additional_websites_delete_confirm_message">Tatanggalin nito ang %d napiling website mula sa Karagdagang Websites.</string>
+    <string name="select_picker_default_title">Pumili ng opsyon</string>
 </resources>

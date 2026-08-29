@@ -42,6 +42,7 @@ class ManualFilterActivity : ClintActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         uiState = ManualFilterUiState()
         uiState.isEnabled = ManualFilterState.isEnabled(this)
@@ -68,7 +69,7 @@ class ManualFilterActivity : ClintActivity() {
                     uiState.ruleDialogMode?.let { mode ->
                         ManualFilterRuleDialog(
                             mode = mode,
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             onConfirm = { text ->
                                 when (mode) {
                                     is ManualFilterRuleDialogMode.Add -> {
@@ -84,7 +85,7 @@ class ManualFilterActivity : ClintActivity() {
                         )
                     }
 
-                    ConfirmDialogHost(deleteConfirm, hideStatusBar) { deleteConfirm = null }
+                    ConfirmDialogHost(deleteConfirm, hideStatusBar, hideSystemNavigation) { deleteConfirm = null }
                 }
             }
         }

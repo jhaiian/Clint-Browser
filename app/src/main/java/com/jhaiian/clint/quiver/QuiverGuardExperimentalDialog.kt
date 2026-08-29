@@ -26,7 +26,7 @@ import kotlinx.coroutines.delay
 private const val EXPERIMENTAL_COUNTDOWN_SECONDS = 3
 
 @Composable
-fun ExperimentalDialog(open: Boolean, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+fun ExperimentalDialog(open: Boolean, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     if (!open) return
     val colors = LocalClintColors.current
     var secondsRemaining by remember { mutableStateOf(EXPERIMENTAL_COUNTDOWN_SECONDS) }
@@ -40,7 +40,7 @@ fun ExperimentalDialog(open: Boolean, hideStatusBar: Boolean, onDismiss: () -> U
 
     ClintDialog(
         title = stringResource(R.string.quiver_guard_experimental_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = {},
         cancelable = false,
         footer = {

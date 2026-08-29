@@ -51,6 +51,7 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         const val EXTRA_REFRESH_LINK_FILENAME = "extra_refresh_link_filename"
         const val EXTRA_REFRESH_LINK_ORIGINAL_URL = "extra_refresh_link_original_url"
         const val EXTRA_REFRESH_LINK_ORIGINAL_REFERER = "extra_refresh_link_original_referer"
+        const val EXTRA_SHORTCUT_ID = "extra_shortcut_id"
     }
 
     data class RefreshLinkSession(
@@ -258,6 +259,19 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         downloadDialogFolderPickerCallback = null
     }
 
+    internal var pendingShortcutIconCallback: ((android.graphics.Bitmap?) -> Unit)? = null
+
+    internal val shortcutIconPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        val callback = pendingShortcutIconCallback
+        pendingShortcutIconCallback = null
+        val bitmap = uri?.let { picked ->
+            runCatching { contentResolver.openInputStream(picked)?.use { android.graphics.BitmapFactory.decodeStream(it) } }.getOrNull()
+        }
+        callback?.invoke(bitmap)
+    }
+
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         when (key) {
             "javascript_enabled" -> applyJavaScript()
@@ -296,7 +310,7 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
         prefs.registerOnSharedPreferenceChangeListener(prefsListener)
-        applyStatusBarVisibility()
+        applySystemUiVisibility()
 
         val startTheme = prefs.getString("app_theme", "dark") ?: "dark"
         setContent {
@@ -331,6 +345,8 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         setupAddressBar()
         applyAddressBarPosition()
         val isRefreshLinkMode = intent.getBooleanExtra(EXTRA_REFRESH_LINK_MODE, false)
+        val shortcutId = intent.getStringExtra(EXTRA_SHORTCUT_ID)
+        applyShortcutFrameless(shortcutId != null)
         if (isRefreshLinkMode) {
             val downloadId = intent.getIntExtra(EXTRA_REFRESH_LINK_DOWNLOAD_ID, -1)
             val filename = intent.getStringExtra(EXTRA_REFRESH_LINK_FILENAME) ?: ""
@@ -344,6 +360,11 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
             } else if (!restoreTabs()) {
                 openNewTab(isIncognito = false, url = getSearchEngineHomeUrl())
             }
+        } else if (shortcutId != null) {
+            val fallbackUrl = getUrlFromIntent(intent)
+            setIntent(android.content.Intent())
+            restoreTabs()
+            openOrResumeShortcutTab(shortcutId, fallbackUrl)
         } else {
             val intentUrl = getUrlFromIntent(intent)
             setIntent(android.content.Intent())
@@ -360,6 +381,8 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         val isRefreshLinkMode = intent.getBooleanExtra(EXTRA_REFRESH_LINK_MODE, false)
+        val shortcutId = intent.getStringExtra(EXTRA_SHORTCUT_ID)
+        applyShortcutFrameless(shortcutId != null)
         if (isRefreshLinkMode) {
             val downloadId = intent.getIntExtra(EXTRA_REFRESH_LINK_DOWNLOAD_ID, -1)
             val filename = intent.getStringExtra(EXTRA_REFRESH_LINK_FILENAME) ?: ""
@@ -370,6 +393,12 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
                 refreshLinkSession = RefreshLinkSession(downloadId, filename, originalUrl, originalReferer, tabManager.activeIndex)
                 openRefreshLinkTab(originalReferer.ifEmpty { originalUrl.ifEmpty { getSearchEngineHomeUrl() } })
             }
+            return
+        }
+        if (shortcutId != null) {
+            val fallbackUrl = getUrlFromIntent(intent)
+            setIntent(android.content.Intent())
+            openOrResumeShortcutTab(shortcutId, fallbackUrl)
             return
         }
         val url = getUrlFromIntent(intent)
@@ -388,15 +417,13 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         nestedScrollActive = false
         canvasTouchActive = false
         hasWebBottomNav = false
-        uiState.topBarFullHeightPx = 0
-        uiState.bottomBarFullHeightPx = 0
         swipeRefreshView.isEnabled = true
         updateMainContentInsets()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) applyStatusBarVisibility()
+        if (hasFocus) applySystemUiVisibility()
     }
 
     override fun onStop() {
@@ -515,6 +542,12 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
     }
 
     fun onTabSelected(index: Int) { captureActiveTabThumbnail(); tabManager.switchTo(index); attachActiveWebView() }
+    fun onSwipeTabChange(direction: Int): Boolean {
+        val newIndex = tabManager.activeIndex + direction
+        if (newIndex !in tabManager.tabs.indices) return false
+        onTabSelected(newIndex)
+        return true
+    }
     fun onTabClosed(index: Int) {
         val tab = tabManager.tabs.getOrNull(index)
         tab?.let {
@@ -560,6 +593,15 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         } else {
             webClient.tryOpenInApp(tabManager.activeTab?.webView ?: return, currentUri)
         }
+    }
+    fun onMenuCreateShortcut() {
+        val tab = tabManager.activeTab ?: return
+        val url = tab.webView.url
+        if (url.isNullOrEmpty()) return
+        uiState.createShortcutRequest = com.jhaiian.clint.browser.dialogs.CreateShortcutRequest(
+            pageUrl = url,
+            initialName = tab.title.ifBlank { url }
+        )
     }
     fun onMenuDownloads() { startActivity(android.content.Intent(this, com.jhaiian.clint.downloads.DownloadsActivity::class.java)) }
     fun onMenuBookmarks() { startActivity(android.content.Intent(this, com.jhaiian.clint.bookmarks.BookmarksActivity::class.java)) }
@@ -663,6 +705,13 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
             com.jhaiian.clint.quiver.engine.BlockedRequestCounter.resetTab(tab.id)
         }
         wv.reload()
+    }
+    fun onMenuWebsiteBlocker() {
+        val enabled = !prefs.getBoolean("website_blocker_enabled", false)
+        prefs.edit().putBoolean("website_blocker_enabled", enabled).apply()
+    }
+    fun onMenuOpenWebsiteBlockerSettings() {
+        startActivity(android.content.Intent(this, com.jhaiian.clint.blocker.WebsiteBlockerActivity::class.java))
     }
     fun onMenuReaderMode() {
         val wv = tabManager.activeTab?.webView ?: return
@@ -834,6 +883,36 @@ td,th{border:1px solid $secondaryColor;padding:6px 8px;}
             if (stored != com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase.STATE_ALLOW) return
             runOnUiThread { postWebNotification(title, body, tag, rawOrigin) }
         }
+    }
+
+    inner class SelectPickerBridge(private val webView: android.webkit.WebView) {
+        @android.webkit.JavascriptInterface
+        fun onSelectOpen(id: String, optionsJson: String, multiple: Boolean, title: String) {
+            runOnUiThread {
+                if (tabManager.activeTab?.webView !== webView) return@runOnUiThread
+                val options = parseSelectPickerOptions(optionsJson)
+                if (options.isEmpty()) return@runOnUiThread
+                uiState.selectPickerRequest = com.jhaiian.clint.browser.dialogs.SelectPickerRequest(
+                    id, title, options, multiple, java.lang.ref.WeakReference(webView)
+                )
+            }
+        }
+    }
+
+    private fun parseSelectPickerOptions(json: String): List<com.jhaiian.clint.browser.dialogs.SelectPickerOption> = try {
+        val arr = org.json.JSONArray(json)
+        (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i)
+            com.jhaiian.clint.browser.dialogs.SelectPickerOption(
+                value = o.optString("value"),
+                label = o.optString("label"),
+                selected = o.optBoolean("selected", false),
+                disabled = o.optBoolean("disabled", false),
+                group = if (o.isNull("group")) null else o.optString("group")
+            )
+        }
+    } catch (e: org.json.JSONException) {
+        emptyList()
     }
 
     inner class BlobDownloadBridge {

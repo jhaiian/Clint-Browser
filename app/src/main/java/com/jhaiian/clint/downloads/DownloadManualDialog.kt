@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,7 +73,8 @@ data class ManualDownloadSubmission(
 
 @Composable
 fun DownloadManualDialog(
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
+    prefillUrl: String? = null,
     onDismiss: () -> Unit,
     onSubmit: (ManualDownloadSubmission, onDismiss: () -> Unit, onRename: () -> Unit) -> Unit
 ) {
@@ -82,7 +84,7 @@ fun DownloadManualDialog(
     val scope = rememberCoroutineScope()
     val prefs = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
 
-    var url by remember { mutableStateOf("") }
+    var url by remember { mutableStateOf(prefillUrl ?: "") }
     var isFetching by remember { mutableStateOf(false) }
     var isFetched by remember { mutableStateOf(false) }
     var urlError by remember { mutableStateOf<String?>(null) }
@@ -175,9 +177,13 @@ fun DownloadManualDialog(
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (!prefillUrl.isNullOrBlank()) doFetch()
+    }
+
     ClintDialog(
         title = stringResource(R.string.download_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -481,7 +487,7 @@ fun DownloadManualDialog(
         }
     }
 
-    ConfirmDialogHost(blockingError, hideStatusBar) { blockingError = null }
+    ConfirmDialogHost(blockingError, hideStatusBar, hideSystemNavigation) { blockingError = null }
 }
 
 @Composable

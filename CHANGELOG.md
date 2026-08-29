@@ -4,6 +4,73 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.3
+
+*Because Clint Barton is back in Avengers Secret Wars, the goat himself, here's the update for Clint Browser.*
+
+---
+
+## What's New
+
+### Bookmarks Rework
+
+The bookmark system has been completely reworked. It now supports folders and nested folders, allowing you to organize your bookmarks more efficiently.
+
+- Added the ability to import and export bookmarks to HTML. (Thanks to @ncgjbr-ai for requesting this) #26
+
+---
+
+### Tab Switching
+
+Added the ability to switch tabs by swiping on the search bar. (Thanks to @brnwlshubh for requesting this) #25
+
+---
+
+### Home Screen Shortcuts
+
+- Added the ability to create home screen shortcuts. (Thanks to @reusting for reporting this) #27
+- Added **Frameless** mode in Browser Settings.
+
+Frameless mode hides the search bar and bottom bar when a shortcut is opened from the home screen.
+
+---
+
+### UI Improvements
+
+- Reduced the popup menu max size to 90% of the screen so it doesn't get pushed toward the bottom of the screen.
+- Moved the download option higher on `ImageLongPressSheet.kt`.
+- The app now uses its own UI that matches the app theme when a website requests a selector, instead of the plain WebView built-in design. The app will now use a Compose selector.
+- Added **Hide Navigation Bars** option in Look and Feel settings.
+
+---
+
+### Customizable Menu
+
+Added the ability to reorder or hide all action buttons in the menu except Settings. You can find this in **Settings → Look and Feel → Customize Menu**.
+
+---
+
+## Bug Fixes
+
+- Fixed an issue where, when paused and resumed, the website header would become stuck and broken. (Thanks to @deniganda for reporting this) #27
+- Fixed the bug where you can't see what you're typing when "Hide Status Bar" is off in search overlay.
+- Fixed a bug where tab images were getting cleared.
+
+> *Maybe that's it. I forget, guys.*
+
+---
+
+## Dependency Updates
+
+- Bump `com.android.application` from 9.3.1 to 9.3.2 by @dependabot[bot] in #29
+- Bump `gradle-wrapper` from 9.7.0 to 9.7.1 by @dependabot[bot] in #28
+
+---
+
+> *Btw, I'm very sorry this is such a small update. Like I said, I'm a college student now, and yeah, the schedule is not looking good. Transportation fees as well, man. This college is killing me.*
+
+---
+
 # v1.1.2
 
 ---

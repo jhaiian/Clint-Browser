@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Clint</string>
+    <string name="clint_downloader_label">Clint Downloader</string>
     <string name="back">Back</string>
     <string name="forward">Forward</string>
     <string name="refresh">Refresh</string>
@@ -22,6 +23,12 @@
     <string name="pref_category_protection">Content Blocker</string>
     <string name="pref_category_navigation">Navigation</string>
     <string name="pref_category_language">Language</string>
+    <string name="pref_category_shortcuts">Shortcuts</string>
+    <string name="frameless_shortcut_title">Frameless</string>
+    <string name="frameless_shortcut_summary">Hide the search bar and bottom bar when a shortcut is opened from the home screen</string>
+    <string name="pref_category_incognito">Incognito</string>
+    <string name="incognito_search_history_title">Show search history in Incognito Mode</string>
+    <string name="incognito_search_history_summary">Include your saved search history as suggestions while browsing in Incognito</string>
     <string name="privacy_settings_summary">Cookies, User-Agent, HTTPS, and history</string>
     <string name="javascript_enabled">Enable JavaScript</string>
     <string name="javascript_enabled_summary">Allow websites to execute JavaScript</string>
@@ -100,6 +107,8 @@
     <string name="theme_dark_desc">Dark background </string>
     <string name="hide_status_bar">Hide status bar</string>
     <string name="hide_status_bar_summary">Hide the system status bar for a more immersive browsing experience</string>
+    <string name="hide_system_navigation">Hide navigation bar</string>
+    <string name="hide_system_navigation_summary">Hide the system navigation bar for a more immersive browsing experience</string>
     <string name="pref_menu_style_title">Menu Style</string>
     <string name="menu_style_popup">Pop-up Menu</string>
     <string name="menu_style_popup_desc">Compact menu floating near the toolbar</string>
@@ -110,6 +119,15 @@
     <string name="tab_menu_style_grid_desc">Browse open tabs as a scrollable grid of live previews</string>
     <string name="tab_menu_style_sheet">Tab Sheet</string>
     <string name="tab_menu_style_sheet_desc">The classic list that slides up from the bottom</string>
+    <string name="menu_customization_title">Customize Menu</string>
+    <string name="menu_customization_settings_summary">Hide, show, and reorder menu items</string>
+    <string name="menu_customization_description">Drag the handle to reorder. Turn off items you don\'t want to see in the menu.</string>
+    <string name="menu_customization_reset_desc">Reset to default</string>
+    <string name="menu_customization_drag_handle_desc">Drag to reorder</string>
+    <string name="menu_customization_pinned_note">Always shown in the menu so you can never lock yourself out of these settings</string>
+    <string name="menu_customization_reset_confirm_title">Reset menu?</string>
+    <string name="menu_customization_reset_confirm_message">This restores the default order and shows every menu item again.</string>
+    <string name="menu_customization_reset_action">Reset</string>
     <string name="pref_updates_title">Updates</string>
     <string name="download_settings_title">Downloads</string>
     <string name="download_settings_summary">Download location, notifications, and behavior</string>
@@ -253,12 +271,18 @@
     <string name="open_in_app_chooser_message">Choose an app to open %1$s.</string>
     <string name="menu_open_in_app">Open in app</string>
     <string name="menu_open_in_named_app">Open in %1$s</string>
+    <string name="menu_create_shortcut">Create a Shortcut</string>
+    <string name="create_shortcut_dialog_title">Create Shortcut</string>
+    <string name="create_shortcut_name_hint">Shortcut name</string>
+    <string name="create_shortcut_change_icon">Change icon</string>
+    <string name="create_shortcut_unsupported">This launcher doesn\'t support shortcuts</string>
     <string name="menu_downloads">Downloads</string>
     <string name="menu_bookmarks">Bookmarks</string>
     <string name="menu_history">History</string>
     <string name="reader_mode">Reader Mode</string>
 
     <string name="action_ok">OK</string>
+    <string name="action_add">Add</string>
     <string name="action_close">Close</string>
     <string name="action_close_search">Close search</string>
     <string name="action_clear_search">Clear search</string>
@@ -616,6 +640,35 @@
     <string name="bookmarks_delete_confirm_message">Delete %d bookmark(s)?</string>
     <string name="bookmarks_items_deleted">Bookmarks deleted</string>
     <string name="bookmarks_sort_by_date_added">Date Added</string>
+    <string name="bookmarks_new_folder_desc">New folder</string>
+    <string name="bookmarks_new_folder_title">New Folder</string>
+    <string name="bookmarks_folder_name_hint">Folder name</string>
+    <string name="bookmarks_folder_create">Create</string>
+    <string name="bookmarks_rename_folder">Rename folder</string>
+    <string name="bookmarks_move_to">Move to…</string>
+    <string name="bookmarks_move_to_title">Move to</string>
+    <string name="bookmarks_save_to_title">Save to</string>
+    <string name="bookmarks_delete_confirm_message_folders">Delete %d item(s)? Bookmarks and folders inside selected folders will also be deleted.</string>
+    <string name="bookmarks_folder_empty">This folder is empty</string>
+    <string name="bookmarks_folder_item_count">%d items</string>
+    <string name="bookmarks_add_fab_desc">Add bookmark or folder</string>
+    <string name="bookmarks_fab_add_folder">Add Folder</string>
+    <string name="bookmarks_fab_add_bookmark">Add Bookmark</string>
+    <string name="bookmarks_new_bookmark_title">Add Bookmark</string>
+    <string name="bookmarks_bookmark_title_hint">Title</string>
+    <string name="bookmarks_bookmark_url_hint">URL</string>
+    <string name="bookmarks_import">Import bookmarks</string>
+    <string name="bookmarks_export">Export bookmarks</string>
+    <string name="bookmarks_import_title">Import Bookmarks</string>
+    <string name="bookmarks_export_title">Export Bookmarks</string>
+    <string name="bookmarks_format_html">HTML</string>
+    <string name="bookmarks_format_html_desc">Compatible with Chrome, Firefox, Safari, and Edge</string>
+    <string name="bookmarks_format_sqlite">SQLite Database</string>
+    <string name="bookmarks_format_sqlite_desc">Full backup with folders and dates preserved</string>
+    <string name="bookmarks_import_success">Imported %d bookmarks</string>
+    <string name="bookmarks_import_error">Failed to import bookmarks</string>
+    <string name="bookmarks_export_success">Bookmarks exported</string>
+    <string name="bookmarks_export_error">Failed to export bookmarks</string>
 
     <string name="downloads_title">Downloads</string>
     <string name="downloads_tab_all">ALL</string>
@@ -700,6 +753,7 @@
     <string name="data_saver_disable_autoplay_summary">Videos and media will not play automatically. May not work on all websites</string>
     <string name="menu_data_saver">Data Saver</string>
     <string name="menu_quiver_guard">Quiver Guard</string>
+    <string name="menu_website_blocker">Website Blocker</string>
     <string name="about_webview_label">WEBVIEW</string>
     <string name="about_webview_info">%1$s\n%2$s\nv%3$s</string>
     <string name="about_webview_unavailable">Unavailable</string>
@@ -1212,4 +1266,5 @@
     <string name="additional_websites_invalid_host">Enter a valid domain, such as example.com</string>
     <string name="additional_websites_delete_confirm_title">Delete website?</string>
     <string name="additional_websites_delete_confirm_message">This will delete %d selected websites from Additional Websites.</string>
+    <string name="select_picker_default_title">Select an option</string>
 </resources>

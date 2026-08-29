@@ -6,7 +6,8 @@ import androidx.compose.runtime.setValue
 
 class MiscUiState(
     initialDefaultBrowserSummary: String,
-    val hideStatusBar: Boolean
+    val hideStatusBar: Boolean,
+val hideSystemNavigation: Boolean
 ) {
     var defaultBrowserSummary by mutableStateOf(initialDefaultBrowserSummary)
     var rerunSetupConfirmDialogOpen by mutableStateOf(false)

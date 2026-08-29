@@ -25,11 +25,11 @@ import com.jhaiian.clint.ui.ClintDialog
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
 @Composable
-private fun RerunSetupConfirmDialog(hideStatusBar: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun RerunSetupConfirmDialog(hideStatusBar: Boolean, hideSystemNavigation: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.rerun_setup_confirm_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(
@@ -68,7 +68,7 @@ fun MiscScreen(
         overlay = {
             if (state.rerunSetupConfirmDialogOpen) {
                 RerunSetupConfirmDialog(
-                    hideStatusBar = state.hideStatusBar,
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onRerunSetupConfirm,
                     onDismiss = { state.rerunSetupConfirmDialogOpen = false }
                 )

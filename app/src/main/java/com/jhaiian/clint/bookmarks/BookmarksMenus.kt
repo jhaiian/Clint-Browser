@@ -3,7 +3,14 @@ import androidx.compose.material.icons.filled.Abc
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.DriveFileMove
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.SwapVert
 
 import com.jhaiian.clint.R
 
@@ -53,6 +60,89 @@ fun BookmarksSortMenu(
         }
         ListMenuItem(androidx.compose.material.icons.Icons.Filled.ArrowDownward, stringResource(R.string.history_sort_descending), sortOrder == ListSortOrder.DESCENDING) {
             onDismiss(); onSortDescending()
+        }
+    }
+}
+
+@Composable
+fun BookmarksMoreMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onImportClick: () -> Unit,
+    onExportClick: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        shape = PopupShape,
+        containerColor = colors.popupBackground,
+        border = BorderStroke(1.dp, colors.popupStroke)
+    ) {
+        ListMenuItem(androidx.compose.material.icons.Icons.Filled.FileUpload, stringResource(R.string.bookmarks_import), checked = false) {
+            onDismiss(); onImportClick()
+        }
+        HorizontalDivider(color = colors.divider)
+        ListMenuItem(androidx.compose.material.icons.Icons.Filled.FileDownload, stringResource(R.string.bookmarks_export), checked = false) {
+            onDismiss(); onExportClick()
+        }
+    }
+}
+
+@Composable
+fun BookmarksSelectionOptionsMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onSelectAll: () -> Unit,
+    onInvertSelection: () -> Unit,
+    onDeselectAll: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        shape = PopupShape,
+        containerColor = colors.popupBackground,
+        border = BorderStroke(1.dp, colors.popupStroke)
+    ) {
+        ListMenuItem(androidx.compose.material.icons.Icons.Filled.Check, stringResource(R.string.history_select_all), checked = false) {
+            onDismiss(); onSelectAll()
+        }
+        HorizontalDivider(color = colors.divider)
+        ListMenuItem(androidx.compose.material.icons.Icons.Filled.SwapVert, stringResource(R.string.history_invert_selection), checked = false) {
+            onDismiss(); onInvertSelection()
+        }
+        HorizontalDivider(color = colors.divider)
+        ListMenuItem(androidx.compose.material.icons.Icons.Filled.Close, stringResource(R.string.history_deselect_all), checked = false) {
+            onDismiss(); onDeselectAll()
+        }
+    }
+}
+
+@Composable
+fun BookmarksSelectionItemOptionsMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onMoveTo: () -> Unit,
+    showRename: Boolean,
+    onRename: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        shape = PopupShape,
+        containerColor = colors.popupBackground,
+        border = BorderStroke(1.dp, colors.popupStroke)
+    ) {
+        ListMenuItem(androidx.compose.material.icons.Icons.Filled.DriveFileMove, stringResource(R.string.bookmarks_move_to), checked = false) {
+            onDismiss(); onMoveTo()
+        }
+        if (showRename) {
+            HorizontalDivider(color = colors.divider)
+            ListMenuItem(androidx.compose.material.icons.Icons.Filled.Edit, stringResource(R.string.bookmarks_rename_folder), checked = false) {
+                onDismiss(); onRename()
+            }
         }
     }
 }

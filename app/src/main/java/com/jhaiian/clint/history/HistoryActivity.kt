@@ -41,6 +41,7 @@ class HistoryActivity : ClintActivity() {
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         loadHistory()
 
@@ -57,8 +58,8 @@ class HistoryActivity : ClintActivity() {
                     onClearAllClick = { showClearAllConfirm() }
                 )
 
-                ConfirmDialogHost(uiState.deleteConfirm, hideStatusBar) { uiState.deleteConfirm = null }
-                ConfirmDialogHost(uiState.clearAllConfirm, hideStatusBar) { uiState.clearAllConfirm = null }
+                ConfirmDialogHost(uiState.deleteConfirm, hideStatusBar, hideSystemNavigation) { uiState.deleteConfirm = null }
+                ConfirmDialogHost(uiState.clearAllConfirm, hideStatusBar, hideSystemNavigation) { uiState.clearAllConfirm = null }
             }
         }
     }

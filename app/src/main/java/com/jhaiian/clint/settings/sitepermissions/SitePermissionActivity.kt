@@ -59,6 +59,7 @@ class SitePermissionActivity : ClintActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         val defaultBehaviorKey = "site_perm_default_$type"
 
         val listState = SiteListUiState()
@@ -131,7 +132,7 @@ class SitePermissionActivity : ClintActivity() {
                     if (listState.addDialogOpen) {
                         AddSiteDialog(
                             title = stringResource(R.string.site_permission_add_exception),
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             showStateChoice = true,
                             onConfirm = { origin, allowed ->
                                 val state = if (allowed) SitePermissionDatabase.STATE_ALLOW else SitePermissionDatabase.STATE_DENY
@@ -146,7 +147,7 @@ class SitePermissionActivity : ClintActivity() {
                         SiteListDeleteConfirmDialog(
                             title = stringResource(R.string.site_permission_delete_confirm_title),
                             message = stringResource(R.string.site_permission_delete_confirm_message, listState.selectedOrigins.size),
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             onConfirm = {
                                 listState.selectedOrigins.forEach { origin -> SitePermissionManager.deleteEntry(this@SitePermissionActivity, origin, type) }
                                 listState.removeSelectedItems()

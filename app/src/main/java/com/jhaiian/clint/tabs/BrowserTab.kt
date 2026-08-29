@@ -10,5 +10,7 @@ data class BrowserTab(
     val isIncognito: Boolean = false,
     val isRefreshLinkTab: Boolean = false,
     val openerTabId: String? = null,
+    val shortcutId: String? = null,
+    val previousTabId: String? = null,
     val webView: WebView
 )

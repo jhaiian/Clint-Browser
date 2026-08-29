@@ -47,10 +47,10 @@ object UpdateChecker {
 
     private fun mountFlow(activity: Activity): UpdateFlowState {
         val host = activity as? OverlayHostActivity
-            ?: return UpdateFlowState(hideStatusBar = false)
+            ?: return UpdateFlowState(hideStatusBar = false, hideSystemNavigation = false)
         val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
-        val state = UpdateFlowState(hideStatusBar = prefs.getBoolean("hide_status_bar", false))
+        val state = UpdateFlowState(hideStatusBar = prefs.getBoolean("hide_status_bar", false), hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false))
 
         val dismiss: () -> Unit = {
             state.step = UpdateFlowStep.None

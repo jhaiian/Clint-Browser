@@ -62,7 +62,7 @@ fun DownloadsScreen(
     allItems: List<DownloadItem>,
     tick: Long,
     maxContentWidth: Dp?,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onExit: () -> Unit,
     onOpenItem: (DownloadItem) -> Unit,
     onDownloadSettingsClick: () -> Unit,
@@ -207,7 +207,7 @@ fun DownloadsScreen(
     if (pendingDelete != null) {
         DownloadsDeleteConfirmDialog(
             count = pendingDelete.size,
-            hideStatusBar = hideStatusBar,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
             onDismiss = { state.deleteConfirmItems = null },
             onConfirm = { deleteFromStorage ->
                 state.deleteConfirmItems = null
@@ -218,28 +218,29 @@ fun DownloadsScreen(
 
     val progress = state.deleteProgress
     if (progress != null) {
-        DownloadsDeleteProgressDialog(progress, hideStatusBar)
+        DownloadsDeleteProgressDialog(progress, hideStatusBar, hideSystemNavigation)
     }
 
     state.propertiesItem?.let { item ->
         DownloadPropertiesDialog(
             item = item,
-            hideStatusBar = hideStatusBar,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
             onDismiss = { state.propertiesItem = null },
             onShare = { itemActions.onShare(it) },
             onOpen = { itemActions.onOpen(it) }
         )
     }
     state.changeSettingsItem?.let { item ->
-        DownloadChangeSettingsDialog(item = item, hideStatusBar = hideStatusBar, onDismiss = { state.changeSettingsItem = null })
+        DownloadChangeSettingsDialog(item = item, hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = { state.changeSettingsItem = null })
     }
     state.updateLinkItem?.let { item ->
-        DownloadUpdateLinkDialog(item = item, hideStatusBar = hideStatusBar, onDismiss = { state.updateLinkItem = null })
+        DownloadUpdateLinkDialog(item = item, hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = { state.updateLinkItem = null })
     }
     if (state.manualDownloadDialogOpen) {
         DownloadManualDialog(
-            hideStatusBar = hideStatusBar,
-            onDismiss = { state.manualDownloadDialogOpen = false },
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
+            prefillUrl = state.manualDownloadPrefillUrl,
+            onDismiss = { state.manualDownloadDialogOpen = false; state.manualDownloadPrefillUrl = null },
             onSubmit = onSubmitManualDownload
         )
     }
@@ -372,12 +373,12 @@ private fun DownloadsToolbar(
 }
 
 @Composable
-private fun DownloadsDeleteConfirmDialog(count: Int, hideStatusBar: Boolean, onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
+private fun DownloadsDeleteConfirmDialog(count: Int, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
     val colors = LocalClintColors.current
     var deleteFromStorage by remember { mutableStateOf(false) }
     ClintDialog(
         title = stringResource(R.string.downloads_delete_confirm_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -404,11 +405,11 @@ private fun DownloadsDeleteConfirmDialog(count: Int, hideStatusBar: Boolean, onD
 }
 
 @Composable
-private fun DownloadsDeleteProgressDialog(progress: DeleteProgress, hideStatusBar: Boolean) {
+private fun DownloadsDeleteProgressDialog(progress: DeleteProgress, hideStatusBar: Boolean, hideSystemNavigation: Boolean) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.downloads_deleting_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = {},
         cancelable = false,
         footer = {}

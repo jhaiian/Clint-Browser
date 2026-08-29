@@ -39,18 +39,18 @@ fun UpdateFlowHost(
         UpdateFlowStep.NoUpdate -> SimpleMessageDialog(
             title = stringResource(R.string.update_up_to_date_title),
             message = stringResource(R.string.update_up_to_date_message),
-            hideStatusBar = state.hideStatusBar,
+            hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
             onDismiss = onDismiss
         )
         UpdateFlowStep.CheckFailed -> SimpleMessageDialog(
             title = stringResource(R.string.update_check_failed_title),
             message = stringResource(R.string.update_check_failed_message),
-            hideStatusBar = state.hideStatusBar,
+            hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
             onDismiss = onDismiss
         )
         is UpdateFlowStep.Available -> UpdateAvailableDialog(
             step = step,
-            hideStatusBar = state.hideStatusBar,
+            hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
             onSkip = { onSkip(step.versionCode) },
             onLater = onDismiss,
             onAction = {
@@ -60,18 +60,18 @@ fun UpdateFlowHost(
         )
         UpdateFlowStep.Downloading -> DownloadProgressDialog(
             progress = state.download,
-            hideStatusBar = state.hideStatusBar,
+            hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
             onCancel = onCancelDownload
         )
     }
 }
 
 @Composable
-private fun SimpleMessageDialog(title: String, message: String, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+private fun SimpleMessageDialog(title: String, message: String, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -93,7 +93,7 @@ private fun SimpleMessageDialog(title: String, message: String, hideStatusBar: B
 @Composable
 private fun UpdateAvailableDialog(
     step: UpdateFlowStep.Available,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSkip: () -> Unit,
     onLater: () -> Unit,
     onAction: () -> Unit
@@ -103,7 +103,7 @@ private fun UpdateAvailableDialog(
     val onSurfaceArgb = colors.onSurface.toArgb()
     ClintDialog(
         title = stringResource(R.string.update_dialog_title, step.version, channelLabel),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onLater,
         cancelable = false,
         footer = {
@@ -148,11 +148,11 @@ private fun UpdateAvailableDialog(
 }
 
 @Composable
-private fun DownloadProgressDialog(progress: DownloadProgressState, hideStatusBar: Boolean, onCancel: () -> Unit) {
+private fun DownloadProgressDialog(progress: DownloadProgressState, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onCancel: () -> Unit) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.update_download_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onCancel,
         cancelable = false,
         footer = {

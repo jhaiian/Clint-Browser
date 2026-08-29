@@ -14,13 +14,14 @@ internal fun DownloadsActivity.showRedownloadDialog(item: DownloadItem) {
 
     val theme = prefs.getString("app_theme", "dark") ?: "dark"
     val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+    val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
     val dismiss: () -> Unit = { overlayContent = null }
 
     overlayContent = {
         ClintComposeTheme(theme = theme) {
             DownloadRequestDialog(
-                hideStatusBar = hideStatusBar,
+                hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                 url = item.url,
                 onCopyLink = { copyRedownloadLink(item.url) },
                 initialFilename = item.filename,

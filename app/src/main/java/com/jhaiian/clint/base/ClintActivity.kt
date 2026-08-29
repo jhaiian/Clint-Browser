@@ -435,14 +435,16 @@ abstract class ClintActivity : AppCompatActivity() {
     }
 
     fun applyStatusBarFlagToDialog(dialog: android.app.Dialog) {
-        val hide = PreferenceManager.getDefaultSharedPreferences(this)
-            .getBoolean("hide_status_bar", false)
-        if (hide) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
+        if (hideStatusBar || hideSystemNavigation) {
             dialog.window?.let { dialogWindow ->
                 val dialogController = WindowInsetsControllerCompat(dialogWindow, dialogWindow.decorView)
                 dialogController.systemBarsBehavior =
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                dialogController.hide(WindowInsetsCompat.Type.statusBars())
+                if (hideStatusBar) dialogController.hide(WindowInsetsCompat.Type.statusBars())
+                if (hideSystemNavigation) dialogController.hide(WindowInsetsCompat.Type.navigationBars())
             }
         }
         trackDialogShown()
@@ -450,15 +452,21 @@ abstract class ClintActivity : AppCompatActivity() {
     }
 
     private fun applyStatusBarVisibility() {
-        val hide = PreferenceManager.getDefaultSharedPreferences(this)
-            .getBoolean("hide_status_bar", false)
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         val controller = WindowCompat.getInsetsController(window, window.decorView)
-        if (hide) {
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (hideStatusBar) {
             controller.hide(WindowInsetsCompat.Type.statusBars())
         } else {
             controller.show(WindowInsetsCompat.Type.statusBars())
+        }
+        if (hideSystemNavigation) {
+            controller.hide(WindowInsetsCompat.Type.navigationBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.navigationBars())
         }
     }
 }

@@ -10,7 +10,7 @@ const val MAX_CRASH_CLIP_CHARS = 450_000
 
 class CrashReportItem(val file: File, val title: String, val content: String)
 
-class CrashUiState(val hideStatusBar: Boolean) {
+class CrashUiState(val hideStatusBar: Boolean, val hideSystemNavigation: Boolean) {
     var isLoading by mutableStateOf(true)
     val reports = mutableStateListOf<CrashReportItem>()
     var clearAllConfirmOpen by mutableStateOf(false)

@@ -74,7 +74,7 @@ data class DownloadRequestSubmission(
 
 @Composable
 fun DownloadRequestDialog(
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     url: String,
     onCopyLink: () -> Unit,
     initialFilename: String,
@@ -161,7 +161,7 @@ fun DownloadRequestDialog(
 
     ClintDialog(
         title = stringResource(R.string.download_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -457,7 +457,7 @@ fun DownloadRequestDialog(
         }
     }
 
-    ConfirmDialogHost(blockingError, hideStatusBar) { blockingError = null }
+    ConfirmDialogHost(blockingError, hideStatusBar, hideSystemNavigation) { blockingError = null }
 }
 
 @Composable

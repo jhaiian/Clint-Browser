@@ -27,7 +27,7 @@ class DownloadProgressState {
     var speedText by mutableStateOf("")
 }
 
-class UpdateFlowState(val hideStatusBar: Boolean) {
+class UpdateFlowState(val hideStatusBar: Boolean, val hideSystemNavigation: Boolean) {
     var step by mutableStateOf<UpdateFlowStep>(UpdateFlowStep.None)
     val download = DownloadProgressState()
     var downloadJob: Job? = null

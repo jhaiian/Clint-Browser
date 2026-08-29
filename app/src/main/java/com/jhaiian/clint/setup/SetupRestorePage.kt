@@ -49,13 +49,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun SetupRestorePage(
     activity: SetupActivity,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSkip: () -> Unit,
     onRestoreComplete: () -> Unit
 ) {
     val colors = LocalClintColors.current
     val scope = rememberCoroutineScope()
-    val uiState = remember { BackupRestoreUiState(hideStatusBar) }
+    val uiState = remember { BackupRestoreUiState(hideStatusBar, hideSystemNavigation) }
 
     var simpleDialog by remember { mutableStateOf<ConfirmDialogConfig?>(null) }
 
@@ -179,12 +179,12 @@ fun SetupRestorePage(
         }
     }
 
-    ConfirmDialogHost(config = simpleDialog, hideStatusBar = hideStatusBar, onDismiss = { simpleDialog = null })
+    ConfirmDialogHost(config = simpleDialog, hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = { simpleDialog = null })
 
     if (uiState.stage.value == BackupRestoreStage.RESTORE_PASSWORD) {
         RestorePasswordDialog(
             uiState = uiState,
-            hideStatusBar = hideStatusBar,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
             onDismiss = {
                 uiState.stagedFile.value?.let { RestoreManager.discard(it) }
                 uiState.resetRestoreFlow()
@@ -209,7 +209,7 @@ fun SetupRestorePage(
     if (uiState.stage.value == BackupRestoreStage.SELECT_RESTORE_CATEGORIES) {
         RestoreCategoryDialog(
             uiState = uiState,
-            hideStatusBar = hideStatusBar,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
             onDismiss = {
                 uiState.plainZipFile.value?.let { RestoreManager.discardPlain(it) }
                 uiState.resetRestoreFlow()
@@ -231,7 +231,7 @@ fun SetupRestorePage(
         uiState.stage.value == BackupRestoreStage.RESTORING
     ) {
         ProgressDialog(
-            hideStatusBar = hideStatusBar,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
             message = stringResource(
                 when (uiState.stage.value) {
                     BackupRestoreStage.RESTORING -> R.string.backup_progress_restoring

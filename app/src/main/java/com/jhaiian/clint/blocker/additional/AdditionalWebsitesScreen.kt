@@ -61,7 +61,7 @@ import java.util.Date
 fun AdditionalWebsitesScreen(
     state: AdditionalWebsitesUiState,
     maxContentWidth: Dp?,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onExit: () -> Unit,
     onToggleEnabled: (Boolean) -> Unit,
     onAddHosts: (List<String>) -> Unit,
@@ -163,7 +163,7 @@ fun AdditionalWebsitesScreen(
     if (state.isAddDialogOpen) {
         AdditionalWebsiteAddDialog(
             state = state,
-            hideStatusBar = hideStatusBar,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
             invalidHostMessage = invalidHostMessage,
             onConfirm = onAddHosts
         )
@@ -277,7 +277,7 @@ private fun AdditionalWebsiteRuleRow(
 @Composable
 private fun AdditionalWebsiteAddDialog(
     state: AdditionalWebsitesUiState,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     invalidHostMessage: String,
     onConfirm: (List<String>) -> Unit
 ) {
@@ -296,7 +296,7 @@ private fun AdditionalWebsiteAddDialog(
 
     ClintDialog(
         title = stringResource(R.string.additional_websites_add_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = { state.isAddDialogOpen = false },
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

@@ -92,6 +92,7 @@ internal fun ContentPreviewSheet(request: ContentPreviewRequest, activity: MainA
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+    val hideSystemNavigation = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
 
     val host = remember(request.url) { runCatching { java.net.URL(request.url).host }.getOrElse { "" } }
 
@@ -135,7 +136,7 @@ internal fun ContentPreviewSheet(request: ContentPreviewRequest, activity: MainA
         containerColor = Color.Transparent,
         dragHandle = {}
     ) {
-        ClintDialogStatusBarEffect(hideStatusBar)
+        ClintDialogStatusBarEffect(hideStatusBar, hideSystemNavigation)
         Column(Modifier.fillMaxSize()) {
             Surface(color = colors.popupBackground) {
                 Row(Modifier.fillMaxWidth().height(56.dp).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {

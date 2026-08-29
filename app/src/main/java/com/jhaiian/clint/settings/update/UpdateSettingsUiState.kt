@@ -8,7 +8,8 @@ class UpdateSettingsUiState(
     initialCheckOnLaunch: Boolean,
     initialSkipOnMetered: Boolean,
     initialBetaChannel: Boolean,
-    val hideStatusBar: Boolean
+    val hideStatusBar: Boolean,
+val hideSystemNavigation: Boolean
 ) {
     var checkOnLaunch by mutableStateOf(initialCheckOnLaunch)
     var skipOnMetered by mutableStateOf(initialSkipOnMetered)

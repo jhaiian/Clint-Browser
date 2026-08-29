@@ -132,7 +132,8 @@ fun BackupRestorePane(activity: SettingsActivity) {
     val colors = LocalClintColors.current
     val scope = rememberCoroutineScope()
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
-    val uiState = remember { BackupRestoreUiState(hideStatusBar) }
+    val hideSystemNavigation = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
+    val uiState = remember { BackupRestoreUiState(hideStatusBar, hideSystemNavigation) }
 
     var simpleDialog by remember { mutableStateOf<ConfirmDialogConfig?>(null) }
 
@@ -359,16 +360,16 @@ fun BackupRestorePane(activity: SettingsActivity) {
 
     SettingsScreenScaffold(
         overlay = {
-            ConfirmDialogHost(config = simpleDialog, hideStatusBar = hideStatusBar, onDismiss = { simpleDialog = null })
+            ConfirmDialogHost(config = simpleDialog, hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = { simpleDialog = null })
 
             if (uiState.stage.value == BackupRestoreStage.SELECT_BACKUP_CATEGORIES) {
-                BackupCategoryDialog(uiState, hideStatusBar, onDismiss = { uiState.resetBackupFlow() }, onCreate = { launchBackupCreation() })
+                BackupCategoryDialog(uiState, hideStatusBar, hideSystemNavigation, onDismiss = { uiState.resetBackupFlow() }, onCreate = { launchBackupCreation() })
             }
 
             if (uiState.stage.value == BackupRestoreStage.RESTORE_PASSWORD) {
                 RestorePasswordDialog(
                     uiState = uiState,
-                    hideStatusBar = hideStatusBar,
+                    hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                     onDismiss = {
                         uiState.stagedFile.value?.let { RestoreManager.discard(it) }
                         uiState.resetRestoreFlow()
@@ -393,7 +394,7 @@ fun BackupRestorePane(activity: SettingsActivity) {
             if (uiState.stage.value == BackupRestoreStage.SELECT_RESTORE_CATEGORIES) {
                 RestoreCategoryDialog(
                     uiState = uiState,
-                    hideStatusBar = hideStatusBar,
+                    hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                     onDismiss = {
                         uiState.plainZipFile.value?.let { RestoreManager.discardPlain(it) }
                         uiState.resetRestoreFlow()
@@ -433,7 +434,7 @@ fun BackupRestorePane(activity: SettingsActivity) {
                     }
                 }
                 ProgressDialog(
-                    hideStatusBar = hideStatusBar,
+                    hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                     message = when (uiState.stage.value) {
                         BackupRestoreStage.CREATING_BACKUP -> stringResource(R.string.backup_progress_creating)
                         BackupRestoreStage.ENCRYPTING_BACKUP -> stringResource(R.string.backup_progress_encrypting)
@@ -468,9 +469,9 @@ fun BackupRestorePane(activity: SettingsActivity) {
 }
 
 @Composable
-fun ProgressDialog(hideStatusBar: Boolean, message: String, completed: Int = 0, total: Int = 0) {
+fun ProgressDialog(hideStatusBar: Boolean, hideSystemNavigation: Boolean, message: String, completed: Int = 0, total: Int = 0) {
     val colors = LocalClintColors.current
-    ClintDialog(title = message, hideStatusBar = hideStatusBar, onDismiss = {}, cancelable = false, footer = {}) {
+    ClintDialog(title = message, hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = {}, cancelable = false, footer = {}) {
         if (total > 0) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp)) {
                 LinearProgressIndicator(
@@ -513,14 +514,14 @@ fun CategoryCheckboxRow(category: BackupCategory, checked: Boolean, onToggle: ()
 }
 
 @Composable
-private fun BackupCategoryDialog(uiState: BackupRestoreUiState, hideStatusBar: Boolean, onDismiss: () -> Unit, onCreate: () -> Unit) {
+private fun BackupCategoryDialog(uiState: BackupRestoreUiState, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit, onCreate: () -> Unit) {
     val colors = LocalClintColors.current
     val categories = remember { BackupCategory.available() }
     val allSelected = uiState.selectedBackupCategories.size == categories.size
 
     ClintDialog(
         title = stringResource(R.string.backup_select_categories_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
@@ -626,11 +627,11 @@ private fun BackupCategoryDialog(uiState: BackupRestoreUiState, hideStatusBar: B
 }
 
 @Composable
-fun RestorePasswordDialog(uiState: BackupRestoreUiState, hideStatusBar: Boolean, onDismiss: () -> Unit, onContinue: () -> Unit) {
+fun RestorePasswordDialog(uiState: BackupRestoreUiState, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit, onContinue: () -> Unit) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.restore_password_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
@@ -668,11 +669,11 @@ fun RestorePasswordDialog(uiState: BackupRestoreUiState, hideStatusBar: Boolean,
 }
 
 @Composable
-fun RestoreCategoryDialog(uiState: BackupRestoreUiState, hideStatusBar: Boolean, onDismiss: () -> Unit, onRestore: () -> Unit) {
+fun RestoreCategoryDialog(uiState: BackupRestoreUiState, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit, onRestore: () -> Unit) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.restore_select_categories_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {

@@ -32,13 +32,14 @@ fun SetupLayoutPage(
     addressBarPosition: String,
     menuStyle: String,
     scrollHideMode: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     theme: String,
     accent: String,
     onAddressBarPositionSelected: (String) -> Unit,
     onMenuStyleSelected: (String) -> Unit,
     onScrollHideModeSelected: (String) -> Unit,
     onHideStatusBarToggled: (Boolean) -> Unit,
+    onHideSystemNavigationToggled: (Boolean) -> Unit,
     onNext: () -> Unit
 ) {
     val colors = LocalClintColors.current
@@ -138,7 +139,7 @@ fun SetupLayoutPage(
         Card(
             Modifier
                 .fillMaxWidth()
-                .padding(bottom = 24.dp)
+                .padding(bottom = 12.dp)
                 .clickable { onHideStatusBarToggled(!hideStatusBar) },
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = colors.cardBackground)
@@ -149,6 +150,22 @@ fun SetupLayoutPage(
                     Text(stringResource(R.string.hide_status_bar_summary), color = colors.secondaryText, fontSize = 12.sp, lineHeight = 15.6.sp, modifier = Modifier.padding(top = 2.dp))
                 }
                 ClintSwitch(checked = hideStatusBar)
+            }
+        }
+        Card(
+            Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp)
+                .clickable { onHideSystemNavigationToggled(!hideSystemNavigation) },
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = colors.cardBackground)
+        ) {
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(stringResource(R.string.hide_system_navigation), color = colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.hide_system_navigation_summary), color = colors.secondaryText, fontSize = 12.sp, lineHeight = 15.6.sp, modifier = Modifier.padding(top = 2.dp))
+                }
+                ClintSwitch(checked = hideSystemNavigation)
             }
         }
 

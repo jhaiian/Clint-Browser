@@ -27,12 +27,12 @@ data class ConfirmDialogConfig(
 )
 
 @Composable
-fun ConfirmDialogHost(config: ConfirmDialogConfig?, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+fun ConfirmDialogHost(config: ConfirmDialogConfig?, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     if (config == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = config.title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         cancelable = config.cancelable,
         footer = {

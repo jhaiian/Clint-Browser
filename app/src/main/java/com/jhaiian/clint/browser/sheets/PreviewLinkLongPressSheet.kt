@@ -38,6 +38,7 @@ internal fun PreviewLinkLongPressSheet(request: PreviewLinkLongPressRequest, act
     val colors = LocalClintColors.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+    val hideSystemNavigation = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
 
     fun dismissAnd(action: () -> Unit) {
         onDismiss()
@@ -47,7 +48,7 @@ internal fun PreviewLinkLongPressSheet(request: PreviewLinkLongPressRequest, act
     val hasLinkText = request.linkText.isNotEmpty() && request.linkText != request.url
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = colors.popupBackground) {
-        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
+        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar, hideSystemNavigation)
         Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
             Row(
                 Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),

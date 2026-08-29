@@ -22,12 +22,12 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 import com.jhaiian.clint.util.formatFileSize
 
 @Composable
-fun DownloadProgressDialog(progress: DownloadProgressUi?, hideStatusBar: Boolean, onCancel: () -> Unit) {
+fun DownloadProgressDialog(progress: DownloadProgressUi?, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onCancel: () -> Unit) {
     if (progress == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.quiver_guard_download_dialog_title, progress.filterListName),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = {},
         cancelable = false,
         footer = {
@@ -64,12 +64,12 @@ private fun downloadProgressStatusText(progress: DownloadProgressUi): String = w
 }
 
 @Composable
-fun UpdateProgressDialog(progress: UpdateProgressUi?, hideStatusBar: Boolean, onCancel: () -> Unit) {
+fun UpdateProgressDialog(progress: UpdateProgressUi?, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onCancel: () -> Unit) {
     if (progress == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = progress.title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = {},
         cancelable = false,
         footer = {
@@ -100,12 +100,12 @@ fun UpdateProgressDialog(progress: UpdateProgressUi?, hideStatusBar: Boolean, on
 }
 
 @Composable
-fun CompileProgressDialog(progress: CompileProgressUi?, hideStatusBar: Boolean) {
+fun CompileProgressDialog(progress: CompileProgressUi?, hideStatusBar: Boolean, hideSystemNavigation: Boolean) {
     if (progress == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.quiver_guard_compile_progress_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = {},
         cancelable = false,
         footer = {}
@@ -120,12 +120,12 @@ fun CompileProgressDialog(progress: CompileProgressUi?, hideStatusBar: Boolean) 
 }
 
 @Composable
-fun UpdateResultDialog(result: UpdateResultUi?, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+fun UpdateResultDialog(result: UpdateResultUi?, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     if (result == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = result.title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -149,12 +149,12 @@ fun UpdateResultDialog(result: UpdateResultUi?, hideStatusBar: Boolean, onDismis
 }
 
 @Composable
-fun CompileResultDialog(result: CompileResultUi?, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+fun CompileResultDialog(result: CompileResultUi?, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     if (result == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = result.title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

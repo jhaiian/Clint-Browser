@@ -74,9 +74,9 @@ private fun rememberBgSurface(theme: String, accent: String): Pair<Color, Color>
 }
 
 @Composable
-fun ThemeSelectorDialog(current: String, hideStatusBar: Boolean, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+fun ThemeSelectorDialog(current: String, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
-    ClintDialog(title = stringResource(R.string.pref_app_theme_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_app_theme_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         data class ThemeOption(val key: String, val titleRes: Int, val descRes: Int, val drawableRes: Int)
         listOf(
             ThemeOption("dark", R.string.theme_dark, R.string.theme_dark_desc, R.drawable.theme_swatch_dark),
@@ -100,10 +100,10 @@ fun ThemeSelectorDialog(current: String, hideStatusBar: Boolean, onSelect: (Stri
 }
 
 @Composable
-fun AccentColorDialog(current: String, theme: String, hideStatusBar: Boolean, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+fun AccentColorDialog(current: String, theme: String, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     val context = LocalContext.current
-    ClintDialog(title = stringResource(R.string.pref_accent_color_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_accent_color_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         data class AccentOption(val key: String, val titleRes: Int, val descRes: Int)
         listOf(
             AccentOption("purple", R.string.accent_purple, R.string.accent_purple_desc),
@@ -148,7 +148,7 @@ fun SurfaceIntensityDialog(
     current: String,
     theme: String,
     accent: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -156,7 +156,7 @@ fun SurfaceIntensityDialog(
     val strongVisible = accent in setOf("purple", "blue", "yellow", "red", "green", "orange")
     val swatches = rememberIntensitySwatchColors(theme, accent)
 
-    ClintDialog(title = stringResource(R.string.pref_surface_intensity_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_surface_intensity_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         SelectableCard(
             selected = current == "soft_tint", onClick = { onSelect("soft_tint") },
             cardBackground = colors.surfaceVariant, primary = colors.primary,
@@ -206,7 +206,7 @@ fun AddressBarPositionDialog(
     current: String,
     theme: String,
     accent: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -214,7 +214,7 @@ fun AddressBarPositionDialog(
     val (bg, surface) = rememberBgSurface(theme, accent)
     val onSurface = colors.onSurface
 
-    ClintDialog(title = stringResource(R.string.pref_address_bar_position_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_address_bar_position_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         data class AddrOption(val key: String, val titleRes: Int, val descRes: Int)
         listOf(
             AddrOption("top", R.string.address_bar_position_top, R.string.address_bar_position_top_desc),
@@ -243,7 +243,7 @@ fun MenuStyleDialog(
     addressBarPosition: String,
     theme: String,
     accent: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -252,7 +252,7 @@ fun MenuStyleDialog(
     val onSurface = colors.onSurface
     val panelBg = colors.popupBackground
 
-    ClintDialog(title = stringResource(R.string.pref_menu_style_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_menu_style_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         data class MenuOption(val key: String, val variant: String, val titleRes: Int, val descRes: Int)
         listOf(
             MenuOption("popup", "popup", R.string.menu_style_popup, R.string.menu_style_popup_desc),
@@ -279,14 +279,14 @@ fun TabMenuStyleDialog(
     current: String,
     theme: String,
     accent: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
     val colors = LocalClintColors.current
     val (bg, surface) = rememberBgSurface(theme, accent)
 
-    ClintDialog(title = stringResource(R.string.pref_tab_menu_style_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_tab_menu_style_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         data class TabMenuOption(val key: String, val titleRes: Int, val descRes: Int)
         listOf(
             TabMenuOption("grid", R.string.tab_menu_style_grid, R.string.tab_menu_style_grid_desc),
@@ -377,7 +377,7 @@ fun ScrollHideModeDialog(
     addressBarPosition: String,
     theme: String,
     accent: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -385,7 +385,7 @@ fun ScrollHideModeDialog(
     val (bg, surface) = rememberBgSurface(theme, accent)
     val onSurface = colors.onSurface
 
-    ClintDialog(title = stringResource(R.string.pref_nested_scroll_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_nested_scroll_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         listOf("off", "search_bar", "navigation_bar", "both").forEach { kind ->
             if (scrollCardVisible(kind, addressBarPosition)) {
                 val (titleRes, descRes) = when (kind) {
@@ -420,7 +420,7 @@ fun ScrollHideModeDialog(
 @Composable
 fun ExitConfirmationDialog(
     current: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -429,7 +429,7 @@ fun ExitConfirmationDialog(
 
     ClintDialog(
         title = stringResource(R.string.exit_confirmation_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -466,7 +466,7 @@ fun ExitConfirmationDialog(
 }
 
 @Composable
-fun LanguageSelectorDialog(current: String, hideStatusBar: Boolean, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+fun LanguageSelectorDialog(current: String, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     val context = LocalContext.current
     var options by remember { mutableStateOf(emptyList<LanguageOption>()) }
@@ -475,7 +475,7 @@ fun LanguageSelectorDialog(current: String, hideStatusBar: Boolean, onSelect: (S
         options = withContext(Dispatchers.Default) { collectLanguageOptions(context) }
     }
 
-    ClintDialog(title = stringResource(R.string.pref_language_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.pref_language_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         val systemSelected = current == LocaleHelper.LANGUAGE_SYSTEM
         SelectableCard(
             selected = systemSelected, onClick = { onSelect(LocaleHelper.LANGUAGE_SYSTEM) },

@@ -162,10 +162,15 @@ jobs:
           match = re.search(pattern, changelog_raw, re.DOTALL)
           if match:
               heading = match.group(1).strip()
+              heading = re.sub(
+                  r"^(#{1,6} )(?!Clint Browser\b)(.*)$",
+                  r"\1Clint Browser \2",
+                  heading,
+              )
               body = match.group(2).strip()
               changelog_text = f"{heading}\n\n{body}" if body else heading
           else:
-              changelog_text = f"## {tag}"
+              changelog_text = f"## Clint Browser {tag}"
 
           with open(manifest, "r", encoding="utf-8") as fh:
               data = json.load(fh)

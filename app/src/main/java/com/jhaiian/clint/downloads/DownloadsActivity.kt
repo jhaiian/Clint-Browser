@@ -125,12 +125,15 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        handleOpenIntent(intent)
 
         uiState = DownloadsUiState()
+        handleOpenIntent(intent)
+        handleDownloaderIntent(intent)
+
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         setContent {
             ClintComposeTheme(theme = theme) {
@@ -151,7 +154,7 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActi
                         allItems = allItems,
                         tick = tick,
                         maxContentWidth = maxContentWidth,
-                        hideStatusBar = hideStatusBar,
+                        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                         onExit = { finish() },
                         onOpenItem = { item -> handleOpenItem(item) },
                         onDownloadSettingsClick = {
@@ -185,9 +188,9 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActi
                         onMultiCopyPath = { items -> multiCopyToClipboard(items.joinToString("\n") { pathFor(it) }, getString(R.string.download_menu_path_copied)) },
                         onSubmitManualDownload = { submission, onDismiss, onRename -> submitManualDownload(submission, onDismiss, onRename) }
                     )
-                    com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(uiState.confirmDialogConfig, hideStatusBar) { uiState.confirmDialogConfig = null }
+                    com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(uiState.confirmDialogConfig, hideStatusBar, hideSystemNavigation) { uiState.confirmDialogConfig = null }
                     uiState.conflictDialogRequest?.let { req ->
-                        DownloadConflictDialog(req, hideStatusBar) { uiState.conflictDialogRequest = null }
+                        DownloadConflictDialog(req, hideStatusBar, hideSystemNavigation) { uiState.conflictDialogRequest = null }
                     }
                     overlayContent?.invoke()
                     ClintSnackbarHost(hostState = snackbarHostState)
@@ -200,6 +203,7 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActi
         super.onNewIntent(intent)
         setIntent(intent)
         handleOpenIntent(intent)
+        handleDownloaderIntent(intent)
     }
 
     private fun pathFor(item: DownloadItem): String = when {
@@ -232,6 +236,14 @@ class DownloadsActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActi
             uiState.exitSelectionMode()
             Toast.makeText(this@DownloadsActivity, getString(R.string.downloads_items_removed), Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun handleDownloaderIntent(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_SEND) return
+        val sharedUrl = intent.getStringExtra(Intent.EXTRA_TEXT)?.trim() ?: return
+        if (sharedUrl.isEmpty()) return
+        uiState.manualDownloadPrefillUrl = sharedUrl
+        uiState.manualDownloadDialogOpen = true
     }
 
     private fun handleOpenIntent(intent: Intent?) {

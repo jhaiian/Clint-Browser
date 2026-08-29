@@ -45,7 +45,7 @@ private fun sizesWithinTolerance(a: Long, b: Long): Boolean {
 }
 
 @Composable
-fun DownloadUpdateLinkDialog(item: DownloadItem, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+fun DownloadUpdateLinkDialog(item: DownloadItem, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val colors = LocalClintColors.current
 
@@ -122,7 +122,7 @@ fun DownloadUpdateLinkDialog(item: DownloadItem, hideStatusBar: Boolean, onDismi
 
     ClintDialog(
         title = stringResource(R.string.download_update_link_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

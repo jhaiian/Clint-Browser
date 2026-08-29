@@ -32,13 +32,13 @@ data class PopupAlertRequest(
 )
 
 @Composable
-internal fun PopupAlertDialog(request: PopupAlertRequest, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+internal fun PopupAlertDialog(request: PopupAlertRequest, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     val context = LocalContext.current
 
     ClintDialog(
         title = stringResource(R.string.popup_alert_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

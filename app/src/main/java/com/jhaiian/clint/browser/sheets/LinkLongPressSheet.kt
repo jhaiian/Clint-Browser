@@ -62,6 +62,7 @@ internal fun LinkLongPressSheet(request: LinkLongPressRequest, activity: MainAct
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var favicon by remember(request.url) { mutableStateOf<Bitmap?>(null) }
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+    val hideSystemNavigation = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
 
     LaunchedEffect(request.url) {
         val faviconUrl = FaviconCache.faviconUrlFor(request.url)
@@ -95,7 +96,7 @@ internal fun LinkLongPressSheet(request: LinkLongPressRequest, activity: MainAct
         containerColor = colors.popupBackground,
         dragHandle = { BottomSheetDefaults.DragHandle(color = colors.divider) }
     ) {
-        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
+        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar, hideSystemNavigation)
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = maxSheetHeight).nestedScroll(flingBoundaryConnection), state = listState) {
         item {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {

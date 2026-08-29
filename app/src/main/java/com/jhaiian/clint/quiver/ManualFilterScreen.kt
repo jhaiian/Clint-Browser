@@ -385,7 +385,7 @@ private fun sectionLetterForManualFilterRule(rule: ManualFilterRule): String {
 @Composable
 fun ManualFilterRuleDialog(
     mode: ManualFilterRuleDialogMode,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -395,7 +395,7 @@ fun ManualFilterRuleDialog(
 
     ClintDialog(
         title = stringResource(if (isEdit) R.string.quiver_guard_manual_filter_edit_dialog_title else R.string.quiver_guard_manual_filter_add_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

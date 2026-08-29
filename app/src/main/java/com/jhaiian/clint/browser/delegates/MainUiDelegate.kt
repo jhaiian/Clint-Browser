@@ -81,14 +81,17 @@ internal fun MainActivity.onSearchQueryChanged(query: String) {
     val bgHandler = suggestionsBgHandler ?: return
     bgHandler.removeCallbacksAndMessages(null)
     bgHandler.post {
+        val isIncognito = tabManager.activeTab?.isIncognito == true
+        val incognitoHistoryAllowed = prefs.getBoolean("incognito_search_history_enabled", false)
+        val historyAllowed = !isIncognito || incognitoHistoryAllowed
         if (query.isBlank()) {
             suggestionFetcher?.cancel()
-            val history = SearchHistoryManager.getAll(this).take(SUGGESTION_HISTORY_LIMIT)
+            val history = if (historyAllowed) SearchHistoryManager.getAll(this).take(SUGGESTION_HISTORY_LIMIT) else emptyList()
             val bookmarks = BookmarkManager.getAll(this).take(SUGGESTION_BOOKMARK_LIMIT)
             runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
             return@post
         }
-        val history = SearchHistoryManager.search(this, query).take(SUGGESTION_HISTORY_LIMIT)
+        val history = if (historyAllowed) SearchHistoryManager.search(this, query).take(SUGGESTION_HISTORY_LIMIT) else emptyList()
         val bookmarks = BookmarkManager.search(this, query).take(SUGGESTION_BOOKMARK_LIMIT)
         runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
         val suggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo"
@@ -159,10 +162,33 @@ internal fun MainActivity.navToggleBookmark() {
     val title = tabManager.activeTab?.title ?: url
     if (BookmarkManager.isBookmarked(this, url)) {
         BookmarkManager.remove(this, url)
+        updateBookmarkIcon()
     } else {
-        BookmarkManager.add(this, Bookmark(url = url, title = title))
+        uiState.pendingBookmarkUrl = url
+        uiState.pendingBookmarkTitle = title
+        Thread {
+            val tree = com.jhaiian.clint.bookmarks.buildFolderTree(BookmarkManager.getAllFoldersFlat(this))
+            runOnUiThread {
+                uiState.bookmarkFolderTree = tree
+                uiState.bookmarkFolderDialogOpen = true
+            }
+        }.start()
     }
-    updateBookmarkIcon()
+}
+
+internal fun MainActivity.confirmPendingBookmark(folderId: Long?) {
+    val url = uiState.pendingBookmarkUrl
+    val title = uiState.pendingBookmarkTitle
+    uiState.bookmarkFolderDialogOpen = false
+    if (url.isEmpty()) return
+    Thread {
+        BookmarkManager.add(this, Bookmark(url = url, title = title, folderId = folderId))
+        runOnUiThread { updateBookmarkIcon() }
+    }.start()
+}
+
+internal fun MainActivity.dismissBookmarkFolderDialog() {
+    uiState.bookmarkFolderDialogOpen = false
 }
 
 internal fun MainActivity.loadUrl(input: String) {

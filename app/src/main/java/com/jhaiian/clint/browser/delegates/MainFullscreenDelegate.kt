@@ -48,7 +48,7 @@ internal fun MainActivity.exitFullscreen() {
     swipeRefreshView.isEnabled = true
     val ctrl = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
     ctrl.show(WindowInsetsCompat.Type.navigationBars())
-    applyStatusBarVisibility()
+    applySystemUiVisibility()
     window.decorView.post {
         requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         uiState.topBarFullHeightPx = 0
@@ -56,13 +56,20 @@ internal fun MainActivity.exitFullscreen() {
     }
 }
 
-internal fun MainActivity.applyStatusBarVisibility() {
-    val hide = prefs.getBoolean("hide_status_bar", false)
-    uiState.hideStatusBar = hide
+internal fun MainActivity.applySystemUiVisibility() {
+    val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+    val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
+    uiState.hideStatusBar = hideStatusBar
+    uiState.hideSystemNavigation = hideSystemNavigation
     val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
-    if (hide) {
+    if (hideStatusBar) {
         controller.hide(WindowInsetsCompat.Type.statusBars())
     } else {
         controller.show(WindowInsetsCompat.Type.statusBars())
+    }
+    if (hideSystemNavigation) {
+        controller.hide(WindowInsetsCompat.Type.navigationBars())
+    } else {
+        controller.show(WindowInsetsCompat.Type.navigationBars())
     }
 }

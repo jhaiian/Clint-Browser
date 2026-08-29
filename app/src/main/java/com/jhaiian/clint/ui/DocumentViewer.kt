@@ -40,6 +40,7 @@ object DocumentViewer {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         val state = DocumentViewerUiState()
 
         host.overlayContent = {
@@ -47,7 +48,7 @@ object DocumentViewer {
                 DocumentViewerDialog(
                     title = title,
                     state = state,
-                    hideStatusBar = hideStatusBar,
+                    hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                     onDismiss = { host.overlayContent = null }
                 )
             }

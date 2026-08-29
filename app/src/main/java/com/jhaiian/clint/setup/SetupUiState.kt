@@ -14,7 +14,7 @@ class SetupUiState(
     initialAddressBarPosition: String,
     initialMenuStyle: String,
     initialScrollHideMode: String,
-    initialHideStatusBar: Boolean,
+    initialHideStatusBar: Boolean, initialHideSystemNavigation: Boolean,
     initialEngine: String
 ) {
     var currentPage by mutableStateOf(initialPage)
@@ -28,6 +28,7 @@ class SetupUiState(
     var menuStyle by mutableStateOf(initialMenuStyle)
     var scrollHideMode by mutableStateOf(initialScrollHideMode)
     var hideStatusBar by mutableStateOf(initialHideStatusBar)
+    var hideSystemNavigation by mutableStateOf(initialHideSystemNavigation)
 
     var engine by mutableStateOf(initialEngine)
 

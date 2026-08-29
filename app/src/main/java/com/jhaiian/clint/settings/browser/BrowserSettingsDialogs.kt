@@ -29,7 +29,7 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 @Composable
 fun SearchEngineDialog(
     current: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -38,7 +38,7 @@ fun SearchEngineDialog(
 
     ClintDialog(
         title = stringResource(R.string.choose_search_engine),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -77,7 +77,7 @@ fun SearchEngineDialog(
 @Composable
 fun SearchSuggestionsApiDialog(
     current: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -86,7 +86,7 @@ fun SearchSuggestionsApiDialog(
 
     ClintDialog(
         title = stringResource(R.string.choose_search_suggestions_api),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

@@ -41,7 +41,7 @@ import com.jhaiian.clint.ui.listscreen.PopupShape
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
 @Composable
-fun DownloadChangeSettingsDialog(item: DownloadItem, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+fun DownloadChangeSettingsDialog(item: DownloadItem, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val colors = LocalClintColors.current
 
@@ -56,7 +56,7 @@ fun DownloadChangeSettingsDialog(item: DownloadItem, hideStatusBar: Boolean, onD
 
     ClintDialog(
         title = stringResource(R.string.download_change_settings_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

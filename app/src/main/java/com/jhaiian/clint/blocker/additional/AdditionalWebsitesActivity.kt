@@ -42,6 +42,7 @@ class AdditionalWebsitesActivity : ClintActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         uiState = AdditionalWebsitesUiState()
         uiState.isEnabled = AdditionalWebsitesState.isEnabled(this)
@@ -54,7 +55,7 @@ class AdditionalWebsitesActivity : ClintActivity() {
                     AdditionalWebsitesScreen(
                         state = uiState,
                         maxContentWidth = maxContentWidth,
-                        hideStatusBar = hideStatusBar,
+                        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                         onExit = { finish() },
                         onToggleEnabled = { enabled ->
                             uiState.isEnabled = enabled
@@ -67,7 +68,7 @@ class AdditionalWebsitesActivity : ClintActivity() {
                         onDeleteSelected = { showDeleteSelectedConfirm() }
                     )
 
-                    ConfirmDialogHost(deleteConfirm, hideStatusBar) { deleteConfirm = null }
+                    ConfirmDialogHost(deleteConfirm, hideStatusBar, hideSystemNavigation) { deleteConfirm = null }
                 }
             }
         }

@@ -72,8 +72,10 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
     var pendingRestart = false
 
     var pendingHideStatusBar: Boolean? = null
+    var pendingHideSystemNavigation: Boolean? = null
 
     private var hideStatusBarAtLaunch = false
+    private var hideSystemNavigationAtLaunch = false
     private var addressBarPositionAtLaunch = "top"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,6 +84,7 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         hideStatusBarAtLaunch = prefs.getBoolean("hide_status_bar", false)
+        hideSystemNavigationAtLaunch = prefs.getBoolean("hide_system_navigation", false)
         addressBarPositionAtLaunch = prefs.getString("address_bar_position", "top") ?: "top"
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
 
@@ -102,17 +105,28 @@ class SettingsActivity : ClintActivity(), OverlayHostActivity {
     fun scheduleRestartIfChanged() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val effectiveHideStatusBar = pendingHideStatusBar ?: prefs.getBoolean("hide_status_bar", false)
+        val effectiveHideSystemNavigation = pendingHideSystemNavigation ?: prefs.getBoolean("hide_system_navigation", false)
         val statusBarChanged = effectiveHideStatusBar != hideStatusBarAtLaunch
+        val navigationChanged = effectiveHideSystemNavigation != hideSystemNavigationAtLaunch
         val positionChanged = (prefs.getString("address_bar_position", "top") ?: "top") != addressBarPositionAtLaunch
-        pendingRestart = statusBarChanged || positionChanged
+        pendingRestart = statusBarChanged || navigationChanged || positionChanged
     }
 
     fun restartApp() {
         pendingRestart = false
+        val editor = PreferenceManager.getDefaultSharedPreferences(this).edit()
+        var shouldCommit = false
         pendingHideStatusBar?.let { pending ->
-            PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean("hide_status_bar", pending).apply()
+            editor.putBoolean("hide_status_bar", pending)
             pendingHideStatusBar = null
+            shouldCommit = true
         }
+        pendingHideSystemNavigation?.let { pending ->
+            editor.putBoolean("hide_system_navigation", pending)
+            pendingHideSystemNavigation = null
+            shouldCommit = true
+        }
+        if (shouldCommit) editor.apply()
         val restartIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return
         restartIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(restartIntent)

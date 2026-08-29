@@ -62,6 +62,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
     var tabSwitcherOpen by remember { mutableStateOf(false) }
     var tabMenuStyle by remember { mutableStateOf("sheet") }
     val hideStatusBar = state.hideStatusBar
+    val hideSystemNavigation = state.hideSystemNavigation
     val rawStatusBarPx = WindowInsets.statusBars.getTop(density)
     val rawNavBarPx = WindowInsets.navigationBars.getBottom(density)
     val rawImePx = WindowInsets.ime.getBottom(density)
@@ -77,6 +78,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
     } else {
         rawStatusBarPx.takeIf { it > 0 } ?: state.cachedStatusBarInsetPx
     }
+    val effectiveNavBarPx = if (hideSystemNavigation) 0 else state.navBarInsetPx
     LaunchedEffect(effectiveStatusBarPx) {
         state.statusBarInsetPx = effectiveStatusBarPx
         activity.updateMainContentInsets()
@@ -98,7 +100,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             tabSwitcherOpen = true
         }
 
-        if (!state.isFullscreen && (state.addressBarPosition == AddressBarPosition.TOP || state.addressBarPosition == AddressBarPosition.SPLIT)) {
+        if (!state.isFullscreen && !state.isShortcutFrameless && (state.addressBarPosition == AddressBarPosition.TOP || state.addressBarPosition == AddressBarPosition.SPLIT)) {
             TopToolbar(
                 activity = activity,
                 state = state,
@@ -108,20 +110,20 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             )
         }
 
-        if (!state.isFullscreen && state.addressBarPosition == AddressBarPosition.SPLIT) {
+        if (!state.isFullscreen && !state.isShortcutFrameless && state.addressBarPosition == AddressBarPosition.SPLIT) {
             BottomNavBar(
                 activity = activity,
                 state = state,
-                navBarPaddingPx = state.navBarInsetPx,
+                navBarPaddingPx = effectiveNavBarPx,
                 modifier = Modifier.align(Alignment.BottomStart)
             )
         }
 
-        if (!state.isFullscreen && state.addressBarPosition == AddressBarPosition.BOTTOM) {
+        if (!state.isFullscreen && !state.isShortcutFrameless && state.addressBarPosition == AddressBarPosition.BOTTOM) {
             BottomToolbar(
                 activity = activity,
                 state = state,
-                bottomPaddingPx = maxOf(rawImePx, state.navBarInsetPx),
+                bottomPaddingPx = maxOf(rawImePx, effectiveNavBarPx),
                 onTabCountClick = openTabSwitcher,
                 modifier = Modifier.align(Alignment.BottomStart)
             )
@@ -144,6 +146,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
                 hint = stringResource(R.string.search_bar_hint, stringResource(engineNameRes(activity.prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo"))),
                 suggestions = state.suggestions,
                 voiceResult = state.voiceResult,
+                statusBarPaddingPx = effectiveStatusBarPx,
                 onVoiceResultConsumed = { state.voiceResult = null },
                 onQueryChange = { activity.onSearchQueryChanged(it) },
                 onSubmit = { activity.onSearchSubmitted(it) },
@@ -184,25 +187,43 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
         }
 
         val hideStatusBarPref = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
-        com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(state.confirmDialogConfig, hideStatusBarPref) { state.confirmDialogConfig = null }
+        val hideSystemNavigationPref = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
+        com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(state.confirmDialogConfig, hideStatusBarPref, hideSystemNavigationPref) { state.confirmDialogConfig = null }
         state.conflictDialogRequest?.let { req ->
-            com.jhaiian.clint.downloads.DownloadConflictDialog(req, hideStatusBarPref) { state.conflictDialogRequest = null }
+            com.jhaiian.clint.downloads.DownloadConflictDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.conflictDialogRequest = null }
         }
         state.webPermissionDialogRequest?.let { req ->
-            com.jhaiian.clint.ui.WebPermissionDialog(req, hideStatusBarPref) { state.webPermissionDialogRequest = null }
+            com.jhaiian.clint.ui.WebPermissionDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.webPermissionDialogRequest = null }
+        }
+        state.selectPickerRequest?.let { req ->
+            com.jhaiian.clint.browser.dialogs.SelectPickerDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.selectPickerRequest = null }
         }
         state.popupAlertRequest?.let { req ->
-            com.jhaiian.clint.browser.dialogs.PopupAlertDialog(req, hideStatusBarPref) { state.popupAlertRequest = null }
+            com.jhaiian.clint.browser.dialogs.PopupAlertDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.popupAlertRequest = null }
         }
         state.refreshLinkDialogRequest?.let { req ->
-            com.jhaiian.clint.browser.dialogs.RefreshLinkDialog(req, hideStatusBarPref) { state.refreshLinkDialogRequest = null }
+            com.jhaiian.clint.browser.dialogs.RefreshLinkDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.refreshLinkDialogRequest = null }
+        }
+        state.createShortcutRequest?.let { req ->
+            com.jhaiian.clint.browser.dialogs.CreateShortcutDialog(req, activity, hideStatusBarPref, hideSystemNavigationPref) { state.createShortcutRequest = null }
         }
         state.openInAppRequest?.let { req ->
-            com.jhaiian.clint.browser.webview.OpenInAppDialog(req, hideStatusBarPref) { state.openInAppRequest = null }
+            com.jhaiian.clint.browser.webview.OpenInAppDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.openInAppRequest = null }
+        }
+        if (state.bookmarkFolderDialogOpen) {
+            com.jhaiian.clint.bookmarks.MoveToFolderDialog(
+                tree = state.bookmarkFolderTree,
+                hideStatusBar = hideStatusBarPref, hideSystemNavigation = hideSystemNavigationPref,
+                onDismiss = { activity.dismissBookmarkFolderDialog() },
+                onSelect = { folderId -> activity.confirmPendingBookmark(folderId) },
+                title = stringResource(R.string.bookmarks_save_to_title)
+            )
         }
         state.websiteBlockedRequest?.let { req ->
             com.jhaiian.clint.blocker.blockedpage.WebsiteBlockedOverlay(
                 request = req,
+                statusBarPaddingPx = effectiveStatusBarPx,
+                navBarPaddingPx = effectiveNavBarPx,
                 onReturnToPrevious = { activity.dismissWebsiteBlockedOverlay() }
             )
         }
@@ -254,7 +275,8 @@ private fun TopToolbar(
             isSecure = state.addressBarSecureTop,
             tabCountText = state.tabCountText,
             onAddressBarClick = { activity.openSearchOverlay(isBottom = false) },
-            onTabCountClick = onTabCountClick
+            onTabCountClick = onTabCountClick,
+            onSwipeTabChange = { direction -> activity.onSwipeTabChange(direction) }
         )
         if (state.isPageLoading) {
             LinearProgressIndicator(
@@ -306,7 +328,8 @@ private fun BottomToolbar(
             isSecure = state.addressBarSecureBottom,
             tabCountText = state.tabCountText,
             onAddressBarClick = { activity.openSearchOverlay(isBottom = true) },
-            onTabCountClick = onTabCountClick
+            onTabCountClick = onTabCountClick,
+            onSwipeTabChange = { direction -> activity.onSwipeTabChange(direction) }
         )
     }
 }

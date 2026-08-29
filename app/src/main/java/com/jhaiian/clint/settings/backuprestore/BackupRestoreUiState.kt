@@ -22,7 +22,7 @@ enum class BackupRestoreStage {
     RESTORE_RESULT
 }
 
-class BackupRestoreUiState(val hideStatusBar: Boolean) {
+class BackupRestoreUiState(val hideStatusBar: Boolean, val hideSystemNavigation: Boolean) {
     var stage = mutableStateOf(BackupRestoreStage.IDLE)
 
     val selectedBackupCategories = mutableStateListOf<BackupCategory>().apply { addAll(BackupCategory.available()) }

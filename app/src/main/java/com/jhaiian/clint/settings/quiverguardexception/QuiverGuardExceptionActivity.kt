@@ -30,6 +30,7 @@ class QuiverGuardExceptionActivity : ClintActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         val listState = SiteListUiState()
         fun reload() {
@@ -58,7 +59,7 @@ class QuiverGuardExceptionActivity : ClintActivity() {
                     if (listState.addDialogOpen) {
                         AddSiteDialog(
                             title = stringResource(R.string.quiver_guard_exception_add_site),
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             showStateChoice = false,
                             onConfirm = { origin, _ ->
                                 SitePermissionManager.setState(this@QuiverGuardExceptionActivity, origin, type, SitePermissionDatabase.STATE_ALLOW)
@@ -72,7 +73,7 @@ class QuiverGuardExceptionActivity : ClintActivity() {
                         SiteListDeleteConfirmDialog(
                             title = stringResource(R.string.quiver_guard_exception_delete_title),
                             message = stringResource(R.string.quiver_guard_exception_delete_message, listState.selectedOrigins.size),
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             onConfirm = {
                                 listState.selectedOrigins.forEach { origin -> SitePermissionManager.deleteEntry(this@QuiverGuardExceptionActivity, origin, type) }
                                 listState.removeSelectedItems()

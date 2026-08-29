@@ -1,9 +1,11 @@
 package com.jhaiian.clint.settings.browser
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.DesktopWindows
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.VisibilityOff
 
 import androidx.compose.foundation.layout.padding
 import com.jhaiian.clint.ui.ClintSwitch
@@ -24,8 +26,10 @@ fun BrowserSettingsScreen(
     onSearchEngineConfirmed: (String) -> Unit,
     onSearchSuggestionsApiConfirmed: (String) -> Unit,
     onJavascriptRowClicked: () -> Unit,
+    onFramelessShortcutRowClicked: () -> Unit,
     onWebsiteBlockerRowClicked: () -> Unit,
-    onQuiverGuardRowClicked: () -> Unit
+    onQuiverGuardRowClicked: () -> Unit,
+    onIncognitoSearchHistoryRowClicked: () -> Unit
 ) {
     val colors = LocalClintColors.current
 
@@ -34,7 +38,7 @@ fun BrowserSettingsScreen(
             if (state.searchEngineDialogOpen) {
                 SearchEngineDialog(
                     current = state.searchEngine,
-                    hideStatusBar = state.hideStatusBar,
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onSearchEngineConfirmed,
                     onDismiss = { state.searchEngineDialogOpen = false }
                 )
@@ -42,7 +46,7 @@ fun BrowserSettingsScreen(
             if (state.searchSuggestionsApiDialogOpen) {
                 SearchSuggestionsApiDialog(
                     current = state.searchSuggestionsApi,
-                    hideStatusBar = state.hideStatusBar,
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onSearchSuggestionsApiConfirmed,
                     onDismiss = { state.searchSuggestionsApiDialogOpen = false }
                 )
@@ -81,6 +85,20 @@ fun BrowserSettingsScreen(
             )
         }
 
+        SectionLabel(stringResource(R.string.pref_category_shortcuts).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
+        SettingsSection(colors.cardBackground) {
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.OpenInNew,
+                title = stringResource(R.string.frameless_shortcut_title),
+                summary = stringResource(R.string.frameless_shortcut_summary),
+                colors = colors,
+                onClick = onFramelessShortcutRowClicked,
+                trailing = {
+                    ClintSwitch(checked = state.framelessShortcut)
+                }
+            )
+        }
+
         SectionLabel(stringResource(R.string.pref_category_protection).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
         SettingsSection(colors.cardBackground) {
             SettingsRow(
@@ -96,6 +114,20 @@ fun BrowserSettingsScreen(
                 summary = stringResource(R.string.quiver_guard_description),
                 colors = colors,
                 onClick = onQuiverGuardRowClicked
+            )
+        }
+
+        SectionLabel(stringResource(R.string.pref_category_incognito).uppercase(), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
+        SettingsSection(colors.cardBackground) {
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.VisibilityOff,
+                title = stringResource(R.string.incognito_search_history_title),
+                summary = stringResource(R.string.incognito_search_history_summary),
+                colors = colors,
+                onClick = onIncognitoSearchHistoryRowClicked,
+                trailing = {
+                    ClintSwitch(checked = state.incognitoSearchHistory)
+                }
             )
         }
     }

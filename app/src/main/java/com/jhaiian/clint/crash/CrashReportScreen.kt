@@ -81,11 +81,11 @@ private fun CrashStepRow(number: Int, text: String, colors: ClintColors) {
 }
 
 @Composable
-private fun ClearAllConfirmDialog(hideStatusBar: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun ClearAllConfirmDialog(hideStatusBar: Boolean, hideSystemNavigation: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.crash_clear_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -111,7 +111,7 @@ private fun ClearAllConfirmDialog(hideStatusBar: Boolean, onConfirm: () -> Unit,
 @Composable
 private fun CrashDetailDialog(
     item: CrashReportItem,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onCopy: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
@@ -126,7 +126,7 @@ private fun CrashDetailDialog(
 
     ClintDialog(
         title = item.title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         cancelable = false,
         footer = {
@@ -184,7 +184,7 @@ fun CrashReportScreen(
         overlay = {
             if (state.clearAllConfirmOpen) {
                 ClearAllConfirmDialog(
-                    hideStatusBar = state.hideStatusBar,
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onClearAllConfirm,
                     onDismiss = { state.clearAllConfirmOpen = false }
                 )
@@ -192,7 +192,7 @@ fun CrashReportScreen(
             state.detailReport?.let { item ->
                 CrashDetailDialog(
                     item = item,
-                    hideStatusBar = state.hideStatusBar,
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onCopy = {
                         onCopyReport(item)
                         state.detailReport = null

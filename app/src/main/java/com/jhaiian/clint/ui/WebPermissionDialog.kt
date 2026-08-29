@@ -34,14 +34,14 @@ data class WebPermissionDialogRequest(
 )
 
 @Composable
-internal fun WebPermissionDialog(request: WebPermissionDialogRequest, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+internal fun WebPermissionDialog(request: WebPermissionDialogRequest, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
 
     var remember by remember(request) { mutableStateOf(true) }
 
     ClintDialog(
         title = request.title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
 
         onDismiss = onDismiss,
         footer = {

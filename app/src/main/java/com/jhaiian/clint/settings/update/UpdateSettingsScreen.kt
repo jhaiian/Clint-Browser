@@ -30,11 +30,11 @@ import com.jhaiian.clint.setup.SectionLabel
 import com.jhaiian.clint.ui.theme.LocalClintColors
 
 @Composable
-private fun BetaEnrolConfirmDialog(hideStatusBar: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun BetaEnrolConfirmDialog(hideStatusBar: Boolean, hideSystemNavigation: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.beta_enrol_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(
@@ -76,7 +76,7 @@ fun UpdateSettingsScreen(
         overlay = {
             if (state.betaConfirmDialogOpen) {
                 BetaEnrolConfirmDialog(
-                    hideStatusBar = state.hideStatusBar,
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onBetaConfirm,
                     onDismiss = { state.betaConfirmDialogOpen = false }
                 )

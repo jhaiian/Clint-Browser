@@ -52,6 +52,7 @@ internal fun MainActivity.createWebView(isIncognito: Boolean): WebView {
     webView.addJavascriptInterface(BottomNavBridge(), "BottomNavBridge")
     webView.addJavascriptInterface(NotificationBridge(webView), "ClintNotificationBridge")
     webView.addJavascriptInterface(BlobDownloadBridge(), "BlobDownloadBridge")
+    webView.addJavascriptInterface(SelectPickerBridge(webView), "SelectPickerBridge")
 
     if (prefs.getBoolean("quiver_guard_enabled", false)) {
         QuiverGuardWebIntegration.installEarly(this, webView)
@@ -102,6 +103,7 @@ internal fun MainActivity.createWebView(isIncognito: Boolean): WebView {
     if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
         WebViewCompat.addDocumentStartJavaScript(webView, loadJsAsset("link_touch_tracker.js"), setOf("*"))
         WebViewCompat.addDocumentStartJavaScript(webView, loadJsAsset("web_notification_bridge.js"), setOf("*"))
+        WebViewCompat.addDocumentStartJavaScript(webView, loadJsAsset("select_picker.js"), setOf("*"))
     }
     val dataSaverActive = prefs.getBoolean("data_saver_enabled", false)
         && prefs.getBoolean("data_saver_disable_autoplay", true)

@@ -122,6 +122,7 @@ fun LookAndFeelPane(activity: SettingsActivity) {
             initialMenuStyle = prefs.getString("menu_style", "popup") ?: "popup",
             initialTabMenuStyle = prefs.getString("tab_menu_style", "sheet") ?: "sheet",
             initialHideStatusBar = prefs.getBoolean("hide_status_bar", false),
+            initialHideSystemNavigation = prefs.getBoolean("hide_system_navigation", false),
             initialExitConfirmation = prefs.getString("exit_confirmation", "toast") ?: "toast"
         )
     }
@@ -133,6 +134,7 @@ fun LookAndFeelPane(activity: SettingsActivity) {
         uiState.menuStyle = prefs.getString("menu_style", "popup") ?: "popup"
         uiState.tabMenuStyle = prefs.getString("tab_menu_style", "sheet") ?: "sheet"
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        uiState.hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         uiState.exitConfirmation = prefs.getString("exit_confirmation", "toast") ?: "toast"
         uiState.forceDarkWeb = prefs.getBoolean("force_dark_web", false)
         uiState.language = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
@@ -231,6 +233,29 @@ fun LookAndFeelPane(activity: SettingsActivity) {
         )
     }
 
+    fun onHideSystemNavigationRowClicked() {
+        val newValue = !uiState.hideSystemNavigation
+        confirmDialog = ConfirmDialogConfig(
+            title = activity.getString(R.string.restart_required_title),
+            message = activity.getString(R.string.restart_required_message),
+            cancelable = false,
+            positiveLabel = activity.getString(R.string.action_later),
+            onPositive = {
+                uiState.hideSystemNavigation = newValue
+                activity.pendingHideSystemNavigation = newValue
+                activity.scheduleRestartIfChanged()
+            },
+            negativeLabel = activity.getString(R.string.action_cancel),
+            onNegative = { activity.pendingRestart = false },
+            neutralLabel = activity.getString(R.string.restart_required_confirm),
+            onNeutral = {
+                uiState.hideSystemNavigation = newValue
+                activity.pendingHideSystemNavigation = newValue
+                activity.restartApp()
+            }
+        )
+    }
+
     LookAndFeelScreen(
         state = uiState,
         onThemeSelected = { newTheme -> uiState.openDialog = null; activity.captureAndRecreate(newTheme) },
@@ -255,13 +280,17 @@ fun LookAndFeelPane(activity: SettingsActivity) {
         },
         onScrollHideModeSelected = ::selectScrollHideMode,
         onHideStatusBarRowClicked = ::onHideStatusBarRowClicked,
+        onHideSystemNavigationRowClicked = ::onHideSystemNavigationRowClicked,
+        onCustomizeMenuRowClicked = {
+            activity.startActivity(Intent(activity, com.jhaiian.clint.settings.menucustomization.MenuCustomizationActivity::class.java))
+        },
         onExitConfirmationConfirmed = { value ->
             prefs.edit().putString("exit_confirmation", value).apply()
             uiState.exitConfirmation = value
             uiState.openDialog = null
         }
     )
-    ConfirmDialogHost(confirmDialog, uiState.hideStatusBar) { confirmDialog = null }
+    ConfirmDialogHost(confirmDialog, uiState.hideStatusBar, uiState.hideSystemNavigation) { confirmDialog = null }
 }
 
 @Composable
@@ -272,7 +301,10 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
             initialSearchEngine = prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo",
             initialSearchSuggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo",
             initialJavascriptEnabled = prefs.getBoolean("javascript_enabled", true),
-            initialHideStatusBar = prefs.getBoolean("hide_status_bar", false)
+            initialFramelessShortcut = prefs.getBoolean("shortcut_frameless_enabled", true),
+            initialHideStatusBar = prefs.getBoolean("hide_status_bar", false),
+            initialHideSystemNavigation = prefs.getBoolean("hide_system_navigation", false),
+            initialIncognitoSearchHistory = prefs.getBoolean("incognito_search_history_enabled", false)
         )
     }
     var confirmDialog by remember { mutableStateOf<ConfirmDialogConfig?>(null) }
@@ -281,7 +313,10 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
         uiState.searchEngine = prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo"
         uiState.searchSuggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo"
         uiState.javascriptEnabled = prefs.getBoolean("javascript_enabled", true)
+        uiState.framelessShortcut = prefs.getBoolean("shortcut_frameless_enabled", true)
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        uiState.hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
+        uiState.incognitoSearchHistory = prefs.getBoolean("incognito_search_history_enabled", false)
     }
 
     fun confirmEngine(engine: String) {
@@ -345,19 +380,33 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
         }
     }
 
+    fun onFramelessShortcutRowClicked() {
+        val newValue = !uiState.framelessShortcut
+        prefs.edit().putBoolean("shortcut_frameless_enabled", newValue).apply()
+        uiState.framelessShortcut = newValue
+    }
+
+    fun onIncognitoSearchHistoryRowClicked() {
+        val newValue = !uiState.incognitoSearchHistory
+        prefs.edit().putBoolean("incognito_search_history_enabled", newValue).apply()
+        uiState.incognitoSearchHistory = newValue
+    }
+
     BrowserSettingsScreen(
         state = uiState,
         onSearchEngineConfirmed = ::onSearchEngineConfirmed,
         onSearchSuggestionsApiConfirmed = ::onSearchSuggestionsApiConfirmed,
         onJavascriptRowClicked = ::onJavascriptRowClicked,
+        onFramelessShortcutRowClicked = ::onFramelessShortcutRowClicked,
         onWebsiteBlockerRowClicked = {
             activity.startActivity(android.content.Intent(activity, com.jhaiian.clint.blocker.WebsiteBlockerActivity::class.java))
         },
         onQuiverGuardRowClicked = {
             activity.startActivity(android.content.Intent(activity, com.jhaiian.clint.quiver.QuiverGuardActivity::class.java))
-        }
+        },
+        onIncognitoSearchHistoryRowClicked = ::onIncognitoSearchHistoryRowClicked
     )
-    ConfirmDialogHost(confirmDialog, uiState.hideStatusBar) { confirmDialog = null }
+    ConfirmDialogHost(confirmDialog, uiState.hideStatusBar, uiState.hideSystemNavigation) { confirmDialog = null }
 }
 
 @Composable
@@ -465,7 +514,8 @@ fun UpdateSettingsPane(activity: SettingsActivity) {
             initialCheckOnLaunch = prefs.getBoolean(PREF_CHECK_UPDATE_ON_LAUNCH, DEFAULT_CHECK_UPDATE_ON_LAUNCH),
             initialSkipOnMetered = prefs.getBoolean(PREF_SKIP_UPDATE_ON_METERED, DEFAULT_SKIP_UPDATE_ON_METERED),
             initialBetaChannel = prefs.getBoolean(PREF_BETA_CHANNEL, DEFAULT_BETA_CHANNEL),
-            hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+            hideStatusBar = prefs.getBoolean("hide_status_bar", false),
+            hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         )
     }
 
@@ -511,7 +561,8 @@ fun MiscPane(activity: SettingsActivity) {
     val uiState = remember {
         MiscUiState(
             initialDefaultBrowserSummary = defaultBrowserSummaryText(activity),
-            hideStatusBar = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false)
+            hideStatusBar = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false),
+            hideSystemNavigation = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false)
         )
     }
 
@@ -597,7 +648,7 @@ private fun buildCrashReportTemplate(context: Context): String {
 @Composable
 fun DebugPane(activity: SettingsActivity) {
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-    val uiState = remember { CrashUiState(hideStatusBar = prefs.getBoolean("hide_status_bar", false)) }
+    val uiState = remember { CrashUiState(hideStatusBar = prefs.getBoolean("hide_status_bar", false), hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)) }
     val scope = rememberCoroutineScope()
 
     fun copyToClipboard(content: String) {
@@ -731,7 +782,8 @@ fun DownloadSettingsPane(activity: SettingsActivity) {
             initialShowGrantAllFilesAccessRow = showGrantAllFilesAccessRow(),
             initialAllFilesAccessGranted = isAllFilesAccessGranted(),
             initialPushNotifications = prefs.getBoolean(DownloadSettingsKeys.PREF_PUSH_NOTIFICATIONS, DownloadSettingsKeys.DEFAULT_PUSH_NOTIFICATIONS),
-            initialHideStatusBar = prefs.getBoolean("hide_status_bar", false)
+            initialHideStatusBar = prefs.getBoolean("hide_status_bar", false),
+            initialHideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         )
     }
 
@@ -767,6 +819,7 @@ fun DownloadSettingsPane(activity: SettingsActivity) {
             uiState.allFilesAccessGranted = isAllFilesAccessGranted()
         }
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        uiState.hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
     }
 
     fun showSchedulePicker(currentMinutes: Int, onPicked: (Int) -> Unit) {

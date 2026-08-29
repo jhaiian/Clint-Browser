@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.net.Uri
@@ -36,9 +37,12 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 @Composable
 fun WebsiteBlockedOverlay(
     request: WebsiteBlockedRequest,
+    statusBarPaddingPx: Int,
+    navBarPaddingPx: Int,
     onReturnToPrevious: () -> Unit
 ) {
     val colors = LocalClintColors.current
+    val density = LocalDensity.current
     val host = remember(request.blockedUrl) {
         runCatching { Uri.parse(request.blockedUrl).host }.getOrNull() ?: request.blockedUrl
     }
@@ -47,6 +51,10 @@ fun WebsiteBlockedOverlay(
         Column(
             Modifier
                 .fillMaxSize()
+                .padding(
+                    top = with(density) { statusBarPaddingPx.toDp() },
+                    bottom = with(density) { navBarPaddingPx.toDp() }
+                )
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center

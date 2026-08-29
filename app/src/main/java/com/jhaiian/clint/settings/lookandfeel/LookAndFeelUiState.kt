@@ -18,7 +18,7 @@ class LookAndFeelUiState(
     initialAddressBarPosition: String,
     initialMenuStyle: String,
     initialTabMenuStyle: String,
-    initialHideStatusBar: Boolean,
+    initialHideStatusBar: Boolean, initialHideSystemNavigation: Boolean,
     initialExitConfirmation: String
 ) {
     var theme by mutableStateOf(initialTheme)
@@ -32,6 +32,7 @@ class LookAndFeelUiState(
     var menuStyle by mutableStateOf(initialMenuStyle)
     var tabMenuStyle by mutableStateOf(initialTabMenuStyle)
     var hideStatusBar by mutableStateOf(initialHideStatusBar)
+    var hideSystemNavigation by mutableStateOf(initialHideSystemNavigation)
 
     var exitConfirmation by mutableStateOf(initialExitConfirmation)
 

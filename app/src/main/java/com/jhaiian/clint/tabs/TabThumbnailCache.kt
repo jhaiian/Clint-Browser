@@ -57,7 +57,7 @@ object TabThumbnailCache {
     }
 
     private fun diskDir(context: Context): File =
-        File(context.cacheDir, DIR_NAME).apply { mkdirs() }
+        File(context.filesDir, DIR_NAME).apply { mkdirs() }
 
     private fun diskFile(context: Context, tabId: String): File =
         File(diskDir(context), "$tabId.png")

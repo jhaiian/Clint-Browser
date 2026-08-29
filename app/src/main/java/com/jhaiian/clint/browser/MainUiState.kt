@@ -40,6 +40,11 @@ internal class MainUiState {
     var isBookmarked by mutableStateOf(false)
     var hasActiveUrl by mutableStateOf(false)
 
+    var bookmarkFolderDialogOpen by mutableStateOf(false)
+    var bookmarkFolderTree by mutableStateOf<List<com.jhaiian.clint.bookmarks.FolderTreeEntry>>(emptyList())
+    var pendingBookmarkUrl by mutableStateOf("")
+    var pendingBookmarkTitle by mutableStateOf("")
+
     var tabCountText by mutableStateOf("1")
     var isIncognito by mutableStateOf(false)
 
@@ -52,21 +57,25 @@ internal class MainUiState {
     var cachedStatusBarInsetPx by mutableIntStateOf(0)
     var navBarInsetPx by mutableIntStateOf(0)
     var hideStatusBar by mutableStateOf(false)
+    var hideSystemNavigation by mutableStateOf(false)
 
     var contentPaddingTopPx by mutableIntStateOf(0)
     var contentPaddingBottomPx by mutableIntStateOf(0)
 
     var isFullscreen by mutableStateOf(false)
+    var isShortcutFrameless by mutableStateOf(false)
 
     var imageLongPressRequest by mutableStateOf<com.jhaiian.clint.browser.sheets.ImageLongPressRequest?>(null)
     var linkLongPressRequest by mutableStateOf<com.jhaiian.clint.browser.sheets.LinkLongPressRequest?>(null)
     var contentPreviewRequest by mutableStateOf<com.jhaiian.clint.browser.sheets.ContentPreviewRequest?>(null)
+    var selectPickerRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.SelectPickerRequest?>(null)
 
     var confirmDialogConfig by mutableStateOf<com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig?>(null)
     var conflictDialogRequest by mutableStateOf<com.jhaiian.clint.downloads.DownloadConflictDialogRequest?>(null)
     var webPermissionDialogRequest by mutableStateOf<com.jhaiian.clint.ui.WebPermissionDialogRequest?>(null)
     var popupAlertRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.PopupAlertRequest?>(null)
     var refreshLinkDialogRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.RefreshLinkDialogRequest?>(null)
+    var createShortcutRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.CreateShortcutRequest?>(null)
     var openInAppRequest by mutableStateOf<com.jhaiian.clint.browser.webview.OpenInAppRequest?>(null)
     var websiteBlockedRequest by mutableStateOf<com.jhaiian.clint.blocker.blockedpage.WebsiteBlockedRequest?>(null)
 }

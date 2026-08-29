@@ -20,12 +20,12 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 import com.jhaiian.clint.util.formatFileSize
 
 @Composable
-fun WebsiteBlockerDownloadProgressDialog(progress: WebsiteBlockerDownloadProgress?, categoryName: String?, hideStatusBar: Boolean, onCancel: () -> Unit) {
+fun WebsiteBlockerDownloadProgressDialog(progress: WebsiteBlockerDownloadProgress?, categoryName: String?, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onCancel: () -> Unit) {
     if (progress == null || categoryName == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.quiver_guard_download_dialog_title, categoryName),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = {},
         cancelable = false,
         footer = {
@@ -71,12 +71,12 @@ private fun websiteBlockerDownloadStatusText(progress: WebsiteBlockerDownloadPro
 }
 
 @Composable
-fun WebsiteBlockerCompileProgressDialog(progress: WebsiteBlockerCompileProgressUi?, hideStatusBar: Boolean) {
+fun WebsiteBlockerCompileProgressDialog(progress: WebsiteBlockerCompileProgressUi?, hideStatusBar: Boolean, hideSystemNavigation: Boolean) {
     if (progress == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = stringResource(R.string.website_blocker_compile_progress_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = {},
         cancelable = false,
         footer = {}
@@ -90,12 +90,12 @@ fun WebsiteBlockerCompileProgressDialog(progress: WebsiteBlockerCompileProgressU
 }
 
 @Composable
-fun WebsiteBlockerCompileResultDialog(result: WebsiteBlockerCompileResultUi?, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+fun WebsiteBlockerCompileResultDialog(result: WebsiteBlockerCompileResultUi?, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     if (result == null) return
     val colors = LocalClintColors.current
     ClintDialog(
         title = result.title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

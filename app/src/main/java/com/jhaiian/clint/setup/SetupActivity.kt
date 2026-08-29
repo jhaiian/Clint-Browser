@@ -42,6 +42,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
         private const val KEY_PENDING_PAGE = "setup_pending_page"
         private const val KEY_PENDING_SCROLL = "setup_pending_scroll"
         private const val KEY_PENDING_HIDE_STATUS_BAR = "setup_pending_hide_status_bar"
+        private const val KEY_PENDING_HIDE_SYSTEM_NAVIGATION = "setup_pending_hide_system_navigation"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,9 +63,14 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
         if (prefs.getBoolean("setup_complete", false)) { startMainActivity(); return }
 
         var hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        var hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         if (prefs.contains(KEY_PENDING_HIDE_STATUS_BAR)) {
             hideStatusBar = prefs.getBoolean(KEY_PENDING_HIDE_STATUS_BAR, false)
             prefs.edit().remove(KEY_PENDING_HIDE_STATUS_BAR).apply()
+        }
+        if (prefs.contains(KEY_PENDING_HIDE_SYSTEM_NAVIGATION)) {
+            hideSystemNavigation = prefs.getBoolean(KEY_PENDING_HIDE_SYSTEM_NAVIGATION, false)
+            prefs.edit().remove(KEY_PENDING_HIDE_SYSTEM_NAVIGATION).apply()
         }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -91,7 +97,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
             initialAddressBarPosition = prefs.getString("address_bar_position", "top") ?: "top",
             initialMenuStyle = prefs.getString("menu_style", "popup") ?: "popup",
             initialScrollHideMode = prefs.getString("scroll_hide_mode", "off") ?: "off",
-            initialHideStatusBar = hideStatusBar,
+            initialHideStatusBar = hideStatusBar, initialHideSystemNavigation = hideSystemNavigation,
             initialEngine = "duckduckgo"
         )
         if (uiState.currentPage == 5) refreshDefaultBrowserState()
@@ -109,6 +115,10 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
                 },
                 onHideStatusBarToggled = { checked ->
                     uiState.hideStatusBar = checked
+                    Toast.makeText(this, getString(R.string.setup_status_bar_applied_later), Toast.LENGTH_SHORT).show()
+                },
+                onHideSystemNavigationToggled = { checked ->
+                    uiState.hideSystemNavigation = checked
                     Toast.makeText(this, getString(R.string.setup_status_bar_applied_later), Toast.LENGTH_SHORT).show()
                 },
                 onThemeSelected = { theme -> onSetupThemeSelected(theme) },
@@ -131,7 +141,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
                 },
                 onSkipDefaultBrowser = { saveAndProceed() }
             )
-            com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(uiState.confirmDialogConfig, uiState.hideStatusBar) { uiState.confirmDialogConfig = null }
+            com.jhaiian.clint.ui.listscreen.ConfirmDialogHost(uiState.confirmDialogConfig, uiState.hideStatusBar, uiState.hideSystemNavigation) { uiState.confirmDialogConfig = null }
             overlayContent?.invoke()
           }
         }
@@ -230,6 +240,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
             .putInt(KEY_PENDING_PAGE, 2)
             .putInt(KEY_PENDING_SCROLL, uiState.themePageScrollState.value)
             .putBoolean(KEY_PENDING_HIDE_STATUS_BAR, uiState.hideStatusBar)
+            .putBoolean(KEY_PENDING_HIDE_SYSTEM_NAVIGATION, uiState.hideSystemNavigation)
             .apply()
     }
 
@@ -241,6 +252,7 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
             .putString("menu_style", uiState.menuStyle)
             .putString("scroll_hide_mode", uiState.scrollHideMode)
             .putBoolean("hide_status_bar", uiState.hideStatusBar)
+            .putBoolean("hide_system_navigation", uiState.hideSystemNavigation)
             .putBoolean("setup_complete", true)
             .apply()
         startMainActivity()

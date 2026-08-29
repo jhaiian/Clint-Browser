@@ -1,6 +1,7 @@
 package com.jhaiian.clint.browser.menu
 import android.content.res.Configuration
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddToHomeScreen
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
@@ -101,8 +102,11 @@ internal data class BrowserMenuSnapshot(
     val isQuiverGuardEnabled: Boolean,
     val quiverGuardBlockedCount: Long,
     val isQuiverGuardExceptionForSite: Boolean,
+    val isWebsiteBlockerEnabled: Boolean,
     val openInAppEnabled: Boolean,
-    val openInAppLabel: String?
+    val openInAppLabel: String?,
+    val canCreateShortcut: Boolean,
+    val visibleMenuItems: List<CustomizableMenuItem>
 )
 
 internal class BrowserMenuActions(
@@ -115,6 +119,7 @@ internal class BrowserMenuActions(
     val onIncognito: () -> Unit,
     val onShare: () -> Unit,
     val onOpenInApp: () -> Unit,
+    val onCreateShortcut: () -> Unit,
     val onDownloads: () -> Unit,
     val onOpenDownloadSettings: () -> Unit,
     val onBookmarks: () -> Unit,
@@ -126,7 +131,9 @@ internal class BrowserMenuActions(
     val onOpenDataSaverSettings: () -> Unit,
     val onQuiverGuard: () -> Unit,
     val onOpenQuiverGuardSettings: () -> Unit,
-    val onDisableQuiverGuardForSite: () -> Unit
+    val onDisableQuiverGuardForSite: () -> Unit,
+    val onWebsiteBlocker: () -> Unit,
+    val onOpenWebsiteBlockerSettings: () -> Unit
 )
 
 internal fun MainActivity.buildMenuSnapshot(): BrowserMenuSnapshot {
@@ -165,8 +172,11 @@ internal fun MainActivity.buildMenuSnapshot(): BrowserMenuSnapshot {
         isQuiverGuardEnabled = prefs.getBoolean("quiver_guard_enabled", false),
         quiverGuardBlockedCount = tabManager.activeTab?.id?.let { BlockedRequestCounter.getTabCount(it) } ?: 0L,
         isQuiverGuardExceptionForSite = exceptionForSite,
+        isWebsiteBlockerEnabled = prefs.getBoolean("website_blocker_enabled", false),
         openInAppEnabled = appMatches.isNotEmpty(),
-        openInAppLabel = openInAppLabel
+        openInAppLabel = openInAppLabel,
+        canCreateShortcut = currentUrl.isNotEmpty(),
+        visibleMenuItems = BrowserMenuCustomizationStore.visibleOrderedItems(prefs)
     )
 }
 
@@ -180,6 +190,7 @@ internal fun MainActivity.buildMenuActions(dismiss: () -> Unit): BrowserMenuActi
     onIncognito = { dismiss(); onMenuIncognito() },
     onShare = { dismiss(); onMenuShare() },
     onOpenInApp = { dismiss(); onMenuOpenInApp() },
+    onCreateShortcut = { dismiss(); onMenuCreateShortcut() },
     onDownloads = { dismiss(); onMenuDownloads() },
     onOpenDownloadSettings = { dismiss(); onMenuOpenDownloadSettings() },
     onBookmarks = { dismiss(); onMenuBookmarks() },
@@ -191,7 +202,9 @@ internal fun MainActivity.buildMenuActions(dismiss: () -> Unit): BrowserMenuActi
     onOpenDataSaverSettings = { dismiss(); onMenuOpenDataSaverSettings() },
     onQuiverGuard = { dismiss(); onMenuQuiverGuard() },
     onOpenQuiverGuardSettings = { dismiss(); onMenuOpenQuiverGuardSettings() },
-    onDisableQuiverGuardForSite = { dismiss(); onMenuDisableQuiverGuardForSite() }
+    onDisableQuiverGuardForSite = { dismiss(); onMenuDisableQuiverGuardForSite() },
+    onWebsiteBlocker = { dismiss(); onMenuWebsiteBlocker() },
+    onOpenWebsiteBlockerSettings = { dismiss(); onMenuOpenWebsiteBlockerSettings() }
 )
 
 @Composable
@@ -199,6 +212,8 @@ internal fun MenuTriggerButton(activity: MainActivity, modifier: Modifier = Modi
     var expanded by remember { mutableStateOf(false) }
     var snapshot by remember { mutableStateOf<BrowserMenuSnapshot?>(null) }
     val colors = LocalClintColors.current
+    val configuration = LocalConfiguration.current
+    val maxMenuHeight = configuration.screenHeightDp.dp * 0.9f
     val actions = remember(activity) { activity.buildMenuActions(dismiss = { expanded = false }) }
 
     LaunchedEffect(expanded) {
@@ -224,7 +239,7 @@ internal fun MenuTriggerButton(activity: MainActivity, modifier: Modifier = Modi
             DropdownMenu(
                 expanded = expanded && currentSnapshot != null,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.width(240.dp),
+                modifier = Modifier.width(240.dp).heightIn(max = maxMenuHeight),
                 shape = PopupShape,
                 containerColor = colors.popupBackground,
                 border = BorderStroke(1.dp, colors.popupStroke)
@@ -248,6 +263,9 @@ private fun BrowserMenuBottomSheet(
     val hideStatusBar = remember {
         PreferenceManager.getDefaultSharedPreferences(context).getBoolean("hide_status_bar", false)
     }
+    val hideSystemNavigation = remember {
+        PreferenceManager.getDefaultSharedPreferences(context).getBoolean("hide_system_navigation", false)
+    }
     val listState = rememberLazyListState()
 
     val flingBoundaryConnection = remember {
@@ -269,7 +287,7 @@ private fun BrowserMenuBottomSheet(
         containerColor = colors.popupBackground,
         dragHandle = { BottomSheetDefaults.DragHandle(color = colors.divider) }
     ) {
-        ClintDialogStatusBarEffect(hideStatusBar)
+        ClintDialogStatusBarEffect(hideStatusBar, hideSystemNavigation)
         LazyColumn(
             Modifier.fillMaxWidth().heightIn(max = maxSheetHeight).nestedScroll(flingBoundaryConnection),
             state = listState
@@ -319,26 +337,40 @@ private fun BrowserMenuContent(
             }
             MenuDivider()
         }
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.Add, stringResource(R.string.new_tab), onClick = actions.onNewTab)
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.VisibilityOff, stringResource(R.string.new_incognito_tab), onClick = actions.onIncognito)
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.Share, stringResource(R.string.share_url), onClick = actions.onShare)
-        MenuItemRow(
-            androidx.compose.material.icons.Icons.AutoMirrored.Filled.OpenInNew,
-            snapshot.openInAppLabel ?: stringResource(R.string.menu_open_in_app),
+        snapshot.visibleMenuItems.forEach { item -> MenuItemRowFor(item, snapshot, actions) }
+        MenuDivider()
+        MenuItemRow(androidx.compose.material.icons.Icons.Filled.Settings, stringResource(R.string.settings), onClick = actions.onSettings)
+    }
+}
+
+@Composable
+private fun MenuItemRowFor(item: CustomizableMenuItem, snapshot: BrowserMenuSnapshot, actions: BrowserMenuActions) {
+    when (item) {
+        CustomizableMenuItem.NEW_TAB -> MenuItemRow(item.icon(), stringResource(item.titleRes()), onClick = actions.onNewTab)
+        CustomizableMenuItem.NEW_INCOGNITO_TAB -> MenuItemRow(item.icon(), stringResource(item.titleRes()), onClick = actions.onIncognito)
+        CustomizableMenuItem.SHARE -> MenuItemRow(item.icon(), stringResource(item.titleRes()), onClick = actions.onShare)
+        CustomizableMenuItem.OPEN_IN_APP -> MenuItemRow(
+            item.icon(),
+            snapshot.openInAppLabel ?: stringResource(item.titleRes()),
             enabled = snapshot.openInAppEnabled,
             onClick = actions.onOpenInApp
         )
-        MenuDivider()
-        MenuItemRow(
-            androidx.compose.material.icons.Icons.Filled.Download,
-            stringResource(R.string.menu_downloads),
+        CustomizableMenuItem.CREATE_SHORTCUT -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
+            enabled = snapshot.canCreateShortcut,
+            onClick = actions.onCreateShortcut
+        )
+        CustomizableMenuItem.DOWNLOADS -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
             badge = if (snapshot.pendingDownloadCount > 0L) BlockedRequestCounter.formatCount(snapshot.pendingDownloadCount) else null,
             onClick = actions.onDownloads,
             onLongClick = actions.onOpenDownloadSettings
         )
-        MenuItemRow(
-            androidx.compose.material.icons.Icons.Filled.Security,
-            stringResource(R.string.menu_quiver_guard),
+        CustomizableMenuItem.QUIVER_GUARD -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
             checked = snapshot.isQuiverGuardEnabled,
             badge = if (snapshot.isQuiverGuardEnabled && !snapshot.isQuiverGuardExceptionForSite && snapshot.quiverGuardBlockedCount > 0L) {
                 BlockedRequestCounter.formatCount(snapshot.quiverGuardBlockedCount)
@@ -346,27 +378,35 @@ private fun BrowserMenuContent(
             onClick = actions.onQuiverGuard,
             onLongClick = actions.onOpenQuiverGuardSettings
         )
-        MenuItemRow(
-            androidx.compose.material.icons.Icons.Filled.Security,
-            stringResource(R.string.menu_disable_quiver_guard_for_site),
+        CustomizableMenuItem.DISABLE_QUIVER_GUARD_FOR_SITE -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
             checked = snapshot.isQuiverGuardExceptionForSite,
             onClick = actions.onDisableQuiverGuardForSite
         )
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.BookmarkBorder, stringResource(R.string.menu_bookmarks), onClick = actions.onBookmarks)
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.History, stringResource(R.string.menu_history), onClick = actions.onHistory)
-        MenuItemRow(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ChromeReaderMode, stringResource(R.string.reader_mode), onClick = actions.onReaderMode)
-        MenuDivider()
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.DesktopWindows, stringResource(R.string.desktop_mode), checked = snapshot.isDesktopMode, onClick = actions.onDesktopMode)
-        MenuDivider()
-        MenuItemRow(
-            androidx.compose.material.icons.Icons.Filled.DataSaverOn,
-            stringResource(R.string.menu_data_saver),
+        CustomizableMenuItem.WEBSITE_BLOCKER -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
+            checked = snapshot.isWebsiteBlockerEnabled,
+            onClick = actions.onWebsiteBlocker,
+            onLongClick = actions.onOpenWebsiteBlockerSettings
+        )
+        CustomizableMenuItem.BOOKMARKS -> MenuItemRow(item.icon(), stringResource(item.titleRes()), onClick = actions.onBookmarks)
+        CustomizableMenuItem.HISTORY -> MenuItemRow(item.icon(), stringResource(item.titleRes()), onClick = actions.onHistory)
+        CustomizableMenuItem.READER_MODE -> MenuItemRow(item.icon(), stringResource(item.titleRes()), onClick = actions.onReaderMode)
+        CustomizableMenuItem.DESKTOP_MODE -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
+            checked = snapshot.isDesktopMode,
+            onClick = actions.onDesktopMode
+        )
+        CustomizableMenuItem.DATA_SAVER -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
             checked = snapshot.isDataSaverEnabled,
             onClick = actions.onDataSaver,
             onLongClick = actions.onOpenDataSaverSettings
         )
-        MenuDivider()
-        MenuItemRow(androidx.compose.material.icons.Icons.Filled.Settings, stringResource(R.string.settings), onClick = actions.onSettings)
     }
 }
 

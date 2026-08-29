@@ -30,6 +30,7 @@ class DownloadsUiState {
     var changeSettingsItem by mutableStateOf<DownloadItem?>(null)
     var updateLinkItem by mutableStateOf<DownloadItem?>(null)
     var manualDownloadDialogOpen by mutableStateOf(false)
+    var manualDownloadPrefillUrl by mutableStateOf<String?>(null)
 
     var confirmDialogConfig by mutableStateOf<com.jhaiian.clint.ui.listscreen.ConfirmDialogConfig?>(null)
     var conflictDialogRequest by mutableStateOf<DownloadConflictDialogRequest?>(null)

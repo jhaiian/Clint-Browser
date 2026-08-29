@@ -65,13 +65,13 @@ private fun DocumentViewerContent(state: DocumentViewerUiState) {
 fun DocumentViewerDialog(
     title: String,
     state: DocumentViewerUiState,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onDismiss: () -> Unit
 ) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         cancelable = false,
         footer = {

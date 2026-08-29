@@ -13,3 +13,6 @@
 > people who open issue to report a bug and suggestions
 - [@manhd89](https://github.com/manhd89)
 - [@brnwlshubh](https://github.com/brnwlshubh)
+- [@ncgjbr-ai](https://github.com/ncgjbr-ai)
+- [@deniganda](https://github.com/deniganda)
+

@@ -28,7 +28,7 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 @Composable
 fun AddSiteDialog(
     title: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     showStateChoice: Boolean,
     onConfirm: (origin: String, allowed: Boolean) -> Unit,
     onDismiss: () -> Unit
@@ -39,7 +39,7 @@ fun AddSiteDialog(
 
     ClintDialog(
         title = title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -90,14 +90,14 @@ fun AddSiteDialog(
 fun SiteListDeleteConfirmDialog(
     title: String,
     message: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val colors = LocalClintColors.current
     ClintDialog(
         title = title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

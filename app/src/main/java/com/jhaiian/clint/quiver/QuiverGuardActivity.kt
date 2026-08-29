@@ -63,6 +63,7 @@ class QuiverGuardActivity : ClintActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         filePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val uri: Uri? = result.data?.data
@@ -144,17 +145,17 @@ class QuiverGuardActivity : ClintActivity() {
                         onRecompile = { showRecompileConfirmation() }
                     )
 
-                    ConfirmDialogHost(uiState.confirmDialog, hideStatusBar) { uiState.confirmDialog = null }
-                    DownloadProgressDialog(uiState.downloadProgress, hideStatusBar) { activeDownloadJob?.cancel() }
-                    UpdateProgressDialog(uiState.updateProgress, hideStatusBar) { activeUpdateJob?.cancel() }
-                    CompileProgressDialog(uiState.compileProgress, hideStatusBar)
-                    CompileResultDialog(uiState.compileResult, hideStatusBar) { uiState.compileResult = null }
-                    UpdateResultDialog(uiState.updateResult, hideStatusBar) { uiState.updateResult = null }
-                    ExperimentalDialog(uiState.experimentalDialogOpen, hideStatusBar) { uiState.experimentalDialogOpen = false }
+                    ConfirmDialogHost(uiState.confirmDialog, hideStatusBar, hideSystemNavigation) { uiState.confirmDialog = null }
+                    DownloadProgressDialog(uiState.downloadProgress, hideStatusBar, hideSystemNavigation) { activeDownloadJob?.cancel() }
+                    UpdateProgressDialog(uiState.updateProgress, hideStatusBar, hideSystemNavigation) { activeUpdateJob?.cancel() }
+                    CompileProgressDialog(uiState.compileProgress, hideStatusBar, hideSystemNavigation)
+                    CompileResultDialog(uiState.compileResult, hideStatusBar, hideSystemNavigation) { uiState.compileResult = null }
+                    UpdateResultDialog(uiState.updateResult, hideStatusBar, hideSystemNavigation) { uiState.updateResult = null }
+                    ExperimentalDialog(uiState.experimentalDialogOpen, hideStatusBar, hideSystemNavigation) { uiState.experimentalDialogOpen = false }
 
                     if (uiState.addFromLinkDialogOpen) {
                         AddFilterListFromLinkDialog(
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             fetchStatus = uiState.addLinkFetchStatus,
                             onFetch = { url -> fetchFilterListFromUrl(url) },
                             onUrlChanged = { resetFilterListLinkFetch() },
@@ -165,7 +166,7 @@ class QuiverGuardActivity : ClintActivity() {
                     uiState.addFromFileImport?.let { imported ->
                         AddFilterListFromFileDialog(
                             imported = imported,
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             onConfirm = { title -> confirmAddFilterListFromFile(title) },
                             onDismiss = { uiState.addFromFileImport = null }
                         )

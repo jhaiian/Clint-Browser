@@ -33,13 +33,13 @@ data class OpenInAppRequest(
 )
 
 @Composable
-internal fun OpenInAppDialog(request: OpenInAppRequest, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+internal fun OpenInAppDialog(request: OpenInAppRequest, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     val single = request.matches.singleOrNull()
 
     ClintDialog(
         title = stringResource(if (single != null) R.string.open_in_app_dialog_title else R.string.open_in_app_chooser_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         cancelable = false,
         onDismiss = onDismiss,
         footer = {

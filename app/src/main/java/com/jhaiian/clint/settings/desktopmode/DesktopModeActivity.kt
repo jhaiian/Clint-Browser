@@ -50,6 +50,7 @@ class DesktopModeActivity : ClintActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         val listState = SiteListUiState()
         fun reload() {
@@ -109,7 +110,7 @@ class DesktopModeActivity : ClintActivity() {
                     if (listState.addDialogOpen) {
                         AddSiteDialog(
                             title = stringResource(R.string.desktop_mode_add_site),
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             showStateChoice = false,
                             onConfirm = { origin, _ ->
                                 SitePermissionManager.setState(this@DesktopModeActivity, origin, type, SitePermissionDatabase.STATE_ALLOW)
@@ -123,7 +124,7 @@ class DesktopModeActivity : ClintActivity() {
                         SiteListDeleteConfirmDialog(
                             title = stringResource(R.string.desktop_mode_delete_confirm_title),
                             message = stringResource(R.string.desktop_mode_delete_confirm_message, listState.selectedOrigins.size),
-                            hideStatusBar = hideStatusBar,
+                            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
                             onConfirm = {
                                 listState.selectedOrigins.forEach { origin -> SitePermissionManager.deleteEntry(this@DesktopModeActivity, origin, type) }
                                 listState.removeSelectedItems()

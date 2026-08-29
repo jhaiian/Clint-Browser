@@ -9,9 +9,19 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +49,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,6 +61,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -76,9 +90,21 @@ internal fun AddressBarRow(
     tabCountText: String,
     onAddressBarClick: () -> Unit,
     onTabCountClick: () -> Unit,
+    onSwipeTabChange: (Int) -> Boolean,
     modifier: Modifier = Modifier
 ) {
     val colors = LocalClintColors.current
+    val density = LocalDensity.current
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    var swipeDirection by remember { mutableIntStateOf(0) }
+    val swipeThresholdPx = with(density) { 56.dp.toPx() }
+    val maxDragPx = with(density) { 72.dp.toPx() }
+    LaunchedEffect(addressBarText) {
+        if (swipeDirection != 0) {
+            kotlinx.coroutines.delay(240)
+            swipeDirection = 0
+        }
+    }
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -94,23 +120,69 @@ internal fun AddressBarRow(
         Surface(
             color = colors.addressBarColor,
             shape = RoundedCornerShape(24.dp),
-            modifier = Modifier.weight(1f).height(48.dp).clickable(onClick = onAddressBarClick)
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp)
+                .clickable(onClick = onAddressBarClick)
+                .draggable(
+                    orientation = Orientation.Horizontal,
+                    state = rememberDraggableState { delta ->
+                        dragOffset = (dragOffset + delta).coerceIn(-maxDragPx, maxDragPx)
+                    },
+                    onDragStopped = {
+                        val value = dragOffset
+                        val settle: suspend (Float) -> Unit = { start ->
+                            androidx.compose.animation.core.animate(start, 0f, animationSpec = tween(220)) { v, _ -> dragOffset = v }
+                        }
+                        when {
+                            value <= -swipeThresholdPx -> {
+                                swipeDirection = -1
+                                if (onSwipeTabChange(-1)) dragOffset = 0f else settle(value)
+                            }
+                            value >= swipeThresholdPx -> {
+                                swipeDirection = 1
+                                if (onSwipeTabChange(1)) dragOffset = 0f else settle(value)
+                            }
+                            else -> settle(value)
+                        }
+                    }
+                )
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .graphicsLayer { translationX = dragOffset }
+            ) {
                 Icon(
                     imageVector = if (isSecure) androidx.compose.material.icons.Icons.Filled.Lock else androidx.compose.material.icons.Icons.Filled.LockOpen,
                     contentDescription = null,
                     tint = colors.iconTint,
                     modifier = Modifier.size(20.dp)
                 )
-                Text(
-                    text = addressBarText,
-                    color = colors.onSurface,
-                    fontSize = 16.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                AnimatedContent(
+                    targetState = addressBarText,
+                    transitionSpec = {
+                        if (swipeDirection < 0) {
+                            (slideInHorizontally(tween(220)) { it } + fadeIn(tween(220))) togetherWith
+                                (slideOutHorizontally(tween(220)) { -it } + fadeOut(tween(220)))
+                        } else if (swipeDirection > 0) {
+                            (slideInHorizontally(tween(220)) { -it } + fadeIn(tween(220))) togetherWith
+                                (slideOutHorizontally(tween(220)) { it } + fadeOut(tween(220)))
+                        } else {
+                            fadeIn(tween(180)) togetherWith fadeOut(tween(180))
+                        }
+                    },
                     modifier = Modifier.padding(start = 12.dp).weight(1f)
-                )
+                ) { text ->
+                    Text(
+                        text = text,
+                        color = colors.onSurface,
+                        fontSize = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
         Box(
@@ -142,6 +214,7 @@ internal fun SearchOverlay(
     hint: String,
     suggestions: List<SuggestionItem>,
     voiceResult: String?,
+    statusBarPaddingPx: Int,
     onVoiceResultConsumed: () -> Unit,
     onQueryChange: (String) -> Unit,
     onSubmit: (String) -> Unit,
@@ -152,6 +225,7 @@ internal fun SearchOverlay(
     modifier: Modifier = Modifier
 ) {
     val colors = LocalClintColors.current
+    val density = LocalDensity.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
     var fieldValue by remember {
@@ -259,7 +333,7 @@ internal fun SearchOverlay(
     }
 
     Surface(color = colors.background, modifier = modifier.fillMaxSize().imePadding()) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(top = with(density) { statusBarPaddingPx.toDp() })) {
             if (isBottom) {
                 Box(modifier = Modifier.weight(1f, fill = true), contentAlignment = Alignment.BottomStart) { suggestionsList() }
                 fieldRow()

@@ -28,7 +28,7 @@ import com.jhaiian.clint.util.formatFileSize
 
 @Composable
 fun AddFilterListFromLinkDialog(
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     fetchStatus: AddLinkFetchStatus,
     onFetch: (url: String) -> Unit,
     onUrlChanged: () -> Unit,
@@ -57,7 +57,7 @@ fun AddFilterListFromLinkDialog(
 
     ClintDialog(
         title = stringResource(R.string.filter_list_add_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         cancelable = !isFetching,
         footer = {
@@ -132,7 +132,7 @@ fun AddFilterListFromLinkDialog(
 @Composable
 internal fun AddFilterListFromFileDialog(
     imported: LocalFilterListImportResult.Success,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (title: String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -142,7 +142,7 @@ internal fun AddFilterListFromFileDialog(
 
     ClintDialog(
         title = stringResource(R.string.filter_list_add_file_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         cancelable = !isSaving,
         footer = {

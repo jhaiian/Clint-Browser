@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
@@ -37,7 +38,7 @@ val ClintDialogContentMaxHeight = 440.dp
 private val ClintDialogChromeHeight = 140.dp
 
 @Composable
-internal fun ClintDialogStatusBarEffect(hideStatusBar: Boolean) {
+internal fun ClintDialogStatusBarEffect(hideStatusBar: Boolean, hideSystemNavigation: Boolean) {
     val view = LocalView.current
     val context = LocalContext.current
 
@@ -47,15 +48,20 @@ internal fun ClintDialogStatusBarEffect(hideStatusBar: Boolean) {
         onDispose { activity?.trackDialogDismissed() }
     }
 
-    DisposableEffect(hideStatusBar) {
+    DisposableEffect(hideStatusBar, hideSystemNavigation) {
         val window = (view.parent as? DialogWindowProvider)?.window
         if (window != null) {
             val controller = WindowInsetsControllerCompat(window, window.decorView)
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             if (hideStatusBar) {
-                controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 controller.hide(WindowInsetsCompat.Type.statusBars())
             } else {
                 controller.show(WindowInsetsCompat.Type.statusBars())
+            }
+            if (hideSystemNavigation) {
+                controller.hide(WindowInsetsCompat.Type.navigationBars())
+            } else {
+                controller.show(WindowInsetsCompat.Type.navigationBars())
             }
         }
         onDispose {}
@@ -75,10 +81,11 @@ fun ClintDialogCancelFooter(onDismiss: () -> Unit) {
 @Composable
 fun ClintDialog(
     title: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onDismiss: () -> Unit,
     cancelable: Boolean = true,
     footer: @Composable () -> Unit = { ClintDialogCancelFooter(onDismiss) },
+    scrollState: ScrollState = rememberScrollState(),
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = LocalClintColors.current
@@ -90,7 +97,7 @@ fun ClintDialog(
             dismissOnClickOutside = cancelable
         )
     ) {
-        ClintDialogStatusBarEffect(hideStatusBar)
+        ClintDialogStatusBarEffect(hideStatusBar, hideSystemNavigation)
         BoxWithConstraints {
             val maxContentHeight = (maxHeight - ClintDialogChromeHeight)
                 .coerceIn(0.dp, ClintDialogContentMaxHeight)
@@ -106,7 +113,7 @@ fun ClintDialog(
                     Column(
                         Modifier
                             .heightIn(max = maxContentHeight)
-                            .verticalScroll(rememberScrollState())
+                            .verticalScroll(scrollState)
                             .padding(horizontal = 8.dp)
                     ) { content() }
                     footer()

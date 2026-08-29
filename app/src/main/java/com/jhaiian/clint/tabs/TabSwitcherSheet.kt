@@ -68,6 +68,7 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
     val activeIndex = remember { activity.tabManager.activeIndex }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+    val hideSystemNavigation = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
     val listState = rememberLazyListState()
 
     val flingBoundaryConnection = remember {
@@ -96,7 +97,7 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
         containerColor = colors.popupBackground,
         dragHandle = { BottomSheetDefaults.DragHandle(color = colors.divider) }
     ) {
-        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
+        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar, hideSystemNavigation)
         LazyColumn(
             Modifier.fillMaxWidth().heightIn(max = maxSheetHeight).nestedScroll(flingBoundaryConnection),
             state = listState

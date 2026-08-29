@@ -107,19 +107,19 @@ fun DownloadSettingsScreen(
         overlay = {
             when (state.openDialog) {
                 DownloadSettingsDialog.MEASUREMENT_SYSTEM -> MeasurementSystemDialog(
-                    current = state.measurementSystemDecimal, hideStatusBar = state.hideStatusBar,
+                    current = state.measurementSystemDecimal, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onSelect = onMeasurementSystemSelected, onDismiss = { state.openDialog = null }
                 )
                 DownloadSettingsDialog.RETRY_COUNT -> RetryCountDialog(
-                    current = state.retryCount, hideStatusBar = state.hideStatusBar,
+                    current = state.retryCount, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onRetryCountConfirm, onDismiss = { state.openDialog = null }
                 )
                 DownloadSettingsDialog.RETRY_INTERVAL -> RetryIntervalDialog(
-                    current = state.retryInterval, hideStatusBar = state.hideStatusBar,
+                    current = state.retryInterval, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onRetryIntervalConfirm, onDismiss = { state.openDialog = null }
                 )
                 DownloadSettingsDialog.SPEED_LIMIT -> SpeedLimitDialog(
-                    currentAmount = state.speedLimitAmount, currentUnit = state.speedLimitUnit, hideStatusBar = state.hideStatusBar,
+                    currentAmount = state.speedLimitAmount, currentUnit = state.speedLimitUnit, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onSpeedLimitConfirm, onDismiss = { state.openDialog = null }
                 )
                 null -> {}

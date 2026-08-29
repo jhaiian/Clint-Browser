@@ -13,8 +13,27 @@ import com.jhaiian.clint.quiver.engine.QuiverGuardWebIntegration
 import com.jhaiian.clint.quiver.engine.ScriptHandlerStore
 
 internal fun MainActivity.saveTabs() {
+    val excludeShortcutTabs = uiState.isShortcutFrameless
+    val activeTab = tabManager.activeTab
+    val restoreActiveId = if (excludeShortcutTabs && activeTab?.shortcutId != null) {
+        activeTab.previousTabId
+    } else {
+        null
+    }
+    fun belongsToShortcut(tab: BrowserTab): Boolean {
+        if (!excludeShortcutTabs) return false
+        if (tab.shortcutId != null) return true
+        var openerId = tab.openerTabId
+        val visited = mutableSetOf<String>()
+        while (openerId != null && visited.add(openerId)) {
+            val opener = tabManager.tabs.firstOrNull { it.id == openerId } ?: return false
+            if (opener.shortcutId != null) return true
+            openerId = opener.openerTabId
+        }
+        return false
+    }
     val savedTabs = tabManager.tabs
-        .filter { !it.isIncognito && !it.isRefreshLinkTab }
+        .filter { !it.isIncognito && !it.isRefreshLinkTab && !belongsToShortcut(it) }
         .mapIndexedNotNull { index, tab ->
             val url = tab.webView.url?.takeIf { it.isNotEmpty() && it != "about:blank" }
                 ?: tab.url.takeIf { it.isNotEmpty() && it != "about:blank" }
@@ -23,8 +42,9 @@ internal fun MainActivity.saveTabs() {
                 position = index,
                 url = url,
                 title = tab.title,
-                isActive = tab == tabManager.activeTab,
-                tabId = tab.id
+                isActive = if (restoreActiveId != null) tab.id == restoreActiveId else tab == tabManager.activeTab,
+                tabId = tab.id,
+                shortcutId = tab.shortcutId
             )
         }
     Thread { TabSessionManager.save(this, savedTabs) }.start()
@@ -35,7 +55,7 @@ internal fun MainActivity.restoreTabs(): Boolean {
     val savedTabs = TabSessionManager.load(this)
     if (savedTabs.isEmpty()) return false
     val activeIndex = savedTabs.indexOfFirst { it.isActive }.coerceAtLeast(0)
-    savedTabs.forEach { openNewTabSilent(it.url, it.tabId) }
+    savedTabs.forEach { openNewTabSilent(it.url, it.tabId, it.shortcutId) }
     tabManager.switchTo(activeIndex)
     attachActiveWebView()
     TabThumbnailCache.pruneDisk(this, savedTabs.map { it.tabId }.toSet())
@@ -72,9 +92,9 @@ private fun MainActivity.migrateTabsFromPrefsIfNeeded() {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-internal fun MainActivity.openNewTabSilent(url: String, id: String = java.util.UUID.randomUUID().toString()) {
+internal fun MainActivity.openNewTabSilent(url: String, id: String = java.util.UUID.randomUUID().toString(), shortcutId: String? = null) {
     val webView = createWebView(false)
-    val tab = BrowserTab(id = id, url = url, webView = webView)
+    val tab = BrowserTab(id = id, url = url, shortcutId = shortcutId, webView = webView)
     tabManager.add(tab)
     if (isDesktopMode) addDesktopScript(tab)
     webView.webViewClient = ClintWebViewClient(
@@ -107,10 +127,10 @@ internal fun MainActivity.openNewTabSilent(url: String, id: String = java.util.U
     webView.loadUrl(url)
 }
 
-internal fun MainActivity.openNewTab(isIncognito: Boolean, url: String = getSearchEngineHomeUrl(), openerTabId: String? = null) {
+internal fun MainActivity.openNewTab(isIncognito: Boolean, url: String = getSearchEngineHomeUrl(), openerTabId: String? = null, shortcutId: String? = null, previousTabId: String? = null) {
     captureActiveTabThumbnail()
     val webView = createWebView(isIncognito)
-    val tab = BrowserTab(isIncognito = isIncognito, openerTabId = openerTabId, webView = webView)
+    val tab = BrowserTab(isIncognito = isIncognito, openerTabId = openerTabId, shortcutId = shortcutId, previousTabId = previousTabId, webView = webView)
     val index = tabManager.add(tab)
     if (isDesktopMode) addDesktopScript(tab)
     webView.webViewClient = ClintWebViewClient(

@@ -133,6 +133,7 @@ class WebsiteBlockerActivity : ClintActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val theme = prefs.getString("app_theme", "dark") ?: "dark"
         val hideStatusBar = prefs.getBoolean("hide_status_bar", false)
+        val hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
 
         uiState = WebsiteBlockerUiState()
         uiState.masterEnabled = prefs.getBoolean(PREF_ENABLED, false)
@@ -176,11 +177,11 @@ class WebsiteBlockerActivity : ClintActivity() {
                         onSelectionShareLink = { shareSelectedCategoryLinks() }
                     )
 
-                    ConfirmDialogHost(uiState.confirmDialog, hideStatusBar) { uiState.confirmDialog = null }
+                    ConfirmDialogHost(uiState.confirmDialog, hideStatusBar, hideSystemNavigation) { uiState.confirmDialog = null }
                     val downloadingCategoryName = uiState.downloadProgress?.let { stringResourceCategoryTitle(it.categoryId) }
-                    WebsiteBlockerDownloadProgressDialog(uiState.downloadProgress, downloadingCategoryName, hideStatusBar) { activeJob?.cancel() }
-                    WebsiteBlockerCompileProgressDialog(uiState.compileProgress, hideStatusBar)
-                    WebsiteBlockerCompileResultDialog(uiState.compileResult, hideStatusBar) { uiState.compileResult = null }
+                    WebsiteBlockerDownloadProgressDialog(uiState.downloadProgress, downloadingCategoryName, hideStatusBar, hideSystemNavigation) { activeJob?.cancel() }
+                    WebsiteBlockerCompileProgressDialog(uiState.compileProgress, hideStatusBar, hideSystemNavigation)
+                    WebsiteBlockerCompileResultDialog(uiState.compileResult, hideStatusBar, hideSystemNavigation) { uiState.compileResult = null }
                 }
             }
         }

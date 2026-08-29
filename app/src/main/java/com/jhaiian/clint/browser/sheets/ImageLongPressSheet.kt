@@ -80,6 +80,7 @@ internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainA
     val colors = LocalClintColors.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
+    val hideSystemNavigation = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
 
     fun dismissAnd(action: () -> Unit) {
         onDismiss()
@@ -127,7 +128,7 @@ internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainA
         containerColor = colors.popupBackground,
         dragHandle = { BottomSheetDefaults.DragHandle(color = colors.divider) }
     ) {
-        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar)
+        com.jhaiian.clint.ui.ClintDialogStatusBarEffect(hideStatusBar, hideSystemNavigation)
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = maxSheetHeight).nestedScroll(flingBoundaryConnection), state = listState) {
         item {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
@@ -153,6 +154,9 @@ internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainA
                     dismissAnd { activity.onImageOpenIncognito(request.imageUrl) }
                 }
             }
+            LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Download, stringResource(R.string.image_download)) {
+                dismissAnd { activity.onImageDownload(request.imageUrl, request.pageTitle) }
+            }
             if (request.isPreviewContext) {
                 LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Tab, stringResource(R.string.image_open_in_current_tab)) {
                     dismissAnd { activity.onImageOpenInCurrentTab(request.imageUrl) }
@@ -165,9 +169,6 @@ internal fun ImageLongPressSheet(request: ImageLongPressRequest, activity: MainA
             }
             LongPressActionRow(androidx.compose.material.icons.Icons.Filled.ContentCopy, stringResource(R.string.image_copy)) {
                 dismissAnd { activity.onImageCopy(request.imageUrl) }
-            }
-            LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Download, stringResource(R.string.image_download)) {
-                dismissAnd { activity.onImageDownload(request.imageUrl, request.pageTitle) }
             }
             LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Share, stringResource(R.string.image_share)) {
                 dismissAnd { activity.onImageShare(request.imageUrl) }

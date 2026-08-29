@@ -116,6 +116,20 @@
             android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".browser.MainActivity" />
 
+        <activity-alias
+            android:name=".downloads.ClintDownloaderAlias"
+            android:targetActivity=".downloads.DownloadsActivity"
+            android:exported="true"
+            android:label="@string/clint_downloader_label"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
+
         <activity
             android:name=".bookmarks.BookmarksActivity"
             android:exported="false"
@@ -169,6 +183,12 @@
             android:exported="false"
             android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".blocker.WebsiteBlockerActivity" />
+
+        <activity
+            android:name=".settings.menucustomization.MenuCustomizationActivity"
+            android:exported="false"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:parentActivityName=".settings.SettingsActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

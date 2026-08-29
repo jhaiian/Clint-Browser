@@ -48,12 +48,12 @@ private val OptionBottomSpacing = SettingsPickerOptionBottomSpacing
 @Composable
 fun MeasurementSystemDialog(
     current: Boolean,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onSelect: (decimal: Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     val colors = LocalClintColors.current
-    ClintDialog(title = stringResource(R.string.measurement_system_dialog_title), hideStatusBar = hideStatusBar, onDismiss = onDismiss) {
+    ClintDialog(title = stringResource(R.string.measurement_system_dialog_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
         data class Option(val decimal: Boolean, val titleRes: Int, val descRes: Int)
         listOf(
             Option(false, R.string.measurement_system_binary, R.string.measurement_system_binary_desc),
@@ -81,7 +81,7 @@ private fun NumberEntryDialog(
     hint: String,
     initialValue: Int,
     minValue: Int,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -90,7 +90,7 @@ private fun NumberEntryDialog(
 
     ClintDialog(
         title = title,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
@@ -122,28 +122,28 @@ private fun NumberEntryDialog(
 }
 
 @Composable
-fun RetryCountDialog(current: Int, hideStatusBar: Boolean, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
+fun RetryCountDialog(current: Int, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
     NumberEntryDialog(
         title = stringResource(R.string.download_retry_count_dialog_title),
         message = stringResource(R.string.download_retry_count_dialog_message),
         hint = stringResource(R.string.download_retry_count_dialog_hint),
         initialValue = current,
         minValue = 0,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onConfirm = onConfirm,
         onDismiss = onDismiss
     )
 }
 
 @Composable
-fun RetryIntervalDialog(current: Int, hideStatusBar: Boolean, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
+fun RetryIntervalDialog(current: Int, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
     NumberEntryDialog(
         title = stringResource(R.string.download_retry_interval_dialog_title),
         message = stringResource(R.string.download_retry_interval_dialog_message),
         hint = stringResource(R.string.download_retry_interval_dialog_hint),
         initialValue = current,
         minValue = 1,
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onConfirm = onConfirm,
         onDismiss = onDismiss
     )
@@ -153,7 +153,7 @@ fun RetryIntervalDialog(current: Int, hideStatusBar: Boolean, onConfirm: (Int) -
 fun SpeedLimitDialog(
     currentAmount: Int,
     currentUnit: String,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (amount: Int, unit: String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -164,7 +164,7 @@ fun SpeedLimitDialog(
 
     ClintDialog(
         title = stringResource(R.string.download_speed_limit_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

@@ -17,10 +17,10 @@ data class DownloadConflictDialogRequest(
 )
 
 @Composable
-internal fun DownloadConflictDialog(request: DownloadConflictDialogRequest, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+internal fun DownloadConflictDialog(request: DownloadConflictDialogRequest, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     ClintDialog(
         title = stringResource(R.string.download_conflict_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = { ClintDialogCancelFooter(onDismiss) }
     ) {

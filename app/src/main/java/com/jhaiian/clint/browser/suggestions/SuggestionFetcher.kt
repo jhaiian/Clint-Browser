@@ -20,10 +20,8 @@ internal class SuggestionFetcher {
 
     private val handler = Handler(Looper.getMainLooper())
     private var pendingCall: Call? = null
-    private var debounceRunnable: Runnable? = null
 
     fun fetch(query: String, provider: String = "duckduckgo", onResult: (List<String>) -> Unit) {
-        debounceRunnable?.let { handler.removeCallbacks(it) }
         pendingCall?.cancel()
         pendingCall = null
 
@@ -32,52 +30,48 @@ internal class SuggestionFetcher {
             return
         }
 
-        val runnable = Runnable {
-            val encodedQuery = android.net.Uri.encode(query)
-            val url = if (provider == "google") {
-                "https://www.google.com/complete/search?client=firefox&q=$encodedQuery"
-            } else {
-                "https://duckduckgo.com/ac/?q=$encodedQuery&type=list"
-            }
-            val request = Request.Builder()
-                .url(url)
-                .build()
-            val call = client.newCall(request)
-            pendingCall = call
-            call.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    handler.post { onResult(emptyList()) }
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    val results = mutableListOf<String>()
-                    try {
-                        val body = response.body.string()
-                        val root = JSONArray(body)
-                        if (root.length() >= 2) {
-                            val suggestions = root.getJSONArray(1)
-                            val limit = minOf(suggestions.length(), MAX_SUGGESTIONS)
-                            for (i in 0 until limit) {
-                                results.add(suggestions.getString(i))
-                            }
-                        }
-                    } catch (_: Exception) {}
-                    handler.post { onResult(results) }
-                }
-            })
+        val encodedQuery = android.net.Uri.encode(query)
+        val url = if (provider == "google") {
+            "https://www.google.com/complete/search?client=firefox&q=$encodedQuery"
+        } else {
+            "https://duckduckgo.com/ac/?q=$encodedQuery&type=list"
         }
-        debounceRunnable = runnable
-        handler.postDelayed(runnable, DEBOUNCE_MS)
+        val request = Request.Builder()
+            .url(url)
+            .build()
+        val call = client.newCall(request)
+        pendingCall = call
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                if (call != pendingCall) return
+                handler.post { onResult(emptyList()) }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (call != pendingCall) return
+                val results = mutableListOf<String>()
+                try {
+                    val body = response.body.string()
+                    val root = JSONArray(body)
+                    if (root.length() >= 2) {
+                        val suggestions = root.getJSONArray(1)
+                        val limit = minOf(suggestions.length(), MAX_SUGGESTIONS)
+                        for (i in 0 until limit) {
+                            results.add(suggestions.getString(i))
+                        }
+                    }
+                } catch (_: Exception) {}
+                handler.post { onResult(results) }
+            }
+        })
     }
 
     fun cancel() {
-        debounceRunnable?.let { handler.removeCallbacks(it) }
         pendingCall?.cancel()
         pendingCall = null
     }
 
     companion object {
-        private const val DEBOUNCE_MS = 200L
         private const val MAX_SUGGESTIONS = 10
     }
 }

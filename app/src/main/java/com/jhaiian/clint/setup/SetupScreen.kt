@@ -35,6 +35,7 @@ fun SetupScreen(
     onPrivacyClick: () -> Unit,
     onTermsClick: () -> Unit,
     onHideStatusBarToggled: (Boolean) -> Unit,
+    onHideSystemNavigationToggled: (Boolean) -> Unit,
     onThemeSelected: (String) -> Unit,
     onAccentSelected: (String) -> Unit,
     onIntensitySelected: (String) -> Unit,
@@ -62,7 +63,7 @@ fun SetupScreen(
                         start = insets.calculateStartPadding(layoutDirection),
                         end = insets.calculateEndPadding(layoutDirection),
                         top = if (state.hideStatusBar) 0.dp else insets.calculateTopPadding(),
-                        bottom = insets.calculateBottomPadding()
+                        bottom = if (state.hideSystemNavigation) 0.dp else insets.calculateBottomPadding()
                     )
             ) {
                 val isWideScreen = LocalConfiguration.current.screenWidthDp >= WideScreenBreakpointDp
@@ -92,7 +93,7 @@ fun SetupScreen(
                                 )
                                 1 -> SetupRestorePage(
                                     activity = activity,
-                                    hideStatusBar = state.hideStatusBar,
+                                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                                     onSkip = onSkipRestore,
                                     onRestoreComplete = onRestoreComplete
                                 )
@@ -110,13 +111,13 @@ fun SetupScreen(
                                     addressBarPosition = state.addressBarPosition,
                                     menuStyle = state.menuStyle,
                                     scrollHideMode = state.scrollHideMode,
-                                    hideStatusBar = state.hideStatusBar,
+                                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                                     theme = state.theme,
                                     accent = state.accent,
                                     onAddressBarPositionSelected = onAddressBarPositionSelected,
                                     onMenuStyleSelected = onMenuStyleSelected,
                                     onScrollHideModeSelected = onScrollHideModeSelected,
-                                    onHideStatusBarToggled = onHideStatusBarToggled,
+                                    onHideStatusBarToggled = onHideStatusBarToggled, onHideSystemNavigationToggled = onHideSystemNavigationToggled,
                                     onNext = onNextFromLayoutPage
                                 )
                                 4 -> SetupEnginePage(

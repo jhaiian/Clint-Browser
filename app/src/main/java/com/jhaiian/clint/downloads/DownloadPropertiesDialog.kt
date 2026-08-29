@@ -48,7 +48,7 @@ import java.util.Locale
 @Composable
 fun DownloadPropertiesDialog(
     item: DownloadItem,
-    hideStatusBar: Boolean,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onDismiss: () -> Unit,
     onShare: (DownloadItem) -> Unit,
     onOpen: (DownloadItem) -> Unit
@@ -100,7 +100,7 @@ fun DownloadPropertiesDialog(
 
     ClintDialog(
         title = stringResource(R.string.download_props_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {

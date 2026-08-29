@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.WebAsset
@@ -42,6 +43,8 @@ fun LookAndFeelScreen(
     onTabMenuStyleSelected: (String) -> Unit,
     onScrollHideModeSelected: (String) -> Unit,
     onHideStatusBarRowClicked: () -> Unit,
+    onHideSystemNavigationRowClicked: () -> Unit,
+    onCustomizeMenuRowClicked: () -> Unit,
     onExitConfirmationConfirmed: (String) -> Unit
 ) {
     val colors = LocalClintColors.current
@@ -52,39 +55,39 @@ fun LookAndFeelScreen(
         overlay = {
             when (state.openDialog) {
                 LookAndFeelDialog.THEME -> ThemeSelectorDialog(
-                    current = state.theme, hideStatusBar = state.hideStatusBar,
+                    current = state.theme, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onSelect = onThemeSelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.ACCENT -> AccentColorDialog(
-                    current = state.accent, theme = state.theme, hideStatusBar = state.hideStatusBar,
+                    current = state.accent, theme = state.theme, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onSelect = onAccentSelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.SURFACE_INTENSITY -> SurfaceIntensityDialog(
-                    current = state.intensity, theme = state.theme, accent = state.accent, hideStatusBar = state.hideStatusBar,
+                    current = state.intensity, theme = state.theme, accent = state.accent, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onSelect = onIntensitySelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.ADDRESS_BAR_POSITION -> AddressBarPositionDialog(
-                    current = state.addressBarPosition, theme = state.theme, accent = state.accent, hideStatusBar = state.hideStatusBar,
+                    current = state.addressBarPosition, theme = state.theme, accent = state.accent, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onSelect = onAddressBarPositionSelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.MENU_STYLE -> MenuStyleDialog(
                     current = state.menuStyle, addressBarPosition = state.addressBarPosition, theme = state.theme, accent = state.accent,
-                    hideStatusBar = state.hideStatusBar, onSelect = onMenuStyleSelected, onDismiss = { state.openDialog = null }
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation, onSelect = onMenuStyleSelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.TAB_MENU_STYLE -> TabMenuStyleDialog(
                     current = state.tabMenuStyle, theme = state.theme, accent = state.accent,
-                    hideStatusBar = state.hideStatusBar, onSelect = onTabMenuStyleSelected, onDismiss = { state.openDialog = null }
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation, onSelect = onTabMenuStyleSelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.SCROLL_HIDE_MODE -> ScrollHideModeDialog(
                     current = state.scrollHideMode, addressBarPosition = state.addressBarPosition, theme = state.theme, accent = state.accent,
-                    hideStatusBar = state.hideStatusBar, onSelect = onScrollHideModeSelected, onDismiss = { state.openDialog = null }
+                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation, onSelect = onScrollHideModeSelected, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.EXIT_CONFIRMATION -> ExitConfirmationDialog(
-                    current = state.exitConfirmation, hideStatusBar = state.hideStatusBar,
+                    current = state.exitConfirmation, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onExitConfirmationConfirmed, onDismiss = { state.openDialog = null }
                 )
                 LookAndFeelDialog.LANGUAGE -> LanguageSelectorDialog(
-                    current = state.language, hideStatusBar = state.hideStatusBar,
+                    current = state.language, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onSelect = onLanguageSelected, onDismiss = { state.openDialog = null }
                 )
                 null -> {}
@@ -181,6 +184,14 @@ fun LookAndFeelScreen(
             )
             RowDivider(colors.divider)
             SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.Reorder,
+                title = stringResource(R.string.menu_customization_title),
+                summary = stringResource(R.string.menu_customization_settings_summary),
+                colors = colors,
+                onClick = onCustomizeMenuRowClicked
+            )
+            RowDivider(colors.divider)
+            SettingsRow(
                 icon = androidx.compose.material.icons.Icons.Filled.Fullscreen,
                 title = stringResource(R.string.hide_status_bar),
                 summary = stringResource(R.string.hide_status_bar_summary),
@@ -188,6 +199,17 @@ fun LookAndFeelScreen(
                 onClick = onHideStatusBarRowClicked,
                 trailing = {
                     ClintSwitch(checked = state.hideStatusBar)
+                }
+            )
+            RowDivider(colors.divider)
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.Fullscreen,
+                title = stringResource(R.string.hide_system_navigation),
+                summary = stringResource(R.string.hide_system_navigation_summary),
+                colors = colors,
+                onClick = onHideSystemNavigationRowClicked,
+                trailing = {
+                    ClintSwitch(checked = state.hideSystemNavigation)
                 }
             )
         }

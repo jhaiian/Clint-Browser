@@ -30,7 +30,8 @@ class DownloadSettingsUiState(
     initialShowGrantAllFilesAccessRow: Boolean,
     initialAllFilesAccessGranted: Boolean,
     initialPushNotifications: Boolean,
-    initialHideStatusBar: Boolean
+    initialHideStatusBar: Boolean,
+initialHideSystemNavigation: Boolean
 ) {
     var locationMode by mutableStateOf(initialLocationMode)
     var customUri by mutableStateOf(initialCustomUri)
@@ -60,6 +61,7 @@ class DownloadSettingsUiState(
 
     var pushNotifications by mutableStateOf(initialPushNotifications)
     var hideStatusBar by mutableStateOf(initialHideStatusBar)
+    var hideSystemNavigation by mutableStateOf(initialHideSystemNavigation)
 
     var openDialog by mutableStateOf<DownloadSettingsDialog?>(null)
 }

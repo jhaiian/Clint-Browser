@@ -33,14 +33,14 @@ data class RefreshLinkDialogRequest(
 )
 
 @Composable
-internal fun RefreshLinkDialog(request: RefreshLinkDialogRequest, hideStatusBar: Boolean, onDismiss: () -> Unit) {
+internal fun RefreshLinkDialog(request: RefreshLinkDialogRequest, hideStatusBar: Boolean, hideSystemNavigation: Boolean, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
 
     var updateExisting by remember(request) { mutableStateOf(true) }
 
     ClintDialog(
         title = stringResource(R.string.refresh_link_dialog_title),
-        hideStatusBar = hideStatusBar,
+        hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
         onDismiss = onDismiss,
         footer = {
             Row(Modifier.fillMaxWidth().padding(end = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.End) {
