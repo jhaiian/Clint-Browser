@@ -1,12 +1,12 @@
 {
-  "version": "1.1.4",
-  "changelog": "# Clint Browser v1.1.4\n\n---\n\n## What's New\n\n### Userscripts\n\nAdded userscript support (Tampermonkey style). You can find it in **Settings → Browser Settings → Userscripts**.\n\nYou can add userscripts by:\n- Uploading a script file\n- Downloading via link from Greasy Fork (tap the \"Get Script\" button)\n- Creating a new one directly in the app (it comes with a code editor — it's not great, but at least I built one)\n\nIt supports most scripts from my testing. Just let me know if a script isn't working as intended, whether there's something we can do about it, or if it's just another WebView limitation.\n\n(Thanks to @brnwlshubh for suggesting this #8)\n\n---\n\n### Search Engine & Search Suggestions\n\n- Added Ecosia as a search engine option.\n- Added the ability to create a custom search engine.\n\nUse `{query}` where the search term goes.\n\nExample: `https://www.google.com/search?q={query}`\n\n- Added the ability to create your own custom search suggestions API.\n\nUse `{query}` where the search term goes.\n\nExample: `https://duckduckgo.com/ac/?q={query}&type=list`\n\n(Thanks to @ncgjbr-ai for suggesting this #35)\n\n---\n\n### Frameless Mode Shortcuts Rework\n\nFrameless mode shortcuts have been reworked.\n\nNow, shortcuts will no longer be visible in the tab menu. If you click on a shortcut, it will open. If you go back home and click Clint again, it will return to browsing, and vice versa.\n\nThe shortcut tab will also have session persistence. Instead of coming back every time you restart the app, you will resume your session.\n\n(Thanks to @deniganda for suggesting this #32)\n\n---\n\n### Download Manager\n\nAdded the ability to switch your download manager between:\n\n- Clint\n- 1DM\n- 1DM+\n- 1DM Lite\n- ADM\n\n(Thanks to @iHarryPotter178 for suggesting this #31)\n\n---\n\n## Bug Fixes\n\n- Fixed the WebView getting cut off at the top when the status bar is on. (Thanks to @deniganda and @ncgjbr-ai for reporting this #32 #34)\n- Fixed search suggestions flickering every time the character changes. (Thanks to @snashyturner for reporting this #36)\n- Fixed others that I forget.\n\n---\n\n## Extra Changes\n\n- Updated Terms of Service.\n- Updated Privacy Policy.\n\n---",
+  "version": "1.1.4-r2",
+  "changelog": "# Clint Browser v1.1.4-r2\n\n---\n\n## Bug Fixes\n\n- Fixed an issue where the status bar became transparent instead of having its own view when the status bar was enabled and the search bar was positioned at the bottom. (Thanks to @ncgjbr-ai for reporting this in #38!)\n- Fixed the animation of the bottom search bar when opening the search overlay.\n\n---\n\n> *You can skip this version if you don't use this combination of settings. I just wanted to release a quick fix because I don't want anybody to experience these bugs, especially since the next major update might take longer.*\n\n---",
   "downloads": {
-    "arm64-v8a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4/ClintBrowser-1.1.4-arm64-v8a.apk",
-    "armeabi-v7a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4/ClintBrowser-1.1.4-armeabi-v7a.apk",
-    "x86": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4/ClintBrowser-1.1.4-x86.apk",
-    "x86_64": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4/ClintBrowser-1.1.4-x86_64.apk",
-    "universal": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4/ClintBrowser-1.1.4-universal.apk"
+    "arm64-v8a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-arm64-v8a.apk",
+    "armeabi-v7a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-armeabi-v7a.apk",
+    "x86": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-x86.apk",
+    "x86_64": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-x86_64.apk",
+    "universal": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-universal.apk"
   },
-  "versionCode": 26
+  "versionCode": 27
 }
