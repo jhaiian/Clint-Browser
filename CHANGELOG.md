@@ -4,6 +4,21 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.4-r2
+
+---
+
+## Bug Fixes
+
+- Fixed an issue where the status bar became transparent instead of having its own view when the status bar was enabled and the search bar was positioned at the bottom. (Thanks to @ncgjbr-ai for reporting this in #38!)
+- Fixed the animation of the bottom search bar when opening the search overlay.
+
+---
+
+> *You can skip this version if you don't use this combination of settings. I just wanted to release a quick fix because I don't want anybody to experience these bugs, especially since the next major update might take longer.*
+
+---
+
 # v1.1.4
 
 ---

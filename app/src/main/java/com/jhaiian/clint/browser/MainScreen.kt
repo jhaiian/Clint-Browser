@@ -73,7 +73,7 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
     LaunchedEffect(rawNavBarPx) {
         if (rawNavBarPx > 0) state.navBarInsetPx = rawNavBarPx
     }
-    val effectiveStatusBarPx = if (hideStatusBar || state.addressBarPosition == AddressBarPosition.BOTTOM) {
+    val effectiveStatusBarPx = if (hideStatusBar) {
         0
     } else {
         rawStatusBarPx.takeIf { it > 0 } ?: state.cachedStatusBarInsetPx
@@ -138,7 +138,8 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             exit = fadeOut(tween(150)) + shrinkVertically(
                 animationSpec = tween(250),
                 shrinkTowards = if (state.searchOverlayIsBottom) Alignment.Bottom else Alignment.Top
-            )
+            ),
+            modifier = Modifier.align(if (state.searchOverlayIsBottom) Alignment.BottomStart else Alignment.TopStart)
         ) {
             SearchOverlay(
                 initialText = state.searchQuery,
