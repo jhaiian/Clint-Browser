@@ -15,7 +15,8 @@ class SetupUiState(
     initialMenuStyle: String,
     initialScrollHideMode: String,
     initialHideStatusBar: Boolean, initialHideSystemNavigation: Boolean,
-    initialEngine: String
+    initialEngine: String,
+    initialCustomEngineName: String, initialCustomEngineUrl: String
 ) {
     var currentPage by mutableStateOf(initialPage)
     var consentChecked by mutableStateOf(false)
@@ -31,6 +32,8 @@ class SetupUiState(
     var hideSystemNavigation by mutableStateOf(initialHideSystemNavigation)
 
     var engine by mutableStateOf(initialEngine)
+    var customEngineName by mutableStateOf(initialCustomEngineName)
+    var customEngineUrl by mutableStateOf(initialCustomEngineUrl)
 
     var isDefaultBrowser by mutableStateOf(false)
 

@@ -15,6 +15,7 @@ import androidx.webkit.WebViewFeature
 import com.jhaiian.clint.downloads.ClintDownloadManager
 import com.jhaiian.clint.quiver.engine.QuiverGuardWebIntegration
 import com.jhaiian.clint.tabs.BrowserTab
+import com.jhaiian.clint.userscripts.UserScriptEngine
 import com.jhaiian.clint.util.registeredDomain
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
@@ -51,6 +52,7 @@ internal fun MainActivity.createWebView(isIncognito: Boolean): WebView {
     webView.addJavascriptInterface(CanvasTouchBridge(), "CanvasTouchBridge")
     webView.addJavascriptInterface(BottomNavBridge(), "BottomNavBridge")
     webView.addJavascriptInterface(NotificationBridge(webView), "ClintNotificationBridge")
+    webView.addJavascriptInterface(UserScriptBridge(webView), "ClintUserScriptBridge")
     webView.addJavascriptInterface(BlobDownloadBridge(), "BlobDownloadBridge")
     webView.addJavascriptInterface(SelectPickerBridge(webView), "SelectPickerBridge")
 
@@ -245,10 +247,28 @@ internal fun MainActivity.removeDesktopScript(tab: BrowserTab) {
     desktopScriptHandlers.remove(tab.id)?.remove()
 }
 
+internal fun MainActivity.addUserScripts(tab: BrowserTab) {
+    if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
+    removeUserScripts(tab)
+    val script = UserScriptEngine.buildCombinedScript(this) ?: return
+    userScriptHandlers[tab.id] = WebViewCompat.addDocumentStartJavaScript(tab.webView, script, setOf("*"))
+}
+
+internal fun MainActivity.removeUserScripts(tab: BrowserTab) {
+    userScriptHandlers.remove(tab.id)?.remove()
+}
+
+internal fun MainActivity.applyUserScripts() {
+    tabManager.tabs.forEach { addUserScripts(it) }
+    tabManager.activeTab?.webView?.reload()
+}
+
 internal fun MainActivity.getSearchEngineHomeUrl(): String {
     return when (prefs.getString("search_engine", "duckduckgo")) {
         "brave" -> "https://search.brave.com"
+        "ecosia" -> "https://www.ecosia.org"
         "google" -> "https://www.google.com"
+        "custom" -> com.jhaiian.clint.browser.customSearchEngineHomeUrl(prefs)
         else -> "https://duckduckgo.com"
     }
 }
@@ -257,7 +277,9 @@ internal fun MainActivity.getSearchQueryUrl(query: String): String {
     val encoded = android.net.Uri.encode(query)
     return when (prefs.getString("search_engine", "duckduckgo")) {
         "brave" -> "https://search.brave.com/search?q=$encoded"
+        "ecosia" -> "https://www.ecosia.org/search?q=$encoded"
         "google" -> "https://www.google.com/search?q=$encoded"
+        "custom" -> com.jhaiian.clint.browser.customSearchEngineQueryUrl(prefs, encoded)
         else -> "https://duckduckgo.com/?q=$encoded"
     }
 }

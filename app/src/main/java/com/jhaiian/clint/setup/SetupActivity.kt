@@ -98,7 +98,8 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
             initialMenuStyle = prefs.getString("menu_style", "popup") ?: "popup",
             initialScrollHideMode = prefs.getString("scroll_hide_mode", "off") ?: "off",
             initialHideStatusBar = hideStatusBar, initialHideSystemNavigation = hideSystemNavigation,
-            initialEngine = "duckduckgo"
+            initialEngine = "duckduckgo",
+            initialCustomEngineName = "", initialCustomEngineUrl = ""
         )
         if (uiState.currentPage == 5) refreshDefaultBrowserState()
 
@@ -131,6 +132,11 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
                 onMenuStyleSelected = { style -> uiState.menuStyle = style },
                 onScrollHideModeSelected = { mode -> uiState.scrollHideMode = mode },
                 onEngineSelected = { engine -> uiState.engine = engine },
+                onCustomEngineSaved = { name, url ->
+                    uiState.customEngineName = name
+                    uiState.customEngineUrl = url
+                    uiState.engine = "custom"
+                },
                 onContinueFromWelcome = { uiState.currentPage = 1 },
                 onSkipRestore = { uiState.currentPage = 2 },
                 onRestoreComplete = { restartAppAfterRestore() },
@@ -248,6 +254,8 @@ class SetupActivity : ClintActivity(), OverlayHostActivity {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         prefs.edit()
             .putString("search_engine", uiState.engine)
+            .putString(com.jhaiian.clint.browser.CustomSearchEngineNameKey, uiState.customEngineName)
+            .putString(com.jhaiian.clint.browser.CustomSearchEngineUrlKey, uiState.customEngineUrl)
             .putString("address_bar_position", uiState.addressBarPosition)
             .putString("menu_style", uiState.menuStyle)
             .putString("scroll_hide_mode", uiState.scrollHideMode)

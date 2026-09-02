@@ -13,6 +13,7 @@ import com.jhaiian.clint.bookmarks.Bookmark
 import com.jhaiian.clint.bookmarks.BookmarkManager
 import com.jhaiian.clint.history.HistoryItem
 import com.jhaiian.clint.history.SearchHistoryManager
+import com.jhaiian.clint.userscripts.maybeShowUserScriptInstallPrompt
 
 private const val SUGGESTION_HISTORY_LIMIT = 20
 private const val SUGGESTION_BOOKMARK_LIMIT = 10
@@ -72,6 +73,7 @@ internal fun MainActivity.openSearchOverlay(isBottom: Boolean) {
 internal fun MainActivity.closeSearchOverlay() {
     uiState.searchOverlayOpen = false
     suggestionFetcher?.cancel()
+    lastOnlineSuggestions = emptyList()
     uiState.suggestions = emptyList()
     updateAddressBar(tabManager.activeTab?.url ?: "")
 }
@@ -86,6 +88,7 @@ internal fun MainActivity.onSearchQueryChanged(query: String) {
         val historyAllowed = !isIncognito || incognitoHistoryAllowed
         if (query.isBlank()) {
             suggestionFetcher?.cancel()
+            lastOnlineSuggestions = emptyList()
             val history = if (historyAllowed) SearchHistoryManager.getAll(this).take(SUGGESTION_HISTORY_LIMIT) else emptyList()
             val bookmarks = BookmarkManager.getAll(this).take(SUGGESTION_BOOKMARK_LIMIT)
             runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
@@ -93,9 +96,13 @@ internal fun MainActivity.onSearchQueryChanged(query: String) {
         }
         val history = if (historyAllowed) SearchHistoryManager.search(this, query).take(SUGGESTION_HISTORY_LIMIT) else emptyList()
         val bookmarks = BookmarkManager.search(this, query).take(SUGGESTION_BOOKMARK_LIMIT)
-        runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, emptyList()) }
+        runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, lastOnlineSuggestions) }
         val suggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo"
-        suggestionFetcher?.fetch(query, suggestionsApi) { suggestions ->
+        val customSuggestionsUrl = if (suggestionsApi == "custom") {
+            customSearchSuggestionsApiQueryUrl(prefs, android.net.Uri.encode(query))
+        } else null
+        suggestionFetcher?.fetch(query, suggestionsApi, customSuggestionsUrl) { suggestions ->
+            lastOnlineSuggestions = suggestions
             runOnUiThread { uiState.suggestions = combineSuggestions(bookmarks, history, suggestions) }
         }
     }
@@ -119,6 +126,7 @@ internal fun MainActivity.onSearchSubmitted(input: String) {
     setAddressBarText(formatted, isBottom = uiState.searchOverlayIsBottom)
     uiState.searchOverlayOpen = false
     suggestionFetcher?.cancel()
+    lastOnlineSuggestions = emptyList()
     uiState.suggestions = emptyList()
     if (tabManager.activeTab?.isIncognito != true) {
         Thread { SearchHistoryManager.add(this, trimmed) }.start()
@@ -131,6 +139,7 @@ internal fun MainActivity.onSuggestionChosen(query: String) {
     setAddressBarText(formatted, isBottom = uiState.searchOverlayIsBottom)
     uiState.searchOverlayOpen = false
     suggestionFetcher?.cancel()
+    lastOnlineSuggestions = emptyList()
     uiState.suggestions = emptyList()
     if (tabManager.activeTab?.isIncognito != true) {
         SearchHistoryManager.add(this, query)
@@ -230,6 +239,7 @@ internal fun MainActivity.onTabUrlUpdated(webView: android.webkit.WebView, url: 
 }
 
 internal fun MainActivity.onPageStarted(url: String) {
+    if (this.maybeShowUserScriptInstallPrompt(url)) return
     swipeRefreshView.isRefreshing = false
     updateAddressBar(url)
     uiState.isPageLoading = true
@@ -331,7 +341,7 @@ internal fun MainActivity.onPageFinished(url: String) {
     }
 
     val activeTab = tabManager.activeTab
-    if (activeTab?.isIncognito != true && url.startsWith("http") && !SearchHistoryManager.isSearchEngineUrl(url)) {
+    if (activeTab?.isIncognito != true && url.startsWith("http") && !SearchHistoryManager.isSearchEngineUrl(applicationContext, url)) {
         val title = activeTab?.webView?.title ?: ""
         Thread {
             SearchHistoryManager.add(applicationContext, url, title)
@@ -365,7 +375,7 @@ internal fun MainActivity.updateNavigationState() {
 }
 
 internal fun MainActivity.updateTabCount() {
-    val count = tabManager.count
+    val count = tabManager.previews().size
     uiState.tabCountText = if (count > 99) ":D" else count.toString()
 }
 

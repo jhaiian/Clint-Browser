@@ -299,7 +299,11 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
     val uiState = remember {
         BrowserSettingsUiState(
             initialSearchEngine = prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo",
+            initialCustomSearchEngineName = com.jhaiian.clint.browser.customSearchEngineName(prefs),
+            initialCustomSearchEngineUrl = com.jhaiian.clint.browser.customSearchEngineUrlTemplate(prefs),
             initialSearchSuggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo",
+            initialCustomSearchSuggestionsApiName = com.jhaiian.clint.browser.customSearchSuggestionsApiName(prefs),
+            initialCustomSearchSuggestionsApiUrl = com.jhaiian.clint.browser.customSearchSuggestionsApiUrlTemplate(prefs),
             initialJavascriptEnabled = prefs.getBoolean("javascript_enabled", true),
             initialFramelessShortcut = prefs.getBoolean("shortcut_frameless_enabled", true),
             initialHideStatusBar = prefs.getBoolean("hide_status_bar", false),
@@ -311,7 +315,11 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
 
     OnResume {
         uiState.searchEngine = prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo"
+        uiState.customSearchEngineName = com.jhaiian.clint.browser.customSearchEngineName(prefs)
+        uiState.customSearchEngineUrl = com.jhaiian.clint.browser.customSearchEngineUrlTemplate(prefs)
         uiState.searchSuggestionsApi = prefs.getString("search_suggestions_api", "duckduckgo") ?: "duckduckgo"
+        uiState.customSearchSuggestionsApiName = com.jhaiian.clint.browser.customSearchSuggestionsApiName(prefs)
+        uiState.customSearchSuggestionsApiUrl = com.jhaiian.clint.browser.customSearchSuggestionsApiUrlTemplate(prefs)
         uiState.javascriptEnabled = prefs.getBoolean("javascript_enabled", true)
         uiState.framelessShortcut = prefs.getBoolean("shortcut_frameless_enabled", true)
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
@@ -338,6 +346,24 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
         } else {
             confirmEngine(selected)
         }
+    }
+
+    fun onCustomSearchEngineSaved(name: String, url: String) {
+        prefs.edit()
+            .putString(com.jhaiian.clint.browser.CustomSearchEngineNameKey, name)
+            .putString(com.jhaiian.clint.browser.CustomSearchEngineUrlKey, url)
+            .apply()
+        uiState.customSearchEngineName = name
+        uiState.customSearchEngineUrl = url
+    }
+
+    fun onCustomSearchSuggestionsApiSaved(name: String, url: String) {
+        prefs.edit()
+            .putString(com.jhaiian.clint.browser.CustomSearchSuggestionsApiNameKey, name)
+            .putString(com.jhaiian.clint.browser.CustomSearchSuggestionsApiUrlKey, url)
+            .apply()
+        uiState.customSearchSuggestionsApiName = name
+        uiState.customSearchSuggestionsApiUrl = url
     }
 
     fun confirmSuggestionsApi(api: String) {
@@ -395,7 +421,9 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
     BrowserSettingsScreen(
         state = uiState,
         onSearchEngineConfirmed = ::onSearchEngineConfirmed,
+        onCustomSearchEngineSaved = ::onCustomSearchEngineSaved,
         onSearchSuggestionsApiConfirmed = ::onSearchSuggestionsApiConfirmed,
+        onCustomSearchSuggestionsApiSaved = ::onCustomSearchSuggestionsApiSaved,
         onJavascriptRowClicked = ::onJavascriptRowClicked,
         onFramelessShortcutRowClicked = ::onFramelessShortcutRowClicked,
         onWebsiteBlockerRowClicked = {
@@ -404,7 +432,10 @@ fun BrowserSettingsPane(activity: SettingsActivity) {
         onQuiverGuardRowClicked = {
             activity.startActivity(android.content.Intent(activity, com.jhaiian.clint.quiver.QuiverGuardActivity::class.java))
         },
-        onIncognitoSearchHistoryRowClicked = ::onIncognitoSearchHistoryRowClicked
+        onIncognitoSearchHistoryRowClicked = ::onIncognitoSearchHistoryRowClicked,
+        onUserScriptsRowClicked = {
+            activity.startActivity(android.content.Intent(activity, com.jhaiian.clint.userscripts.UserScriptsActivity::class.java))
+        }
     )
     ConfirmDialogHost(confirmDialog, uiState.hideStatusBar, uiState.hideSystemNavigation) { confirmDialog = null }
 }
@@ -762,6 +793,7 @@ fun DownloadSettingsPane(activity: SettingsActivity) {
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
     val uiState = remember {
         DownloadSettingsUiState(
+            initialDownloadManagerApp = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_MANAGER, DownloadSettingsKeys.DEFAULT_DOWNLOAD_MANAGER) ?: DownloadSettingsKeys.DEFAULT_DOWNLOAD_MANAGER,
             initialLocationMode = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_LOCATION_MODE, DownloadSettingsKeys.MODE_DEFAULT) ?: DownloadSettingsKeys.MODE_DEFAULT,
             initialCustomUri = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_CUSTOM_URI, null)?.let { Uri.parse(it) },
             initialMeasurementSystemDecimal = prefs.getString(PREF_MEASUREMENT_SYSTEM, DEFAULT_MEASUREMENT_SYSTEM) == MEASUREMENT_SYSTEM_DECIMAL,
@@ -838,6 +870,11 @@ fun DownloadSettingsPane(activity: SettingsActivity) {
 
     DownloadSettingsScreen(
         state = uiState,
+        onDownloadManagerSelected = { appId ->
+            prefs.edit().putString(DownloadSettingsKeys.PREF_DOWNLOAD_MANAGER, appId).apply()
+            uiState.downloadManagerApp = appId
+            uiState.openDialog = null
+        },
         onLocationModeSelected = { newMode ->
             prefs.edit().putString(DownloadSettingsKeys.PREF_DOWNLOAD_LOCATION_MODE, newMode).apply()
             uiState.locationMode = newMode

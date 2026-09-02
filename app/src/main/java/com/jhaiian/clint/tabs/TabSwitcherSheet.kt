@@ -65,7 +65,7 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
     val colors = LocalClintColors.current
     val tabs = remember { mutableStateListOf<TabPreview>().apply { addAll(activity.tabManager.previews()) } }
 
-    val activeIndex = remember { activity.tabManager.activeIndex }
+    val activeTabId = activity.tabManager.activeTab?.id
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val hideStatusBar = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_status_bar", false) }
     val hideSystemNavigation = remember { PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("hide_system_navigation", false) }
@@ -85,9 +85,18 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
         (configuration.screenHeightDp.dp - 96.dp).coerceAtLeast(320.dp)
     }
 
-    fun closeTabAt(index: Int) {
-        activity.onTabClosed(index)
-        if (index in tabs.indices) tabs.removeAt(index)
+    fun openTab(tabId: String) {
+        val idx = activity.tabManager.tabs.indexOfFirst { it.id == tabId }
+        if (idx < 0) return
+        activity.onTabSelected(idx)
+        onDismiss()
+    }
+
+    fun closeTab(tabId: String) {
+        val idx = activity.tabManager.tabs.indexOfFirst { it.id == tabId }
+        if (idx >= 0) activity.onTabClosed(idx)
+        val listIdx = tabs.indexOfFirst { it.id == tabId }
+        if (listIdx >= 0) tabs.removeAt(listIdx)
         if (tabs.isEmpty()) onDismiss()
     }
 
@@ -136,32 +145,32 @@ fun TabSwitcherSheet(activity: MainActivity, onDismiss: () -> Unit) {
 
                     HorizontalDivider(color = colors.divider, thickness = 1.dp)
 
-                    val normalTabs = tabs.withIndex().filter { !it.value.isIncognito }
-                    val incognitoTabs = tabs.withIndex().filter { it.value.isIncognito }
+                    val normalTabs = tabs.filter { !it.isIncognito }
+                    val incognitoTabs = tabs.filter { it.isIncognito }
 
                     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(top = 8.dp, bottom = 24.dp)) {
                         if (normalTabs.isNotEmpty()) {
                             TabSectionHeader(isIncognito = false)
-                            normalTabs.forEach { (index, tab) ->
+                            normalTabs.forEach { tab ->
                                 key(tab.id) {
                                     TabRow(
                                         tab = tab,
-                                        isActive = index == activeIndex,
-                                        onClick = { activity.onTabSelected(index); onDismiss() },
-                                        onClose = { closeTabAt(index) }
+                                        isActive = tab.id == activeTabId,
+                                        onClick = { openTab(tab.id) },
+                                        onClose = { closeTab(tab.id) }
                                     )
                                 }
                             }
                         }
                         if (incognitoTabs.isNotEmpty()) {
                             TabSectionHeader(isIncognito = true)
-                            incognitoTabs.forEach { (index, tab) ->
+                            incognitoTabs.forEach { tab ->
                                 key(tab.id) {
                                     TabRow(
                                         tab = tab,
-                                        isActive = index == activeIndex,
-                                        onClick = { activity.onTabSelected(index); onDismiss() },
-                                        onClose = { closeTabAt(index) }
+                                        isActive = tab.id == activeTabId,
+                                        onClick = { openTab(tab.id) },
+                                        onClose = { closeTab(tab.id) }
                                     )
                                 }
                             }

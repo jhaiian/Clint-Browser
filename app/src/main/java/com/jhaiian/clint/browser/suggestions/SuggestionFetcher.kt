@@ -21,7 +21,7 @@ internal class SuggestionFetcher {
     private val handler = Handler(Looper.getMainLooper())
     private var pendingCall: Call? = null
 
-    fun fetch(query: String, provider: String = "duckduckgo", onResult: (List<String>) -> Unit) {
+    fun fetch(query: String, provider: String = "duckduckgo", customUrl: String? = null, onResult: (List<String>) -> Unit) {
         pendingCall?.cancel()
         pendingCall = null
 
@@ -31,10 +31,10 @@ internal class SuggestionFetcher {
         }
 
         val encodedQuery = android.net.Uri.encode(query)
-        val url = if (provider == "google") {
-            "https://www.google.com/complete/search?client=firefox&q=$encodedQuery"
-        } else {
-            "https://duckduckgo.com/ac/?q=$encodedQuery&type=list"
+        val url = when {
+            !customUrl.isNullOrBlank() -> customUrl
+            provider == "google" -> "https://www.google.com/complete/search?client=firefox&q=$encodedQuery"
+            else -> "https://duckduckgo.com/ac/?q=$encodedQuery&type=list"
         }
         val request = Request.Builder()
             .url(url)

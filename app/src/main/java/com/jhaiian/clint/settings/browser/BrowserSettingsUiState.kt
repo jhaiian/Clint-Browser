@@ -6,7 +6,11 @@ import androidx.compose.runtime.setValue
 
 class BrowserSettingsUiState(
     initialSearchEngine: String,
+    initialCustomSearchEngineName: String,
+    initialCustomSearchEngineUrl: String,
     initialSearchSuggestionsApi: String,
+    initialCustomSearchSuggestionsApiName: String,
+    initialCustomSearchSuggestionsApiUrl: String,
     initialJavascriptEnabled: Boolean,
     initialFramelessShortcut: Boolean,
     initialHideStatusBar: Boolean,
@@ -14,7 +18,11 @@ class BrowserSettingsUiState(
     initialIncognitoSearchHistory: Boolean
 ) {
     var searchEngine by mutableStateOf(initialSearchEngine)
+    var customSearchEngineName by mutableStateOf(initialCustomSearchEngineName)
+    var customSearchEngineUrl by mutableStateOf(initialCustomSearchEngineUrl)
     var searchSuggestionsApi by mutableStateOf(initialSearchSuggestionsApi)
+    var customSearchSuggestionsApiName by mutableStateOf(initialCustomSearchSuggestionsApiName)
+    var customSearchSuggestionsApiUrl by mutableStateOf(initialCustomSearchSuggestionsApiUrl)
     var javascriptEnabled by mutableStateOf(initialJavascriptEnabled)
     var framelessShortcut by mutableStateOf(initialFramelessShortcut)
     var hideStatusBar by mutableStateOf(initialHideStatusBar)

@@ -86,6 +86,7 @@ import com.jhaiian.clint.downloads.DownloadStatus
 import com.jhaiian.clint.quiver.engine.BlockedRequestCounter
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionManager
+import com.jhaiian.clint.userscripts.UserScriptState
 import com.jhaiian.clint.ui.ClintDialogStatusBarEffect
 import com.jhaiian.clint.ui.listscreen.PopupShape
 import com.jhaiian.clint.ui.theme.LocalClintColors
@@ -99,6 +100,7 @@ internal data class BrowserMenuSnapshot(
     val isDesktopMode: Boolean,
     val isDataSaverEnabled: Boolean,
     val pendingDownloadCount: Long,
+    val isUserScriptsEnabled: Boolean,
     val isQuiverGuardEnabled: Boolean,
     val quiverGuardBlockedCount: Long,
     val isQuiverGuardExceptionForSite: Boolean,
@@ -122,6 +124,8 @@ internal class BrowserMenuActions(
     val onCreateShortcut: () -> Unit,
     val onDownloads: () -> Unit,
     val onOpenDownloadSettings: () -> Unit,
+    val onUserScripts: () -> Unit,
+    val onOpenUserScriptsSettings: () -> Unit,
     val onBookmarks: () -> Unit,
     val onHistory: () -> Unit,
     val onDesktopMode: () -> Unit,
@@ -169,6 +173,7 @@ internal fun MainActivity.buildMenuSnapshot(): BrowserMenuSnapshot {
         isDataSaverEnabled = prefs.getBoolean("data_saver_enabled", false),
         pendingDownloadCount = ClintDownloadManager.downloadsFlow.value
             .count { it.status in DownloadStatus.NOT_FINISHED }.toLong(),
+        isUserScriptsEnabled = UserScriptState.isEnabled(this),
         isQuiverGuardEnabled = prefs.getBoolean("quiver_guard_enabled", false),
         quiverGuardBlockedCount = tabManager.activeTab?.id?.let { BlockedRequestCounter.getTabCount(it) } ?: 0L,
         isQuiverGuardExceptionForSite = exceptionForSite,
@@ -193,6 +198,8 @@ internal fun MainActivity.buildMenuActions(dismiss: () -> Unit): BrowserMenuActi
     onCreateShortcut = { dismiss(); onMenuCreateShortcut() },
     onDownloads = { dismiss(); onMenuDownloads() },
     onOpenDownloadSettings = { dismiss(); onMenuOpenDownloadSettings() },
+    onUserScripts = { dismiss(); onMenuUserScripts() },
+    onOpenUserScriptsSettings = { dismiss(); onMenuOpenUserScriptsSettings() },
     onBookmarks = { dismiss(); onMenuBookmarks() },
     onHistory = { dismiss(); onMenuHistory() },
     onDesktopMode = { dismiss(); onMenuDesktopMode() },
@@ -367,6 +374,13 @@ private fun MenuItemRowFor(item: CustomizableMenuItem, snapshot: BrowserMenuSnap
             badge = if (snapshot.pendingDownloadCount > 0L) BlockedRequestCounter.formatCount(snapshot.pendingDownloadCount) else null,
             onClick = actions.onDownloads,
             onLongClick = actions.onOpenDownloadSettings
+        )
+        CustomizableMenuItem.USER_SCRIPTS -> MenuItemRow(
+            item.icon(),
+            stringResource(item.titleRes()),
+            checked = snapshot.isUserScriptsEnabled,
+            onClick = actions.onUserScripts,
+            onLongClick = actions.onOpenUserScriptsSettings
         )
         CustomizableMenuItem.QUIVER_GUARD -> MenuItemRow(
             item.icon(),

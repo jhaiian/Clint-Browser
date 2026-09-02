@@ -1,5 +1,6 @@
 package com.jhaiian.clint.setup
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Shield
@@ -28,7 +29,10 @@ import androidx.compose.material3.Icon
 import com.jhaiian.clint.ui.ClintRadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -308,8 +312,32 @@ fun SetupThemePage(
 }
 
 @Composable
-fun SetupEnginePage(engine: String, onEngineSelected: (String) -> Unit, onNext: () -> Unit) {
+fun SetupEnginePage(
+    engine: String,
+    customName: String,
+    customUrl: String,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
+    onEngineSelected: (String) -> Unit,
+    onCustomEngineSaved: (name: String, url: String) -> Unit,
+    onNext: () -> Unit
+) {
     val colors = LocalClintColors.current
+    var customEditorOpen by remember { mutableStateOf(false) }
+    val hasCustomEngine = customName.isNotBlank() && customUrl.isNotBlank()
+
+    if (customEditorOpen) {
+        com.jhaiian.clint.ui.CustomSearchEngineDialog(
+            initialName = customName,
+            initialUrl = customUrl,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
+            onConfirm = { name, url ->
+                onCustomEngineSaved(name, url)
+                customEditorOpen = false
+            },
+            onDismiss = { customEditorOpen = false }
+        )
+    }
+
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -323,6 +351,7 @@ fun SetupEnginePage(engine: String, onEngineSelected: (String) -> Unit, onNext: 
         listOf(
             EngineOption("duckduckgo", R.string.engine_duckduckgo, R.string.engine_duckduckgo_desc, true),
             EngineOption("brave", R.string.engine_brave, R.string.engine_brave_desc, false),
+            EngineOption("ecosia", R.string.engine_ecosia, R.string.engine_ecosia_desc, false),
             EngineOption("google", R.string.engine_google, R.string.engine_google_desc, false)
         ).forEach { option ->
             val sel = engine == option.key
@@ -333,6 +362,33 @@ fun SetupEnginePage(engine: String, onEngineSelected: (String) -> Unit, onNext: 
                     Text(stringResource(option.descRes), color = colors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
                 }
                 if (option.showDefault) DefaultChip(stringResource(R.string.default_label), colors.primary)
+            }
+        }
+        val customSel = engine == "custom"
+        SelectableCard(
+            selected = customSel,
+            onClick = { if (hasCustomEngine) onEngineSelected("custom") else customEditorOpen = true },
+            cardBackground = colors.cardBackground, primary = colors.primary
+        ) {
+            ClintRadioButton(selected = customSel)
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(
+                    if (hasCustomEngine) customName else stringResource(R.string.engine_custom),
+                    color = colors.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Medium
+                )
+                Text(
+                    if (hasCustomEngine) customUrl else stringResource(R.string.engine_custom_desc),
+                    color = colors.secondaryText, fontSize = 13.sp, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            androidx.compose.material3.IconButton(onClick = { customEditorOpen = true }) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.action_edit),
+                    tint = colors.iconTint
+                )
             }
         }
 

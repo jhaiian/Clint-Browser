@@ -12,12 +12,17 @@ object SearchHistoryManager {
     private val searchEngineHosts = setOf(
         "duckduckgo.com", "duck.com", "ddg.gg",
         "search.brave.com",
-        "google.com"
+        "google.com",
+        "ecosia.org"
     )
 
-    fun isSearchEngineUrl(url: String): Boolean {
+    fun isSearchEngineUrl(context: Context, url: String): Boolean {
         val host = runCatching { URL(url).host?.lowercase() }.getOrNull() ?: return false
-        return searchEngineHosts.any { host == it || host.endsWith(".$it") }
+        if (searchEngineHosts.any { host == it || host.endsWith(".$it") }) return true
+        val customHost = com.jhaiian.clint.browser.customSearchEngineHost(
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        )
+        return customHost != null && (host == customHost || host.endsWith(".$customHost"))
     }
 
     @Volatile private var db: SearchHistoryDatabase? = null

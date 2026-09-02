@@ -65,12 +65,7 @@
             android:name=".setup.SetupActivity"
             android:exported="true"
             android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
-            android:windowSoftInputMode="stateHidden">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:windowSoftInputMode="stateHidden" />
 
         <activity
             android:name=".browser.MainActivity"
@@ -78,6 +73,10 @@
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -183,6 +182,20 @@
             android:exported="false"
             android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".blocker.WebsiteBlockerActivity" />
+
+        <activity
+            android:name=".userscripts.UserScriptsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:parentActivityName=".settings.SettingsActivity" />
+
+        <activity
+            android:name=".userscripts.UserScriptEditorActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:parentActivityName=".userscripts.UserScriptsActivity" />
 
         <activity
             android:name=".settings.menucustomization.MenuCustomizationActivity"

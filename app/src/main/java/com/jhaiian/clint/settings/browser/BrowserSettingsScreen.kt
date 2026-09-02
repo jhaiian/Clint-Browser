@@ -1,5 +1,6 @@
 package com.jhaiian.clint.settings.browser
 import androidx.compose.material.icons.automirrored.filled.ManageSearch
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Search
@@ -24,12 +25,15 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 fun BrowserSettingsScreen(
     state: BrowserSettingsUiState,
     onSearchEngineConfirmed: (String) -> Unit,
+    onCustomSearchEngineSaved: (name: String, url: String) -> Unit,
     onSearchSuggestionsApiConfirmed: (String) -> Unit,
+    onCustomSearchSuggestionsApiSaved: (name: String, url: String) -> Unit,
     onJavascriptRowClicked: () -> Unit,
     onFramelessShortcutRowClicked: () -> Unit,
     onWebsiteBlockerRowClicked: () -> Unit,
     onQuiverGuardRowClicked: () -> Unit,
-    onIncognitoSearchHistoryRowClicked: () -> Unit
+    onIncognitoSearchHistoryRowClicked: () -> Unit,
+    onUserScriptsRowClicked: () -> Unit
 ) {
     val colors = LocalClintColors.current
 
@@ -38,16 +42,22 @@ fun BrowserSettingsScreen(
             if (state.searchEngineDialogOpen) {
                 SearchEngineDialog(
                     current = state.searchEngine,
+                    customName = state.customSearchEngineName,
+                    customUrl = state.customSearchEngineUrl,
                     hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onSearchEngineConfirmed,
+                    onCustomSearchEngineSaved = onCustomSearchEngineSaved,
                     onDismiss = { state.searchEngineDialogOpen = false }
                 )
             }
             if (state.searchSuggestionsApiDialogOpen) {
                 SearchSuggestionsApiDialog(
                     current = state.searchSuggestionsApi,
+                    customName = state.customSearchSuggestionsApiName,
+                    customUrl = state.customSearchSuggestionsApiUrl,
                     hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onSearchSuggestionsApiConfirmed,
+                    onCustomSearchSuggestionsApiSaved = onCustomSearchSuggestionsApiSaved,
                     onDismiss = { state.searchSuggestionsApiDialogOpen = false }
                 )
             }
@@ -58,14 +68,14 @@ fun BrowserSettingsScreen(
             SettingsRow(
                 icon = androidx.compose.material.icons.Icons.Filled.Search,
                 title = stringResource(R.string.search_engine),
-                summary = stringResource(engineSummaryRes(state.searchEngine)),
+                summary = engineSummaryText(state.searchEngine, state.customSearchEngineName),
                 colors = colors,
                 onClick = { state.searchEngineDialogOpen = true }
             )
             SettingsRow(
                 icon = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ManageSearch,
                 title = stringResource(R.string.search_suggestions_api),
-                summary = stringResource(engineSummaryRes(state.searchSuggestionsApi)),
+                summary = engineSummaryText(state.searchSuggestionsApi, state.customSearchSuggestionsApiName),
                 colors = colors,
                 onClick = { state.searchSuggestionsApiDialogOpen = true }
             )
@@ -82,6 +92,13 @@ fun BrowserSettingsScreen(
                 trailing = {
                     ClintSwitch(checked = state.javascriptEnabled)
                 }
+            )
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.Code,
+                title = stringResource(R.string.user_scripts_title),
+                summary = stringResource(R.string.user_scripts_settings_summary),
+                colors = colors,
+                onClick = onUserScriptsRowClicked
             )
         }
 
@@ -133,8 +150,11 @@ fun BrowserSettingsScreen(
     }
 }
 
-private fun engineSummaryRes(engine: String): Int = when (engine) {
-    "brave" -> R.string.engine_brave
-    "google" -> R.string.engine_google
-    else -> R.string.engine_duckduckgo
+@Composable
+private fun engineSummaryText(engine: String, customName: String): String = when (engine) {
+    "brave" -> stringResource(R.string.engine_brave)
+    "ecosia" -> stringResource(R.string.engine_ecosia)
+    "google" -> stringResource(R.string.engine_google)
+    "custom" -> customName.ifBlank { stringResource(R.string.engine_custom) }
+    else -> stringResource(R.string.engine_duckduckgo)
 }

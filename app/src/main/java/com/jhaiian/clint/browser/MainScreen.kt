@@ -143,7 +143,13 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
             SearchOverlay(
                 initialText = state.searchQuery,
                 isBottom = state.searchOverlayIsBottom,
-                hint = stringResource(R.string.search_bar_hint, stringResource(engineNameRes(activity.prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo"))),
+                hint = stringResource(
+                    R.string.search_bar_hint,
+                    engineDisplayName(
+                        activity.prefs.getString("search_engine", "duckduckgo") ?: "duckduckgo",
+                        customSearchEngineName(activity.prefs)
+                    )
+                ),
                 suggestions = state.suggestions,
                 voiceResult = state.voiceResult,
                 statusBarPaddingPx = effectiveStatusBarPx,
@@ -210,6 +216,9 @@ internal fun MainScreen(activity: MainActivity, state: MainUiState) {
         state.openInAppRequest?.let { req ->
             com.jhaiian.clint.browser.webview.OpenInAppDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.openInAppRequest = null }
         }
+        state.userScriptInstallPromptRequest?.let { req ->
+            com.jhaiian.clint.userscripts.UserScriptInstallPromptDialog(req, hideStatusBarPref, hideSystemNavigationPref) { state.userScriptInstallPromptRequest = null }
+        }
         if (state.bookmarkFolderDialogOpen) {
             com.jhaiian.clint.bookmarks.MoveToFolderDialog(
                 tree = state.bookmarkFolderTree,
@@ -259,7 +268,7 @@ private fun TopToolbar(
             }
             .onGloballyPositioned { coordinates ->
                 val h = coordinates.size.height
-                if (state.topBarFullHeightPx == 0 && h > 0) {
+                if (h > 0 && state.topBarFullHeightPx != h) {
                     state.topBarFullHeightPx = h
                     activity.swipeRefreshView.setProgressViewOffset(false, h + 4, h + 72)
                     activity.updateMainContentInsets()
@@ -396,8 +405,11 @@ private fun androidx.compose.foundation.layout.RowScope.NavIconButton(
     }
 }
 
-private fun engineNameRes(engine: String): Int = when (engine) {
-    "brave" -> R.string.engine_brave
-    "google" -> R.string.engine_google
-    else -> R.string.engine_duckduckgo
+@Composable
+private fun engineDisplayName(engine: String, customName: String): String = when (engine) {
+    "brave" -> stringResource(R.string.engine_brave)
+    "ecosia" -> stringResource(R.string.engine_ecosia)
+    "google" -> stringResource(R.string.engine_google)
+    "custom" -> customName.ifBlank { stringResource(R.string.engine_custom) }
+    else -> stringResource(R.string.engine_duckduckgo)
 }

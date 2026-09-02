@@ -12,7 +12,9 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.jhaiian.clint.R
 import com.jhaiian.clint.shortcuts.ShortcutIconStore
+import com.jhaiian.clint.shortcuts.ShortcutSavedTab
 import com.jhaiian.clint.shortcuts.ShortcutStore
+import com.jhaiian.clint.shortcuts.ShortcutTabSessionManager
 import com.jhaiian.clint.shortcuts.WebAppShortcut
 import java.util.UUID
 
@@ -52,19 +54,75 @@ internal fun MainActivity.createHomeScreenShortcut(url: String, name: String, ic
 }
 
 internal fun MainActivity.openOrResumeShortcutTab(shortcutId: String, fallbackUrl: String?) {
-    val existingIndex = tabManager.tabs.indexOfFirst { it.shortcutId == shortcutId }
-    if (existingIndex != -1) {
-        tabManager.switchTo(existingIndex)
+    val groupInMemory = tabManager.tabs.any { tabManager.effectiveShortcutId(it) == shortcutId }
+    if (groupInMemory) {
+        val persistedActiveId = ShortcutTabSessionManager.load(this, shortcutId).firstOrNull { it.isActive }?.tabId
+        val targetIndex = persistedActiveId
+            ?.let { id -> tabManager.tabs.indexOfFirst { it.id == id && tabManager.effectiveShortcutId(it) == shortcutId } }
+            ?.takeIf { it != -1 }
+            ?: tabManager.tabs.indexOfFirst { tabManager.effectiveShortcutId(it) == shortcutId }
+        tabManager.switchTo(targetIndex)
         attachActiveWebView()
         return
     }
     val record = ShortcutStore.get(this, shortcutId)
+    val persistedTabs = ShortcutTabSessionManager.load(this, shortcutId)
+    if (persistedTabs.isNotEmpty()) {
+        persistedTabs.forEach { saved -> openNewTabSilent(saved.url, saved.tabId, shortcutId) }
+        val activeId = persistedTabs.firstOrNull { it.isActive }?.tabId ?: persistedTabs.first().tabId
+        val index = tabManager.tabs.indexOfFirst { it.id == activeId }
+        tabManager.switchTo(if (index != -1) index else tabManager.tabs.lastIndex)
+        attachActiveWebView()
+        return
+    }
     val url = record?.url ?: fallbackUrl ?: getSearchEngineHomeUrl()
     val previousTabId = tabManager.activeTab?.id
     openNewTab(isIncognito = false, url = url, shortcutId = shortcutId, previousTabId = previousTabId)
     val name = record?.name
     if (!name.isNullOrEmpty()) tabManager.activeTab?.title = name
     tabManager.activeTab?.let { ShortcutStore.updateTabId(this, shortcutId, it.id) }
+}
+
+internal fun MainActivity.exitShortcutFramelessToNormal() {
+    val activeTab = tabManager.activeTab ?: return
+    val activeShortcutId = tabManager.effectiveShortcutId(activeTab) ?: return
+    persistShortcutTabsSession(activeShortcutId)
+    captureActiveTabThumbnail()
+    val previousId = activeTab.previousTabId
+    val previousIndex = previousId
+        ?.let { id -> tabManager.tabs.indexOfFirst { it.id == id && !tabManager.isGhostTab(it) } }
+        ?.takeIf { it != -1 }
+    val targetIndex = previousIndex ?: tabManager.tabs.indexOfLast { !tabManager.isGhostTab(it) }
+    if (targetIndex != -1) {
+        tabManager.switchTo(targetIndex)
+        attachActiveWebView()
+    } else {
+        openNewTab(isIncognito = false, url = getSearchEngineHomeUrl())
+    }
+}
+
+internal fun MainActivity.persistShortcutTabsSession(shortcutId: String) {
+    val groupTabs = tabManager.tabs.filter { tabManager.effectiveShortcutId(it) == shortcutId }
+    if (groupTabs.isEmpty()) return
+    val previousActiveId = ShortcutTabSessionManager.load(this, shortcutId).firstOrNull { it.isActive }?.tabId
+    val currentActiveId = tabManager.activeTab?.id
+    val activeId = when {
+        groupTabs.any { it.id == currentActiveId } -> currentActiveId
+        groupTabs.any { it.id == previousActiveId } -> previousActiveId
+        else -> groupTabs.first().id
+    }
+    val saved = groupTabs.mapIndexedNotNull { index, tab ->
+        val url = tab.webView.url?.takeIf { it.isNotEmpty() && it != "about:blank" }
+            ?: tab.url.takeIf { it.isNotEmpty() && it != "about:blank" }
+            ?: return@mapIndexedNotNull null
+        ShortcutSavedTab(position = index, url = url, title = tab.title, isActive = tab.id == activeId, tabId = tab.id)
+    }
+    if (saved.isNotEmpty()) Thread { ShortcutTabSessionManager.save(this, shortcutId, saved) }.start()
+}
+
+internal fun MainActivity.persistAllShortcutTabGroups() {
+    val shortcutIds = tabManager.tabs.mapNotNull { tabManager.effectiveShortcutId(it) }.distinct()
+    shortcutIds.forEach { persistShortcutTabsSession(it) }
 }
 
 private fun MainActivity.fallbackLauncherIconCompat(): IconCompat {

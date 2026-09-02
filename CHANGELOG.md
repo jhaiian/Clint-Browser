@@ -4,6 +4,87 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.4
+
+---
+
+## What's New
+
+### Userscripts
+
+Added userscript support (Tampermonkey style). You can find it in **Settings → Browser Settings → Userscripts**.
+
+You can add userscripts by:
+- Uploading a script file
+- Downloading via link from Greasy Fork (tap the "Get Script" button)
+- Creating a new one directly in the app (it comes with a code editor — it's not great, but at least I built one)
+
+It supports most scripts from my testing. Just let me know if a script isn't working as intended, whether there's something we can do about it, or if it's just another WebView limitation.
+
+(Thanks to @brnwlshubh for suggesting this #8)
+
+---
+
+### Search Engine & Search Suggestions
+
+- Added Ecosia as a search engine option.
+- Added the ability to create a custom search engine.
+
+Use `{query}` where the search term goes.
+
+Example: `https://www.google.com/search?q={query}`
+
+- Added the ability to create your own custom search suggestions API.
+
+Use `{query}` where the search term goes.
+
+Example: `https://duckduckgo.com/ac/?q={query}&type=list`
+
+(Thanks to @ncgjbr-ai for suggesting this #35)
+
+---
+
+### Frameless Mode Shortcuts Rework
+
+Frameless mode shortcuts have been reworked.
+
+Now, shortcuts will no longer be visible in the tab menu. If you click on a shortcut, it will open. If you go back home and click Clint again, it will return to browsing, and vice versa.
+
+The shortcut tab will also have session persistence. Instead of coming back every time you restart the app, you will resume your session.
+
+(Thanks to @deniganda for suggesting this #32)
+
+---
+
+### Download Manager
+
+Added the ability to switch your download manager between:
+
+- Clint
+- 1DM
+- 1DM+
+- 1DM Lite
+- ADM
+
+(Thanks to @iHarryPotter178 for suggesting this #31)
+
+---
+
+## Bug Fixes
+
+- Fixed the WebView getting cut off at the top when the status bar is on. (Thanks to @deniganda and @ncgjbr-ai for reporting this #32 #34)
+- Fixed search suggestions flickering every time the character changes. (Thanks to @snashyturner for reporting this #36)
+- Fixed others that I forget.
+
+---
+
+## Extra Changes
+
+- Updated Terms of Service.
+- Updated Privacy Policy.
+
+---
+
 # v1.1.3
 
 *Because Clint Barton is back in Avengers Secret Wars, the goat himself, here's the update for Clint Browser.*

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.AddToHomeScreen
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DataSaverOn
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Download
@@ -25,6 +26,7 @@ enum class CustomizableMenuItem(val id: String) {
     OPEN_IN_APP("open_in_app"),
     CREATE_SHORTCUT("create_shortcut"),
     DOWNLOADS("downloads"),
+    USER_SCRIPTS("userscripts"),
     QUIVER_GUARD("quiver_guard"),
     DISABLE_QUIVER_GUARD_FOR_SITE("disable_quiver_guard_for_site"),
     WEBSITE_BLOCKER("website_blocker"),
@@ -47,6 +49,7 @@ fun CustomizableMenuItem.icon(): ImageVector = when (this) {
     CustomizableMenuItem.OPEN_IN_APP -> Icons.AutoMirrored.Filled.OpenInNew
     CustomizableMenuItem.CREATE_SHORTCUT -> Icons.AutoMirrored.Filled.AddToHomeScreen
     CustomizableMenuItem.DOWNLOADS -> Icons.Filled.Download
+    CustomizableMenuItem.USER_SCRIPTS -> Icons.Filled.Code
     CustomizableMenuItem.QUIVER_GUARD -> Icons.Filled.Security
     CustomizableMenuItem.DISABLE_QUIVER_GUARD_FOR_SITE -> Icons.Filled.Security
     CustomizableMenuItem.WEBSITE_BLOCKER -> Icons.Filled.Shield
@@ -64,6 +67,7 @@ fun CustomizableMenuItem.titleRes(): Int = when (this) {
     CustomizableMenuItem.OPEN_IN_APP -> R.string.menu_open_in_app
     CustomizableMenuItem.CREATE_SHORTCUT -> R.string.menu_create_shortcut
     CustomizableMenuItem.DOWNLOADS -> R.string.menu_downloads
+    CustomizableMenuItem.USER_SCRIPTS -> R.string.user_scripts_title
     CustomizableMenuItem.QUIVER_GUARD -> R.string.menu_quiver_guard
     CustomizableMenuItem.DISABLE_QUIVER_GUARD_FOR_SITE -> R.string.menu_disable_quiver_guard_for_site
     CustomizableMenuItem.WEBSITE_BLOCKER -> R.string.menu_website_blocker

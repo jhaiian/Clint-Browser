@@ -13,27 +13,14 @@ import com.jhaiian.clint.quiver.engine.QuiverGuardWebIntegration
 import com.jhaiian.clint.quiver.engine.ScriptHandlerStore
 
 internal fun MainActivity.saveTabs() {
-    val excludeShortcutTabs = uiState.isShortcutFrameless
     val activeTab = tabManager.activeTab
-    val restoreActiveId = if (excludeShortcutTabs && activeTab?.shortcutId != null) {
+    val restoreActiveId = if (activeTab != null && tabManager.isGhostTab(activeTab)) {
         activeTab.previousTabId
     } else {
         null
     }
-    fun belongsToShortcut(tab: BrowserTab): Boolean {
-        if (!excludeShortcutTabs) return false
-        if (tab.shortcutId != null) return true
-        var openerId = tab.openerTabId
-        val visited = mutableSetOf<String>()
-        while (openerId != null && visited.add(openerId)) {
-            val opener = tabManager.tabs.firstOrNull { it.id == openerId } ?: return false
-            if (opener.shortcutId != null) return true
-            openerId = opener.openerTabId
-        }
-        return false
-    }
     val savedTabs = tabManager.tabs
-        .filter { !it.isIncognito && !it.isRefreshLinkTab && !belongsToShortcut(it) }
+        .filter { !it.isIncognito && !it.isRefreshLinkTab && !tabManager.isGhostTab(it) }
         .mapIndexedNotNull { index, tab ->
             val url = tab.webView.url?.takeIf { it.isNotEmpty() && it != "about:blank" }
                 ?: tab.url.takeIf { it.isNotEmpty() && it != "about:blank" }
@@ -48,11 +35,12 @@ internal fun MainActivity.saveTabs() {
             )
         }
     Thread { TabSessionManager.save(this, savedTabs) }.start()
+    persistAllShortcutTabGroups()
 }
 
 internal fun MainActivity.restoreTabs(): Boolean {
     migrateTabsFromPrefsIfNeeded()
-    val savedTabs = TabSessionManager.load(this)
+    val savedTabs = TabSessionManager.load(this).filter { it.shortcutId == null }
     if (savedTabs.isEmpty()) return false
     val activeIndex = savedTabs.indexOfFirst { it.isActive }.coerceAtLeast(0)
     savedTabs.forEach { openNewTabSilent(it.url, it.tabId, it.shortcutId) }
@@ -97,6 +85,7 @@ internal fun MainActivity.openNewTabSilent(url: String, id: String = java.util.U
     val tab = BrowserTab(id = id, url = url, shortcutId = shortcutId, webView = webView)
     tabManager.add(tab)
     if (isDesktopMode) addDesktopScript(tab)
+    addUserScripts(tab)
     webView.webViewClient = ClintWebViewClient(
         prefs = prefs,
         isActive = { tabManager.activeTab?.id == tab.id },
@@ -127,12 +116,50 @@ internal fun MainActivity.openNewTabSilent(url: String, id: String = java.util.U
     webView.loadUrl(url)
 }
 
+internal fun MainActivity.openNewTabInBackground(url: String, openerTabId: String? = null) {
+    val webView = createWebView(false)
+    val tab = BrowserTab(url = url, openerTabId = openerTabId, webView = webView)
+    tabManager.addInBackground(tab)
+    if (isDesktopMode) addDesktopScript(tab)
+    addUserScripts(tab)
+    webView.webViewClient = ClintWebViewClient(
+        prefs = prefs,
+        isActive = { tabManager.activeTab?.id == tab.id },
+        onPageStartedCallback = { url -> if (tabManager.activeTab?.id == tab.id) onPageStarted(url) },
+        onPageFinishedCallback = { url -> if (tabManager.activeTab?.id == tab.id) onPageFinished(url) },
+        onTabUrlUpdatedCallback = { wv, url -> onTabUrlUpdated(wv, url) },
+        onWebsiteBlockedCallback = { blockedUrl -> onWebsiteBlocked(blockedUrl, tab.url, tab.id) },
+        getDesktopHeaders = { buildDesktopHeaders() },
+        getTabId = { tab.id }
+    )
+    webView.webChromeClient = ClintWebChromeClient(
+        isActive = { tabManager.activeTab?.id == tab.id },
+        onTitleChanged = { title ->
+            tab.title = title
+            if (tabManager.activeTab?.id == tab.id) updateTabCount()
+        },
+        onProgressChanged = { progress -> if (tabManager.activeTab?.id == tab.id) onProgressChanged(progress) },
+        onUrlChanged = { url -> if (tabManager.activeTab?.id == tab.id) updateAddressBar(url) },
+        onFullscreenShow = { view, cb -> onShowCustomView(view, cb) },
+        onFullscreenHide = { exitFullscreen() },
+        onFileChooser = { callback, params -> onShowFileChooser(callback, params) },
+        onWebPermissionRequest = { request -> onWebPermissionRequest(request) },
+        onGeolocationRequest = { origin, callback -> onWebGeolocationRequest(origin, callback) },
+        onNewWindowRequest = { newUrl ->
+            showPopupAlertDialog(newUrl, false, tab.id)
+        }
+    )
+    webView.loadUrl(url)
+    updateTabCount()
+}
+
 internal fun MainActivity.openNewTab(isIncognito: Boolean, url: String = getSearchEngineHomeUrl(), openerTabId: String? = null, shortcutId: String? = null, previousTabId: String? = null) {
     captureActiveTabThumbnail()
     val webView = createWebView(isIncognito)
     val tab = BrowserTab(isIncognito = isIncognito, openerTabId = openerTabId, shortcutId = shortcutId, previousTabId = previousTabId, webView = webView)
     val index = tabManager.add(tab)
     if (isDesktopMode) addDesktopScript(tab)
+    addUserScripts(tab)
     webView.webViewClient = ClintWebViewClient(
         prefs = prefs,
         isActive = { tabManager.activeTab?.id == tab.id },
@@ -204,6 +231,7 @@ internal fun MainActivity.openRefreshLinkTab(url: String) {
     val tab = BrowserTab(url = url, isRefreshLinkTab = true, webView = webView)
     val index = tabManager.add(tab)
     if (isDesktopMode) addDesktopScript(tab)
+    addUserScripts(tab)
     webView.webViewClient = ClintWebViewClient(
         prefs = prefs,
         isActive = { tabManager.activeTab?.id == tab.id },

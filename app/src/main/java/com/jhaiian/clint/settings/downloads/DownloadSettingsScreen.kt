@@ -1,4 +1,5 @@
 package com.jhaiian.clint.settings.downloads
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.DateRange
@@ -67,6 +68,7 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 @Composable
 fun DownloadSettingsScreen(
     state: DownloadSettingsUiState,
+    onDownloadManagerSelected: (String) -> Unit,
     onLocationModeSelected: (String) -> Unit,
     onFolderRowClick: () -> Unit,
     onMeasurementSystemSelected: (Boolean) -> Unit,
@@ -122,10 +124,25 @@ fun DownloadSettingsScreen(
                     currentAmount = state.speedLimitAmount, currentUnit = state.speedLimitUnit, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                     onConfirm = onSpeedLimitConfirm, onDismiss = { state.openDialog = null }
                 )
+                DownloadSettingsDialog.DOWNLOAD_MANAGER -> DownloadManagerDialog(
+                    current = state.downloadManagerApp, hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
+                    onSelect = onDownloadManagerSelected, onDismiss = { state.openDialog = null }
+                )
                 null -> {}
             }
         }
     ) {
+        SectionLabel(stringResource(R.string.download_section_manager), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
+        SettingsSection(colors.cardBackground) {
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.Apps,
+                title = stringResource(R.string.download_manager_title),
+                summary = stringResource(downloadManagerOptionLabelRes(state.downloadManagerApp)),
+                colors = colors,
+                onClick = { state.openDialog = DownloadSettingsDialog.DOWNLOAD_MANAGER }
+            )
+        }
+
         SectionLabel(stringResource(R.string.download_section_location), colors.primary, Modifier.padding(start = 4.dp, bottom = 8.dp))
         SettingsSection(colors.cardBackground) {
             Column(Modifier.padding(16.dp)) {
@@ -418,6 +435,14 @@ private fun SliderSettingsCard(
         )
         Text(summary, color = colors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(bottom = 4.dp))
     }
+}
+
+private fun downloadManagerOptionLabelRes(appId: String): Int = when (appId) {
+    com.jhaiian.clint.downloads.DownloadManagerAppIds.ONEDM -> R.string.download_manager_option_1dm
+    com.jhaiian.clint.downloads.DownloadManagerAppIds.ONEDM_PLUS -> R.string.download_manager_option_1dm_plus
+    com.jhaiian.clint.downloads.DownloadManagerAppIds.ONEDM_LITE -> R.string.download_manager_option_1dm_lite
+    com.jhaiian.clint.downloads.DownloadManagerAppIds.ADM -> R.string.download_manager_option_adm
+    else -> R.string.download_manager_option_clint
 }
 
 private fun formatMinutesOfDay(context: android.content.Context, minutes: Int): String {

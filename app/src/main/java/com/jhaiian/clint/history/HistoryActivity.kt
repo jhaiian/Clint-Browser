@@ -79,7 +79,9 @@ class HistoryActivity : ClintActivity() {
             val encoded = Uri.encode(item.query)
             when (prefs.getString("search_engine", "duckduckgo")) {
                 "brave" -> "https://search.brave.com/search?q=$encoded"
+                "ecosia" -> "https://www.ecosia.org/search?q=$encoded"
                 "google" -> "https://www.google.com/search?q=$encoded"
+                "custom" -> com.jhaiian.clint.browser.customSearchEngineQueryUrl(prefs, encoded)
                 else -> "https://duckduckgo.com/?q=$encoded"
             }
         }

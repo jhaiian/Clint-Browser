@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Edit
 import com.jhaiian.clint.ui.ClintRadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,12 +30,31 @@ import com.jhaiian.clint.ui.theme.LocalClintColors
 @Composable
 fun SearchEngineDialog(
     current: String,
+    customName: String,
+    customUrl: String,
     hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (String) -> Unit,
+    onCustomSearchEngineSaved: (name: String, url: String) -> Unit,
     onDismiss: () -> Unit
 ) {
     val colors = LocalClintColors.current
     var selected by remember(current) { mutableStateOf(current) }
+    var customEditorOpen by remember { mutableStateOf(false) }
+    val hasCustomEngine = customName.isNotBlank() && customUrl.isNotBlank()
+
+    if (customEditorOpen) {
+        com.jhaiian.clint.ui.CustomSearchEngineDialog(
+            initialName = customName,
+            initialUrl = customUrl,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
+            onConfirm = { name, url ->
+                onCustomSearchEngineSaved(name, url)
+                selected = "custom"
+                customEditorOpen = false
+            },
+            onDismiss = { customEditorOpen = false }
+        )
+    }
 
     ClintDialog(
         title = stringResource(R.string.choose_search_engine),
@@ -55,6 +75,7 @@ fun SearchEngineDialog(
         listOf(
             EngineOption("duckduckgo", R.string.engine_duckduckgo, R.string.engine_duckduckgo_desc, true),
             EngineOption("brave", R.string.engine_brave, R.string.engine_brave_desc, false),
+            EngineOption("ecosia", R.string.engine_ecosia, R.string.engine_ecosia_desc, false),
             EngineOption("google", R.string.engine_google, R.string.engine_google_desc, false)
         ).forEach { option ->
             val sel = selected == option.key
@@ -71,18 +92,65 @@ fun SearchEngineDialog(
                 if (option.showDefault) DefaultChip(stringResource(R.string.default_label), colors.primary)
             }
         }
+        val customSel = selected == "custom"
+        SelectableCard(
+            selected = customSel,
+            onClick = { if (hasCustomEngine) selected = "custom" else customEditorOpen = true },
+            cardBackground = colors.surfaceVariant, primary = colors.primary,
+            contentPadding = SettingsPickerOptionContentPadding, bottomSpacing = SettingsPickerOptionBottomSpacing
+        ) {
+            ClintRadioButton(selected = customSel)
+            Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
+                Text(
+                    if (hasCustomEngine) customName else stringResource(R.string.engine_custom),
+                    color = colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium
+                )
+                Text(
+                    if (hasCustomEngine) customUrl else stringResource(R.string.engine_custom_desc),
+                    color = colors.secondaryText, fontSize = 13.sp, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            androidx.compose.material3.IconButton(onClick = { customEditorOpen = true }) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.action_edit),
+                    tint = colors.iconTint
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun SearchSuggestionsApiDialog(
     current: String,
+    customName: String,
+    customUrl: String,
     hideStatusBar: Boolean, hideSystemNavigation: Boolean,
     onConfirm: (String) -> Unit,
+    onCustomSearchSuggestionsApiSaved: (name: String, url: String) -> Unit,
     onDismiss: () -> Unit
 ) {
     val colors = LocalClintColors.current
     var selected by remember(current) { mutableStateOf(current) }
+    var customEditorOpen by remember { mutableStateOf(false) }
+    val hasCustomApi = customName.isNotBlank() && customUrl.isNotBlank()
+
+    if (customEditorOpen) {
+        com.jhaiian.clint.ui.CustomSearchSuggestionsApiDialog(
+            initialName = customName,
+            initialUrl = customUrl,
+            hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation,
+            onConfirm = { name, url ->
+                onCustomSearchSuggestionsApiSaved(name, url)
+                selected = "custom"
+                customEditorOpen = false
+            },
+            onDismiss = { customEditorOpen = false }
+        )
+    }
 
     ClintDialog(
         title = stringResource(R.string.choose_search_suggestions_api),
@@ -116,6 +184,34 @@ fun SearchSuggestionsApiDialog(
                     Text(stringResource(option.descRes), color = colors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
                 }
                 if (option.showDefault) DefaultChip(stringResource(R.string.default_label), colors.primary)
+            }
+        }
+        val customSel = selected == "custom"
+        SelectableCard(
+            selected = customSel,
+            onClick = { if (hasCustomApi) selected = "custom" else customEditorOpen = true },
+            cardBackground = colors.surfaceVariant, primary = colors.primary,
+            contentPadding = SettingsPickerOptionContentPadding, bottomSpacing = SettingsPickerOptionBottomSpacing
+        ) {
+            ClintRadioButton(selected = customSel)
+            Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
+                Text(
+                    if (hasCustomApi) customName else stringResource(R.string.engine_custom),
+                    color = colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium
+                )
+                Text(
+                    if (hasCustomApi) customUrl else stringResource(R.string.suggestions_api_custom_desc),
+                    color = colors.secondaryText, fontSize = 13.sp, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            androidx.compose.material3.IconButton(onClick = { customEditorOpen = true }) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Filled.Edit,
+                    contentDescription = stringResource(R.string.action_edit),
+                    tint = colors.iconTint
+                )
             }
         }
     }

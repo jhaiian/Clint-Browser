@@ -1,6 +1,6 @@
 # Terms of Service for Clint Browser
 
-*Last updated: August 23, 2026*
+*Last updated: September 2, 2026*
 
 ## 1. What These Terms Cover
 
@@ -12,9 +12,11 @@ If you do not agree, simply uninstall the app.
 
 Clint Browser is a **free, open‑source Android browser** built around privacy. Key facts:
 
-- No backend servers  everything runs on your device.
+- No backend servers, everything runs on your device.
 - Block ads and trackers with Quiver Guard.
 - Block entire categories of sites at the domain level with Website Blocker.
+- Set your own search engine and search suggestions provider, including fully custom ones you point at any URL.
+- Run your own user scripts to customize how pages behave.
 - Incognito sessions are completely isolated..
 - You can view, modify, or share the source code under the GPL‑v3 license.
 
@@ -38,7 +40,7 @@ The name **"Clint Browser"**, the word "Clint", the logo, icons, screenshots, an
 
 You may **not** use, copy, modify, or redistribute these assets without explicit written permission. For example, you cannot create a modified version of Clint Browser and still call it "Clint Browser" or use the original logo. Contact `jhaiianbetter@duck.com` for permission.
 
-## 5. Privacy – No Data Collection
+## 5. Privacy: No Data Collection
 
 Clint Browser does **not** collect any personal information, browsing history, usage statistics, crash reports, or telemetry of any kind. The app has no analytics, no tracking pixels, no backend servers.
 
@@ -52,7 +54,15 @@ Backup files are saved wherever you choose to save them, using your device's own
 
 Before you can back up or restore, the app will also ask you to unlock it with your fingerprint, face unlock, or your device's own PIN/pattern/password. This check happens entirely on your device through Android's own security system; we never see or receive it. It exists so that someone who picks up your unlocked phone can't export or overwrite your data without your say-so. If your device has no lock screen or biometrics set up at all, Backup & Restore won't be available until you set one up in your device settings, since there's simply nothing for Android to check against.
 
-## 7. No Warranty
+## 7. Custom Search Engines, Search Suggestions, and User Scripts
+
+Clint Browser lets you configure your own custom search engine and your own custom search suggestions provider, each pointed at any URL you enter. It also lets you install and run user scripts, which are pieces of JavaScript that run on the pages you visit to change how they look or behave.
+
+These features send your data (search queries, suggestion text, or whatever a script requests) to whatever destination you configure, whether that's a built in provider or one you typed in yourself. The developer does not run, host, review, or vet any of these destinations or scripts. You are solely responsible for what you point them at and what you install.
+
+User scripts run with access to the pages you visit and, depending on what a script does, can read or modify page content and make network requests of their own. Only install scripts from sources you trust. The developer is not responsible for anything a user script does, including data loss, privacy exposure, or harm caused by a malicious or buggy script.
+
+## 8. No Warranty
 
 Clint Browser is provided **"as is"** and **"as available"**. To the maximum extent permitted by law, the developer disclaims all warranties, express or implied, including:
 
@@ -63,36 +73,36 @@ Clint Browser is provided **"as is"** and **"as available"**. To the maximum ext
 
 You use the app entirely at your own risk.
 
-## 8. Limitation of Liability
+## 9. Limitation of Liability
 
 In no event shall the developer be liable for any damages arising from your use of Clint Browser, including but not limited to:
 
 - Data loss or corruption
 - Device damage
 - Security breaches caused by websites you visit
-- Issues with third‑party services (such as search engines)
+- Issues with third‑party services (such as search engines, search suggestions providers, or user script sources)
 - Any indirect, incidental, or consequential damages
 
 Some jurisdictions do not allow certain liability exclusions. In those cases, this limitation applies to the fullest extent permitted by law.
 
-## 9. Third‑Party Content
+## 10. Third‑Party Content
 
-Clint Browser is a **browser** – it renders content from websites, search engines, and online services that are completely outside the developer's control. We do not:
+Clint Browser is a **browser**, it renders content from websites, search engines, and online services that are completely outside the developer's control. We do not:
 
 - Endorse or guarantee the accuracy, legality, or safety of any website you visit
 - Take responsibility for what you find on the internet
 
 You are responsible for your own browsing choices.
 
-## 10. Changes to These Terms
+## 11. Changes to These Terms
 
 These Terms may be updated occasionally. Changes will be posted on the GitHub repository. The app will always link to the latest version. If you continue using Clint Browser after an update, you accept the new Terms.
 
-## 11. Governing Law
+## 12. Governing Law
 
 These Terms are governed by the laws of the Philippines. If you live elsewhere, your local consumer rights may also apply.
 
-## 12. Contact
+## 13. Contact
 
 For questions or permission requests:
 

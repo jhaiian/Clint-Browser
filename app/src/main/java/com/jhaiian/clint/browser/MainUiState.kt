@@ -77,5 +77,6 @@ internal class MainUiState {
     var refreshLinkDialogRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.RefreshLinkDialogRequest?>(null)
     var createShortcutRequest by mutableStateOf<com.jhaiian.clint.browser.dialogs.CreateShortcutRequest?>(null)
     var openInAppRequest by mutableStateOf<com.jhaiian.clint.browser.webview.OpenInAppRequest?>(null)
+    var userScriptInstallPromptRequest by mutableStateOf<com.jhaiian.clint.userscripts.UserScriptInstallPromptRequest?>(null)
     var websiteBlockedRequest by mutableStateOf<com.jhaiian.clint.blocker.blockedpage.WebsiteBlockedRequest?>(null)
 }

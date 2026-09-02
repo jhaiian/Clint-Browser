@@ -6,10 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 enum class DownloadSettingsDialog {
-    MEASUREMENT_SYSTEM, RETRY_COUNT, RETRY_INTERVAL, SPEED_LIMIT
+    MEASUREMENT_SYSTEM, RETRY_COUNT, RETRY_INTERVAL, SPEED_LIMIT, DOWNLOAD_MANAGER
 }
 
 class DownloadSettingsUiState(
+    initialDownloadManagerApp: String,
     initialLocationMode: String,
     initialCustomUri: Uri?,
     initialMeasurementSystemDecimal: Boolean,
@@ -33,6 +34,7 @@ class DownloadSettingsUiState(
     initialHideStatusBar: Boolean,
 initialHideSystemNavigation: Boolean
 ) {
+    var downloadManagerApp by mutableStateOf(initialDownloadManagerApp)
     var locationMode by mutableStateOf(initialLocationMode)
     var customUri by mutableStateOf(initialCustomUri)
     var measurementSystemDecimal by mutableStateOf(initialMeasurementSystemDecimal)

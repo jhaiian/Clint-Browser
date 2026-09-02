@@ -10,8 +10,8 @@ Material Design Android Browser with ADM and an Content Blocker
  
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blueviolet.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-blueviolet.svg)](https://developer.android.com)
-[![Stable](https://img.shields.io/badge/Stable-1.1.3-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.3)
-[![Beta](https://img.shields.io/badge/Beta-1.1.3-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.3)
+[![Stable](https://img.shields.io/badge/Stable-1.1.4-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.4)
+[![Beta](https://img.shields.io/badge/Beta-1.1.4-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser/releases/tag/v1.1.4)
 [![Downloads](https://img.shields.io/github/downloads/jhaiian/ClintBrowser/total?color=blueviolet)](https://github.com/jhaiian/ClintBrowser/releases)
 [![Open Source](https://img.shields.io/badge/Open%20Source-Yes-blueviolet.svg)](https://github.com/jhaiian/ClintBrowser)
 
@@ -67,6 +67,14 @@ Built and maintained by **[@jhaiian](https://github.com/jhaiian)** — a solo de
 - Blocks pornography, gambling, and other unwanted categories
 - Category-based filter lists (abuse, ads, crypto, drugs, fraud, gambling, and more)
 - Add your own custom websites to block
+
+### 📜 User Scripts
+
+- Install userscripts from a URL or write your own with a built-in code editor
+- Tampermonkey-style metadata support (`@match`, `@include`, `@exclude`, `@require`, `@resource`, `@grant`)
+- GM API support, including `GM.setValue`/`GM.getValue`, `GM.xmlHttpRequest`, and `GM.notification`
+- Automatic update checks for scripts installed from a URL
+- Enable or disable individual scripts at any time
 
 ### ⬇️ Download Manager
 

@@ -3,6 +3,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.ZoomIn
 
@@ -118,6 +119,9 @@ internal fun LinkLongPressSheet(request: LinkLongPressRequest, activity: MainAct
 
             LongPressActionRow(androidx.compose.material.icons.Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.link_open_in_new_tab)) {
                 dismissAnd { activity.onLinkOpenInNewTab(request.url) }
+            }
+            LongPressActionRow(androidx.compose.material.icons.Icons.Filled.Tab, stringResource(R.string.link_open_new_tab_background)) {
+                dismissAnd { activity.onLinkOpenNewTabBackground(request.url) }
             }
             LongPressActionRow(androidx.compose.material.icons.Icons.Filled.VisibilityOff, stringResource(R.string.link_open_incognito)) {
                 dismissAnd { activity.onLinkOpenIncognito(request.url) }

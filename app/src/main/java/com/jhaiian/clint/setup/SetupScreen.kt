@@ -43,6 +43,7 @@ fun SetupScreen(
     onMenuStyleSelected: (String) -> Unit,
     onScrollHideModeSelected: (String) -> Unit,
     onEngineSelected: (String) -> Unit,
+    onCustomEngineSaved: (name: String, url: String) -> Unit,
     onContinueFromWelcome: () -> Unit,
     onSkipRestore: () -> Unit,
     onRestoreComplete: () -> Unit,
@@ -122,7 +123,11 @@ fun SetupScreen(
                                 )
                                 4 -> SetupEnginePage(
                                     engine = state.engine,
+                                    customName = state.customEngineName,
+                                    customUrl = state.customEngineUrl,
+                                    hideStatusBar = state.hideStatusBar, hideSystemNavigation = state.hideSystemNavigation,
                                     onEngineSelected = onEngineSelected,
+                                    onCustomEngineSaved = onCustomEngineSaved,
                                     onNext = onNextFromEnginePage
                                 )
                                 else -> SetupDefaultBrowserPage(

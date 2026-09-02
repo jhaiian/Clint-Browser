@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Cookie
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Restore
@@ -77,6 +78,7 @@ private fun categoryTitleRes(category: BackupCategory): Int = when (category) {
     BackupCategory.SETTINGS -> R.string.backup_category_settings
     BackupCategory.TABS -> R.string.backup_category_tabs
     BackupCategory.DOWNLOADS -> R.string.backup_category_downloads
+    BackupCategory.USER_SCRIPTS -> R.string.backup_category_userscripts
     BackupCategory.WEBSITE_BLOCKER -> R.string.backup_category_website_blocker
     BackupCategory.QUIVER_GUARD -> R.string.backup_category_quiver_guard
     BackupCategory.COOKIES -> R.string.backup_category_cookies
@@ -90,6 +92,7 @@ private fun categoryDescRes(category: BackupCategory): Int = when (category) {
     BackupCategory.SETTINGS -> R.string.backup_category_settings_desc
     BackupCategory.TABS -> R.string.backup_category_tabs_desc
     BackupCategory.DOWNLOADS -> R.string.backup_category_downloads_desc
+    BackupCategory.USER_SCRIPTS -> R.string.backup_category_userscripts_desc
     BackupCategory.WEBSITE_BLOCKER -> R.string.backup_category_website_blocker_desc
     BackupCategory.QUIVER_GUARD -> R.string.backup_category_quiver_guard_desc
     BackupCategory.COOKIES -> R.string.backup_category_cookies_desc
@@ -103,6 +106,7 @@ private fun categoryIcon(category: BackupCategory): ImageVector = when (category
     BackupCategory.SETTINGS -> Icons.Filled.Settings
     BackupCategory.TABS -> Icons.Filled.Tab
     BackupCategory.DOWNLOADS -> Icons.Filled.Download
+    BackupCategory.USER_SCRIPTS -> Icons.Filled.Code
     BackupCategory.WEBSITE_BLOCKER -> Icons.Filled.Shield
     BackupCategory.QUIVER_GUARD -> Icons.Filled.Security
     BackupCategory.COOKIES -> Icons.Filled.Cookie

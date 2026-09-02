@@ -1,6 +1,9 @@
 name: Build Clint Browser ARM64
 
 on:
+  push:
+    paths:
+      - 'app/**'
   workflow_dispatch:
 
 jobs:
@@ -57,4 +60,3 @@ jobs:
           name: Clint-arm64-v8a
           path: app/build/outputs/apk/github/release/app-github-arm64-v8a-release.apk
           if-no-files-found: error
-          

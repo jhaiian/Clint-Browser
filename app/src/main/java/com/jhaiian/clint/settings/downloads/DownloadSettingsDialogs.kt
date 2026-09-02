@@ -1,6 +1,7 @@
 package com.jhaiian.clint.settings.downloads
 import androidx.compose.material.icons.filled.ArrowDownward
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -23,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -69,6 +73,55 @@ fun MeasurementSystemDialog(
                     Text(stringResource(option.descRes), color = colors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
                 }
                 CheckSlot(current == option.decimal, colors.primary)
+            }
+        }
+    }
+}
+
+@Composable
+fun DownloadManagerDialog(
+    current: String,
+    hideStatusBar: Boolean, hideSystemNavigation: Boolean,
+    onSelect: (appId: String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val colors = LocalClintColors.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    data class Option(val appId: String, val titleRes: Int)
+    val options = listOf(
+        Option(com.jhaiian.clint.downloads.DownloadManagerAppIds.CLINT, R.string.download_manager_option_clint),
+        Option(com.jhaiian.clint.downloads.DownloadManagerAppIds.ONEDM, R.string.download_manager_option_1dm),
+        Option(com.jhaiian.clint.downloads.DownloadManagerAppIds.ONEDM_PLUS, R.string.download_manager_option_1dm_plus),
+        Option(com.jhaiian.clint.downloads.DownloadManagerAppIds.ONEDM_LITE, R.string.download_manager_option_1dm_lite),
+        Option(com.jhaiian.clint.downloads.DownloadManagerAppIds.ADM, R.string.download_manager_option_adm)
+    )
+    ClintDialog(title = stringResource(R.string.download_manager_dialog_title), hideStatusBar = hideStatusBar, hideSystemNavigation = hideSystemNavigation, onDismiss = onDismiss) {
+        options.forEach { option ->
+            val installed = remember(option.appId) { com.jhaiian.clint.downloads.isDownloadManagerAppInstalled(context, option.appId) }
+            val selected = current == option.appId
+            Card(
+                onClick = { if (installed) onSelect(option.appId) },
+                enabled = installed,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = OptionBottomSpacing)
+                    .alpha(if (!installed) 0.35f else if (selected) 1.0f else 0.6f),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant, disabledContainerColor = colors.surfaceVariant),
+                border = if (selected) BorderStroke(3.dp, colors.primary) else null
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(OptionContentPadding),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f).padding(start = 4.dp, end = 8.dp)) {
+                        Text(stringResource(option.titleRes), color = colors.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        if (!installed) {
+                            Text(stringResource(R.string.download_manager_not_installed), color = colors.secondaryText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
+                        }
+                    }
+                    CheckSlot(selected, colors.primary)
+                }
             }
         }
     }

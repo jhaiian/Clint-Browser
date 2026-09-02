@@ -51,6 +51,8 @@ private const val ADBLOCK_RUST_URL = "https://github.com/brave/adblock-rust"
 private const val ADBLOCK_RUST_LICENSE_URL = "https://www.mozilla.org/en-US/MPL/2.0/"
 private const val BOUNCYCASTLE_URL = "https://www.bouncycastle.org"
 private const val BOUNCYCASTLE_LICENSE_URL = "https://www.bouncycastle.org/licence.html"
+private const val CODEVIEW_URL = "https://github.com/AmrDeveloper/CodeView"
+private const val CODEVIEW_LICENSE_URL = "https://opensource.org/licenses/MIT"
 
 @Composable
 private fun AboutCard(label: String, colors: ClintColors, content: @Composable () -> Unit) {
@@ -339,6 +341,12 @@ fun AboutScreen(
                 stringResource(R.string.about_library_bouncycastle_label), stringResource(R.string.about_library_bouncycastle_license),
                 stringResource(R.string.about_library_bouncycastle_usage), colors,
                 { onLinkClick(BOUNCYCASTLE_URL) }, { onLinkClick(BOUNCYCASTLE_LICENSE_URL) }
+            )
+            AboutThinDivider(colors.surfaceVariant)
+            AboutLibraryEntry(
+                stringResource(R.string.about_library_codeview_label), stringResource(R.string.about_library_codeview_license),
+                stringResource(R.string.about_library_codeview_usage), colors,
+                { onLinkClick(CODEVIEW_URL) }, { onLinkClick(CODEVIEW_LICENSE_URL) }
             )
         }
 

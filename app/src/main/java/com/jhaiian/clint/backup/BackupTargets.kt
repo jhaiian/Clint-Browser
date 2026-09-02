@@ -12,6 +12,7 @@ import com.jhaiian.clint.quiver.ManualFilterDatabase
 import com.jhaiian.clint.quiver.engine.QuiverGuardPaths
 import com.jhaiian.clint.settings.sitepermissions.SitePermissionDatabase
 import com.jhaiian.clint.tabs.TabDatabase
+import com.jhaiian.clint.userscripts.UserScriptDatabase
 import java.io.File
 
 enum class BackupEntryType { DATABASE, PREFS, DIRECTORY }
@@ -52,6 +53,8 @@ object BackupTargets {
 
         BackupEntryTarget("downloads_db", BackupCategory.DOWNLOADS, BackupEntryType.DATABASE, "downloads/${DownloadDatabase.DB_NAME}") { it.getDatabasePath(DownloadDatabase.DB_NAME) },
         BackupEntryTarget("downloads_legacy_prefs", BackupCategory.DOWNLOADS, BackupEntryType.PREFS, "downloads/legacy_prefs.xml") { it.prefsFile(LEGACY_DOWNLOAD_PREFS_NAME) },
+
+        BackupEntryTarget("userscripts_db", BackupCategory.USER_SCRIPTS, BackupEntryType.DATABASE, "userscripts/${UserScriptDatabase.DB_NAME}") { it.getDatabasePath(UserScriptDatabase.DB_NAME) },
 
         BackupEntryTarget("website_blocker_categories_db", BackupCategory.WEBSITE_BLOCKER, BackupEntryType.DATABASE, "website_blocker/${WebsiteBlockerCategoryDatabase.DB_NAME}") { it.getDatabasePath(WebsiteBlockerCategoryDatabase.DB_NAME) },
         BackupEntryTarget("website_blocker_additional_websites_db", BackupCategory.WEBSITE_BLOCKER, BackupEntryType.DATABASE, "website_blocker/${AdditionalWebsitesDatabase.DB_NAME}") { it.getDatabasePath(AdditionalWebsitesDatabase.DB_NAME) },

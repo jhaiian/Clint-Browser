@@ -42,6 +42,8 @@ import com.jhaiian.clint.ui.SnackbarHostActivity
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
 import com.jhaiian.clint.update.UpdateChecker
 import androidx.webkit.ScriptHandler
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity {
 
@@ -81,6 +83,8 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
     internal var autoDesktopPendingReload: String? = null
     internal val desktopScriptHandlers = mutableMapOf<String, ScriptHandler>()
     internal val autoplayScriptHandlers = mutableMapOf<String, ScriptHandler>()
+    internal val userScriptHandlers = mutableMapOf<String, ScriptHandler>()
+    private var lastUserScriptsDataVersion = 0L
     internal val quiverGuardScriptHandlers = com.jhaiian.clint.quiver.engine.ScriptHandlerStore()
     internal val quiverGuardJobs = mutableMapOf<String, kotlinx.coroutines.Job>()
 
@@ -98,6 +102,7 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
     internal var suggestionFetcher: SuggestionFetcher? = null
     internal var suggestionsBgThread: android.os.HandlerThread? = null
     internal var suggestionsBgHandler: android.os.Handler? = null
+    internal var lastOnlineSuggestions: List<String> = emptyList()
 
     private var backPressedOnce = false
     private val backPressHandler = Handler(Looper.getMainLooper())
@@ -216,6 +221,18 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         }
     }
 
+    internal var pendingUserScriptNotify: Triple<String, String, String>? = null
+
+    internal val userScriptNotifyPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val pending = pendingUserScriptNotify
+        pendingUserScriptNotify = null
+        if (granted && pending != null) {
+            postWebNotification(pending.first, pending.second, "", pending.third)
+        }
+    }
+
     internal val voiceSearchLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -278,6 +295,7 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
             "block_third_party_cookies" -> applyCookiePolicy()
             "custom_user_agent" -> applyUserAgent()
             "quiver_guard_enabled" -> onQuiverGuardEnabled(prefs.getBoolean("quiver_guard_enabled", false))
+            "user_scripts_enabled" -> applyUserScripts()
             "data_saver_enabled", "data_saver_disable_images", "data_saver_disable_autoplay" -> applyDataSaverSettings()
             "force_dark_web" -> {
                 tabManager.tabs.forEach { applyWebDarkMode(it.webView) }
@@ -292,6 +310,10 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
                 if (prefs.getString("scroll_hide_mode", "off") == "off") {
                     animateBottomBarTo(0f, animated = false)
                 }
+            }
+            "shortcut_frameless_enabled" -> {
+                tabManager.framelessShortcutsEnabled = prefs.getBoolean("shortcut_frameless_enabled", true)
+                updateTabCount()
             }
         }
     }
@@ -309,7 +331,14 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         fullscreenContainerView = FrameLayout(this)
 
         prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (!prefs.getBoolean("setup_complete", false)) {
+            startActivity(android.content.Intent(this, com.jhaiian.clint.setup.SetupActivity::class.java))
+            finish()
+            return
+        }
         prefs.registerOnSharedPreferenceChangeListener(prefsListener)
+        tabManager.framelessShortcutsEnabled = prefs.getBoolean("shortcut_frameless_enabled", true)
+        lastUserScriptsDataVersion = com.jhaiian.clint.userscripts.UserScriptState.getDataVersion(this)
         applySystemUiVisibility()
 
         val startTheme = prefs.getString("app_theme", "dark") ?: "dark"
@@ -382,6 +411,7 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         super.onNewIntent(intent)
         val isRefreshLinkMode = intent.getBooleanExtra(EXTRA_REFRESH_LINK_MODE, false)
         val shortcutId = intent.getStringExtra(EXTRA_SHORTCUT_ID)
+        val wasShortcutFrameless = uiState.isShortcutFrameless
         applyShortcutFrameless(shortcutId != null)
         if (isRefreshLinkMode) {
             val downloadId = intent.getIntExtra(EXTRA_REFRESH_LINK_DOWNLOAD_ID, -1)
@@ -403,6 +433,9 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         }
         val url = getUrlFromIntent(intent)
         setIntent(android.content.Intent())
+        if (wasShortcutFrameless) {
+            exitShortcutFramelessToNormal()
+        }
         if (!url.isNullOrEmpty()) {
             openNewTab(isIncognito = false, url = url)
         }
@@ -419,6 +452,11 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         hasWebBottomNav = false
         swipeRefreshView.isEnabled = true
         updateMainContentInsets()
+        val currentUserScriptsVersion = com.jhaiian.clint.userscripts.UserScriptState.getDataVersion(this)
+        if (currentUserScriptsVersion != lastUserScriptsDataVersion) {
+            lastUserScriptsDataVersion = currentUserScriptsVersion
+            applyUserScripts()
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -543,9 +581,12 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
 
     fun onTabSelected(index: Int) { captureActiveTabThumbnail(); tabManager.switchTo(index); attachActiveWebView() }
     fun onSwipeTabChange(direction: Int): Boolean {
-        val newIndex = tabManager.activeIndex + direction
-        if (newIndex !in tabManager.tabs.indices) return false
-        onTabSelected(newIndex)
+        val visibleIndices = tabManager.tabs.indices.filter { !tabManager.isGhostTab(tabManager.tabs[it]) }
+        val currentPos = visibleIndices.indexOf(tabManager.activeIndex)
+        if (currentPos == -1) return false
+        val newPos = currentPos - direction
+        if (newPos !in visibleIndices.indices) return false
+        onTabSelected(visibleIndices[newPos])
         return true
     }
     fun onTabClosed(index: Int) {
@@ -559,8 +600,15 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
         val wasActive = index == tabManager.activeIndex
         tabManager.closeTab(index)
         resetProgressBar()
-        if (tabManager.count == 0) openNewTab(false)
-        else if (wasActive) attachActiveWebView()
+        if (tabManager.previews().isEmpty()) {
+            openNewTab(false)
+            return
+        }
+        val activeTab = tabManager.activeTab
+        if (activeTab != null && tabManager.isGhostTab(activeTab)) {
+            val idx = tabManager.tabs.indexOfFirst { !tabManager.isGhostTab(it) }
+            if (idx != -1) { tabManager.switchTo(idx); attachActiveWebView() } else openNewTab(false)
+        } else if (wasActive) attachActiveWebView()
         else updateTabCount()
     }
     fun onNewTab() { openNewTab(false) }
@@ -658,6 +706,14 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
     fun onMenuOpenDownloadSettings() {
         startActivity(android.content.Intent(this, com.jhaiian.clint.settings.SettingsActivity::class.java)
             .putExtra(com.jhaiian.clint.settings.SettingsActivity.EXTRA_OPEN_FRAGMENT, "download_settings"))
+    }
+    fun onMenuUserScripts() {
+        com.jhaiian.clint.userscripts.UserScriptState.setEnabled(
+            this, !com.jhaiian.clint.userscripts.UserScriptState.isEnabled(this)
+        )
+    }
+    fun onMenuOpenUserScriptsSettings() {
+        startActivity(android.content.Intent(this, com.jhaiian.clint.userscripts.UserScriptsActivity::class.java))
     }
     fun onMenuQuiverGuard() {
         val enabled = !prefs.getBoolean("quiver_guard_enabled", false)
@@ -928,6 +984,135 @@ td,th{border:1px solid $secondaryColor;padding:6px 8px;}
         }
     }
 
+    inner class UserScriptBridge(private val webView: android.webkit.WebView) {
+        private val prefs = getSharedPreferences("user_script_gm_values", android.content.Context.MODE_PRIVATE)
+        private val calls = java.util.concurrent.ConcurrentHashMap<String, okhttp3.Call>()
+
+        @android.webkit.JavascriptInterface
+        fun getValue(scriptKey: String, key: String): String? = prefs.getString("$scriptKey|$key", null)
+
+        @android.webkit.JavascriptInterface
+        fun setValue(scriptKey: String, key: String, jsonValue: String) {
+            prefs.edit().putString("$scriptKey|$key", jsonValue).apply()
+            runOnUiThread {
+                val safeScript = scriptKey.replace("'", "")
+                val safeKey = org.json.JSONObject.quote(key)
+                val safeVal = org.json.JSONObject.quote(jsonValue)
+                webView.evaluateJavascript(
+                    "window.__usValueChanged&&window.__usValueChanged('$safeScript',$safeKey,$safeVal)", null
+                )
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun deleteValue(scriptKey: String, key: String) {
+            prefs.edit().remove("$scriptKey|$key").apply()
+            runOnUiThread {
+                val safeScript = scriptKey.replace("'", "")
+                val safeKey = org.json.JSONObject.quote(key)
+                webView.evaluateJavascript(
+                    "window.__usValueChanged&&window.__usValueChanged('$safeScript',$safeKey,null)", null
+                )
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun listValues(scriptKey: String): String {
+            val prefix = "$scriptKey|"
+            val out = org.json.JSONArray()
+            for (k in prefs.all.keys) {
+                if (k.startsWith(prefix)) out.put(k.removePrefix(prefix))
+            }
+            return out.toString()
+        }
+
+        @android.webkit.JavascriptInterface
+        fun notify(scriptName: String, title: String, text: String, origin: String) {
+            runOnUiThread {
+                val displayTitle = title.ifBlank { scriptName }
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU ||
+                    isSystemPermissionGranted(android.Manifest.permission.POST_NOTIFICATIONS)
+                ) {
+                    postWebNotification(displayTitle, text, "", origin)
+                } else {
+                    pendingUserScriptNotify = Triple(displayTitle, text, origin)
+                    userScriptNotifyPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun download(base64: String, filename: String, mimeType: String) {
+            runOnUiThread { showDownloadDialogForBlob(base64, filename, mimeType) }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun abort(id: String) {
+            calls.remove(id)?.cancel()
+        }
+
+        @android.webkit.JavascriptInterface
+        fun xhr(id: String, detailsJson: String) {
+            val safeId = id.replace("'", "")
+            try {
+                val details = org.json.JSONObject(detailsJson)
+                val url = details.getString("url")
+                val method = details.optString("method", "GET").ifBlank { "GET" }
+                val hasBody = details.has("data") && !details.isNull("data")
+                val mediaTypeHeader = details.optJSONObject("headers")?.optString("Content-Type")
+                    ?: details.optJSONObject("headers")?.optString("content-type")
+                val requestBody = if (hasBody) {
+                    details.optString("data", "").toRequestBody(
+                        (mediaTypeHeader ?: "text/plain;charset=UTF-8").toMediaTypeOrNull()
+                    )
+                } else if (method != "GET" && method != "HEAD") {
+                    ByteArray(0).toRequestBody(null)
+                } else null
+                val builder = okhttp3.Request.Builder().url(url).method(method, requestBody)
+                val cookie = runCatching { android.webkit.CookieManager.getInstance().getCookie(url) }.getOrNull()
+                if (!cookie.isNullOrBlank()) builder.header("Cookie", cookie)
+                if (details.has("headers")) {
+                    details.optJSONObject("headers")?.let { headers ->
+                        headers.keys().forEach { k -> builder.header(k, headers.optString(k)) }
+                    }
+                }
+                if (!details.has("headers") || details.optJSONObject("headers")?.has("User-Agent") != true) {
+                    builder.header("User-Agent", android.webkit.WebSettings.getDefaultUserAgent(this@MainActivity))
+                }
+                val call = com.jhaiian.clint.downloads.ClintDownloadManager.httpClient.newCall(builder.build())
+                calls[safeId] = call
+                call.enqueue(object : okhttp3.Callback {
+                    override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                        calls.remove(safeId)
+                        val err = org.json.JSONObject().put("error", e.message ?: "network error")
+                        webView.post { webView.evaluateJavascript("window.__usXhrCallback&&window.__usXhrCallback('$safeId',null,${err})", null) }
+                    }
+
+                    override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                        calls.remove(safeId)
+                        response.use { r ->
+                            val text = runCatching { r.body.string() }.getOrDefault("")
+                            val headerText = StringBuilder()
+                            for (i in 0 until r.headers.size) {
+                                headerText.append(r.headers.name(i)).append(": ").append(r.headers.value(i)).append("\r\n")
+                            }
+                            val result = org.json.JSONObject()
+                                .put("status", r.code)
+                                .put("statusText", r.message)
+                                .put("responseText", text)
+                                .put("responseHeaders", headerText.toString())
+                                .put("finalUrl", r.request.url.toString())
+                            webView.post { webView.evaluateJavascript("window.__usXhrCallback&&window.__usXhrCallback('$safeId',${result},null)", null) }
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                val err = org.json.JSONObject().put("error", e.message ?: "request error")
+                webView.post { webView.evaluateJavascript("window.__usXhrCallback&&window.__usXhrCallback('$safeId',null,${err})", null) }
+            }
+        }
+    }
+
     internal fun isNetworkMetered(): Boolean {
         val cm = getSystemService(android.net.ConnectivityManager::class.java) ?: return false
         return cm.isActiveNetworkMetered
@@ -954,6 +1139,7 @@ td,th{border:1px solid $secondaryColor;padding:6px 8px;}
 
     fun onLinkOpenInNewTab(url: String) { handleLinkOpenInNewTab(url) }
     fun onLinkOpenIncognito(url: String) { handleLinkOpenIncognito(url) }
+    fun onLinkOpenNewTabBackground(url: String) { handleLinkOpenNewTabBackground(url) }
     fun onLinkPreviewPage(url: String) { handleLinkPreviewPage(url) }
     fun onLinkCopyAddress(url: String) { handleLinkCopyAddress(url) }
     fun onLinkCopyText(url: String, text: String) { handleLinkCopyText(text) }

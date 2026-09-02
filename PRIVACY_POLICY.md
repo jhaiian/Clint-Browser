@@ -1,6 +1,6 @@
 # Privacy Policy for Clint Browser
 
-*Last updated: August 23, 2026*
+*Last updated: September 2, 2026*
 
 ## Overview
 
@@ -42,19 +42,35 @@ You can clear your search history at any time through the app's settings or by c
 
 ---
 
+## Search Engine
+
+You can choose which search engine handles the searches you type in the address or search bar, in Settings:
+
+- **DuckDuckGo** (default)
+- **Brave Search**
+- **Ecosia**
+- **Google**
+- **Custom**, a URL template you enter yourself
+
+When you search, your query is sent as part of the request URL to whichever engine you've selected. If you configure a custom engine, your query is sent to whatever URL you entered, since the app has no way to know what that service does with it. Review that service's own privacy policy before using it.
+
+---
+
 ## Search Suggestions
 
 When you type in the address or search bar, Clint Browser shows real-time search suggestions to help you find what you're looking for faster.
 
 You can choose which provider these suggestions come from in Settings:
 
-- **DuckDuckGo** (default) — fetched from `https://duckduckgo.com/ac/?q=`
-- **Google** — fetched from `https://www.google.com/complete/search?client=firefox&q=`
+- **DuckDuckGo** (default), fetched from `https://duckduckgo.com/ac/?q=`
+- **Google**, fetched from `https://www.google.com/complete/search?client=firefox&q=`
+- **Custom**, a URL template you enter yourself
 
 **What this means for your privacy:**
-- The text you type is sent only to whichever suggestion provider you've selected, and only to retrieve suggestion results  
-- No search history, cookies, or personal identifiers from Clint Browser are included  
-- Neither provider receives requests associated with your Clint Browser identity, since the app has none to send  
+- The text you type is sent only to whichever suggestion provider you've selected, and only to retrieve suggestion results
+- No search history, cookies, or personal identifiers from Clint Browser are included
+- Neither provider receives requests associated with your Clint Browser identity, since the app has none to send
+- If you configure a custom suggestions provider, each keystroke you type may be sent to that URL as you type, so only point this at a service you trust
 
 Your saved search history is completely separate and never sent to DuckDuckGo, Google, or any other service.
 
@@ -116,6 +132,20 @@ Website Blocker lets you block entire categories of sites (ads, malware, piracy,
 ## Quiver Guard (Ad blocker)
 
 All downloaded filter lists are stored and processed locally on your device using the adblock-rust library. No filter lists, browsing data, or other information are sent to any servers. All ad-blocking operations are performed entirely on your device, helping protect your privacy.
+
+---
+
+## User Scripts
+
+User scripts are pieces of JavaScript you can install to change how pages look or behave. Here's how they interact with your data:
+
+- **Script storage is local.** Script code, its enabled state, and matching rules are stored on your device using SQLite. They are never uploaded or synced anywhere by Clint Browser.
+- **Installing from a URL fetches that URL.** If you add a script by pasting a link, Clint Browser downloads the script's source directly from that URL, sending the site's cookies (if any) and a standard browser user agent, the same as visiting the page normally. A script's declared dependencies (`@require` and `@resource` files) are fetched the same way from their own URLs.
+- **Checking for updates repeats that fetch.** If a script was installed from a URL, checking for updates contacts that same URL again to see if the source has changed.
+- **Scripts can store their own local values.** Scripts that use `GM.setValue` or `GM.getValue` have their data stored locally on your device, scoped to that script. This data is never transmitted anywhere by Clint Browser.
+- **Scripts can make their own network requests.** A script that uses `GM.xmlHttpRequest` can request any URL it's written to request, including across origins. This request is made directly by the script's own code, not by Clint Browser, so what data it sends and where it goes depends entirely on that script.
+- **Scripts can request notification access.** If a script uses `GM.notification`, Android's normal notification permission prompt applies the same way it would for a website.
+- **Scripts run with page level access.** Once installed and matched to a site, a script can read and modify the content of the pages it runs on. The developer does not review or vet the scripts you install, so only install scripts from sources you trust.
 
 ---
 
@@ -204,7 +234,7 @@ Clint Browser does not knowingly collect any personal information from anyone, i
 
 Clint Browser does not include analytics, advertising, or tracking SDKs.
 
-However, the search engine or services you choose (such as DuckDuckGo, Brave Search, or Google) may collect data according to their own privacy policies. Clint Browser has no control over those services. Additionally, the search suggestions feature uses either DuckDuckGo's or Google's public suggestion API, depending on which provider you've selected, and the favicon fallback feature uses DuckDuckGo's public API, as described above.
+However, the search engine or services you choose (such as DuckDuckGo, Brave Search, Ecosia, Google, or a custom one you configure) may collect data according to their own privacy policies. Clint Browser has no control over those services. Additionally, the search suggestions feature uses DuckDuckGo's or Google's public suggestion API, or a custom one you configure, depending on which provider you've selected, and the favicon fallback feature uses DuckDuckGo's public API, as described above. Any user scripts you install can also communicate with third party services on their own, as described in the User Scripts section above.
 
 ---
 

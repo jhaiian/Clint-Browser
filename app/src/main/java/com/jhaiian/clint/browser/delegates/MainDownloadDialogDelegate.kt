@@ -26,6 +26,12 @@ internal fun MainActivity.showDownloadDialog(
     cookies: String
 ) {
     val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+    val downloadManagerApp = prefs.getString(DownloadSettingsKeys.PREF_DOWNLOAD_MANAGER, DownloadSettingsKeys.DEFAULT_DOWNLOAD_MANAGER) ?: DownloadSettingsKeys.DEFAULT_DOWNLOAD_MANAGER
+    if (downloadManagerApp != DownloadSettingsKeys.DEFAULT_DOWNLOAD_MANAGER &&
+        com.jhaiian.clint.downloads.sendToExternalDownloadManager(this, downloadManagerApp, url, filename, userAgent, referer, cookies)
+    ) {
+        return
+    }
     mountDownloadRequestDialog(
         url = url,
         onCopyLink = { copyDownloadRequestLink(url) },
