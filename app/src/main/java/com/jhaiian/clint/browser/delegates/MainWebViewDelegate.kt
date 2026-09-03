@@ -47,7 +47,6 @@ internal fun MainActivity.createWebView(isIncognito: Boolean): WebView {
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, !prefs.getBoolean("block_third_party_cookies", true))
     }
-    webView.setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
     webView.addJavascriptInterface(NestedScrollBridge(), "NestedScrollBridge")
     webView.addJavascriptInterface(CanvasTouchBridge(), "CanvasTouchBridge")
     webView.addJavascriptInterface(BottomNavBridge(), "BottomNavBridge")

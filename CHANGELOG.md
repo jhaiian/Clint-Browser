@@ -4,6 +4,22 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.4-r3
+
+---
+
+## Bug Fixes
+
+- Fixed visible visual artifacts on some GPUs. (Thanks to @ncgjbr-ai for reporting this in #39!)
+
+---
+
+## Other Changes
+
+- Bump `com.android.application` from 9.3.2 to 9.4.0 by @dependabot[bot] in #40
+
+---
+
 # v1.1.4-r2
 
 ---
