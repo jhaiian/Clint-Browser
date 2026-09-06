@@ -113,9 +113,8 @@ fun LookAndFeelPane(activity: SettingsActivity) {
     val uiState = remember {
         LookAndFeelUiState(
             initialTheme = prefs.getString("app_theme", "dark") ?: "dark",
-            initialAccent = prefs.getString("accent_color", "purple") ?: "purple",
-            initialIntensity = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint",
-            initialForceDarkWeb = prefs.getBoolean("force_dark_web", false),
+            initialAccent = prefs.getString("accent_color", "material_you") ?: "material_you",
+            initialIntensity = prefs.getString("surface_intensity", "soft_tint") ?: "soft_tint",
             initialLanguage = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM,
             initialScrollHideMode = prefs.getString("scroll_hide_mode", "off") ?: "off",
             initialAddressBarPosition = prefs.getString("address_bar_position", "top") ?: "top",
@@ -136,7 +135,6 @@ fun LookAndFeelPane(activity: SettingsActivity) {
         uiState.hideStatusBar = prefs.getBoolean("hide_status_bar", false)
         uiState.hideSystemNavigation = prefs.getBoolean("hide_system_navigation", false)
         uiState.exitConfirmation = prefs.getString("exit_confirmation", "toast") ?: "toast"
-        uiState.forceDarkWeb = prefs.getBoolean("force_dark_web", false)
         uiState.language = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
     }
 
@@ -261,11 +259,6 @@ fun LookAndFeelPane(activity: SettingsActivity) {
         onThemeSelected = { newTheme -> uiState.openDialog = null; activity.captureAndRecreate(newTheme) },
         onAccentSelected = { newAccent -> uiState.openDialog = null; activity.captureAndApplyAccentColor(newAccent) },
         onIntensitySelected = { newIntensity -> uiState.openDialog = null; activity.captureAndApplySurfaceIntensity(newIntensity) },
-        onForceDarkWebToggled = {
-            val newValue = !uiState.forceDarkWeb
-            prefs.edit().putBoolean("force_dark_web", newValue).apply()
-            uiState.forceDarkWeb = newValue
-        },
         onLanguageSelected = { newLanguage -> uiState.openDialog = null; activity.captureAndApplyLanguage(newLanguage) },
         onAddressBarPositionSelected = ::selectAddressBarPosition,
         onMenuStyleSelected = { style ->

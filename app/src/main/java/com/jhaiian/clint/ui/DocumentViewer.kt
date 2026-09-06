@@ -25,6 +25,8 @@ object DocumentViewer {
         "https://raw.githubusercontent.com/jhaiian/ClintBrowser/main/CHANGELOG.md"
     const val ATTRIBUTION_URL =
         "https://raw.githubusercontent.com/jhaiian/ClintBrowser/main/Attribution.md"
+    const val SUPPORTERS_URL =
+        "https://raw.githubusercontent.com/jhaiian/ClintBrowser/main/Supporters.md"
 
     private fun Context.findActivity(): Activity? {
         var ctx = this

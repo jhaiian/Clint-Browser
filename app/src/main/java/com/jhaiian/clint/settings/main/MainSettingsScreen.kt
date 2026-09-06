@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.WebAsset
 
 import androidx.compose.runtime.Composable
@@ -35,7 +36,8 @@ fun MainSettingsScreen(
     onUpdatesClick: () -> Unit,
     onMiscClick: () -> Unit,
     onDebugClick: () -> Unit,
-    onAboutClick: () -> Unit
+    onAboutClick: () -> Unit,
+    onSupportClintClick: () -> Unit
 ) {
     val colors = LocalClintColors.current
 
@@ -129,6 +131,14 @@ fun MainSettingsScreen(
                 summary = stringResource(R.string.debug_summary),
                 colors = colors,
                 onClick = onDebugClick
+            )
+            RowDivider(colors.divider)
+            SettingsRow(
+                icon = androidx.compose.material.icons.Icons.Filled.VolunteerActivism,
+                title = stringResource(R.string.support_clint_title),
+                summary = stringResource(R.string.support_clint_summary),
+                colors = colors,
+                onClick = onSupportClintClick
             )
             RowDivider(colors.divider)
             SettingsRow(

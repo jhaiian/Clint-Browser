@@ -73,6 +73,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -242,6 +243,23 @@ internal fun SearchOverlay(
         onQueryChange(text)
     }
 
+    fun withoutAutoSpaceAfterPeriod(new: TextFieldValue): TextFieldValue {
+        val old = fieldValue
+        val newText = new.text
+        val cursor = new.selection.end
+        val insertedAutoSpace = newText.length == old.text.length + 1 &&
+            new.selection.collapsed &&
+            cursor == newText.length &&
+            cursor >= 2 &&
+            newText[cursor - 1] == ' ' &&
+            newText[cursor - 2] == '.' &&
+            (cursor < 3 || newText[cursor - 3] != ' ') &&
+            newText.regionMatches(0, old.text, 0, old.text.length)
+        if (!insertedAutoSpace) return new
+        val fixedText = newText.removeRange(cursor - 1, cursor)
+        return TextFieldValue(fixedText, TextRange(fixedText.length))
+    }
+
     LaunchedEffect(voiceResult) {
         if (voiceResult != null) {
             fill(voiceResult)
@@ -284,13 +302,14 @@ internal fun SearchOverlay(
                     BasicTextField(
                         value = fieldValue,
                         onValueChange = {
-                            fieldValue = it
-                            onQueryChange(it.text)
+                            val corrected = withoutAutoSpaceAfterPeriod(it)
+                            fieldValue = corrected
+                            onQueryChange(corrected.text)
                         },
                         singleLine = true,
                         textStyle = TextStyle(color = colors.onSurface, fontSize = 16.sp),
                         cursorBrush = SolidColor(colors.primary),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
                         keyboardActions = KeyboardActions(onGo = { onSubmit(fieldValue.text.trim()) }),
                         modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
                     )

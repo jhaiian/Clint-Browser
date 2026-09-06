@@ -12,7 +12,6 @@ class LookAndFeelUiState(
     initialTheme: String,
     initialAccent: String,
     initialIntensity: String,
-    initialForceDarkWeb: Boolean,
     initialLanguage: String,
     initialScrollHideMode: String,
     initialAddressBarPosition: String,
@@ -24,7 +23,6 @@ class LookAndFeelUiState(
     var theme by mutableStateOf(initialTheme)
     var accent by mutableStateOf(initialAccent)
     var intensity by mutableStateOf(initialIntensity)
-    var forceDarkWeb by mutableStateOf(initialForceDarkWeb)
     var language by mutableStateOf(initialLanguage)
 
     var scrollHideMode by mutableStateOf(initialScrollHideMode)

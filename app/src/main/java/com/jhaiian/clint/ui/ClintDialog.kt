@@ -17,7 +17,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -32,6 +40,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.jhaiian.clint.R
 import com.jhaiian.clint.base.ClintActivity
 import com.jhaiian.clint.ui.theme.LocalClintColors
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 val ClintDialogContentMaxHeight = 440.dp
 
@@ -66,6 +76,20 @@ internal fun ClintDialogStatusBarEffect(hideStatusBar: Boolean, hideSystemNaviga
         }
         onDispose {}
     }
+}
+
+fun Modifier.scrollToSelection(scrollState: ScrollState, selected: Boolean): Modifier = composed {
+    val coroutineScope = rememberCoroutineScope()
+    var hasScrolled by remember { mutableStateOf(false) }
+    if (selected) {
+        onGloballyPositioned { coordinates ->
+            if (!hasScrolled) {
+                hasScrolled = true
+                val targetY = coordinates.positionInParent().y.roundToInt().coerceAtLeast(0)
+                coroutineScope.launch { scrollState.scrollTo(targetY) }
+            }
+        }
+    } else this
 }
 
 @Composable

@@ -143,11 +143,7 @@ internal fun MainActivity.buildUserAgent(): String {
 @Suppress("DEPRECATION")
 internal fun MainActivity.applyWebDarkMode(webView: WebView) {
     val theme = prefs.getString("app_theme", "dark") ?: "dark"
-    val enabled = when (theme) {
-        "dark" -> true
-        "light" -> false
-        else -> prefs.getBoolean("force_dark_web", false)
-    }
+    val enabled = theme == "dark"
     val settings = webView.settings
     when {
         WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING) ->

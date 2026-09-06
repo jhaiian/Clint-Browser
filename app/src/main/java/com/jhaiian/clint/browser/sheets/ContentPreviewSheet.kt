@@ -383,11 +383,7 @@ private fun buildDesktopHeaders(webView: WebView): Map<String, String> {
 private fun applyPreviewDarkMode(context: android.content.Context, webView: WebView) {
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
     val theme = prefs.getString("app_theme", "dark") ?: "dark"
-    val enabled = when (theme) {
-        "dark" -> true
-        "light" -> false
-        else -> prefs.getBoolean("force_dark_web", false)
-    }
+    val enabled = theme == "dark"
     val settings = webView.settings
     when {
         WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING) ->

@@ -6,19 +6,19 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.preference.PreferenceManager
-import com.google.android.material.color.DynamicColors
-import com.jhaiian.clint.R
 import com.jhaiian.clint.ui.ThemeRevealHolder
 import com.jhaiian.clint.ui.ThemeRevealOverlay
+import com.jhaiian.clint.ui.theme.resolveClintTheme
 import com.jhaiian.clint.util.LocaleHelper
 import kotlin.math.hypot
 import kotlin.math.max
@@ -37,10 +37,10 @@ abstract class ClintActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         appliedTheme = prefs.getString("app_theme", "dark") ?: "dark"
-        appliedAccent = prefs.getString("accent_color", "purple") ?: "purple"
-        appliedIntensity = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint"
+        appliedAccent = prefs.getString("accent_color", "material_you") ?: "material_you"
+        appliedIntensity = prefs.getString("surface_intensity", "soft_tint") ?: "soft_tint"
         appliedLanguage = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
-        applyThemeResource()
+        applyWindowChrome()
         super.onCreate(savedInstanceState)
     }
 
@@ -49,8 +49,8 @@ abstract class ClintActivity : AppCompatActivity() {
         openDialogCount = 0
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val currentTheme = prefs.getString("app_theme", "dark") ?: "dark"
-        val currentAccent = prefs.getString("accent_color", "purple") ?: "purple"
-        val currentIntensity = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint"
+        val currentAccent = prefs.getString("accent_color", "material_you") ?: "material_you"
+        val currentIntensity = prefs.getString("surface_intensity", "soft_tint") ?: "soft_tint"
         val currentLanguage = prefs.getString(LocaleHelper.PREF_APP_LANGUAGE, LocaleHelper.LANGUAGE_SYSTEM) ?: LocaleHelper.LANGUAGE_SYSTEM
         if (currentTheme != appliedTheme || currentAccent != appliedAccent || currentIntensity != appliedIntensity || currentLanguage != appliedLanguage) {
             window.setWindowAnimations(0)
@@ -58,278 +58,31 @@ abstract class ClintActivity : AppCompatActivity() {
             return
         }
         applyStatusBarVisibility()
-        applySystemBarAppearance()
-        window.decorView.post { startRevealIfNeeded() }
-    }
-
-    private fun isMaterialYouActive(): Boolean {
-        return appliedAccent == "material_you" &&
-            (appliedTheme == "dark" || appliedTheme == "light")
-    }
-
-    private fun isDefaultMaterialYou(): Boolean {
-        return appliedAccent == "material_you" && appliedTheme == "default"
-    }
-
-    private fun isPurpleActive(): Boolean {
-        return appliedAccent == "purple"
-    }
-
-    private fun isBlueActive(): Boolean {
-        return appliedAccent == "blue"
-    }
-
-    private fun isYellowActive(): Boolean {
-        return appliedAccent == "yellow"
-    }
-
-    private fun isRedActive(): Boolean {
-        return appliedAccent == "red"
-    }
-
-    private fun isGreenActive(): Boolean {
-        return appliedAccent == "green"
-    }
-
-    private fun isOrangeActive(): Boolean {
-        return appliedAccent == "orange"
-    }
-
-    private fun isSurfaceIntensityActive(): Boolean {
-        if (appliedTheme == "default") return false
-        return appliedAccent == "material_you" || appliedAccent == "purple" || appliedAccent == "blue" || appliedAccent == "yellow" || appliedAccent == "red" || appliedAccent == "green" || appliedAccent == "orange" || appliedAccent == "default"
-    }
-
-    private fun applyThemeResource() {
-        when {
-            appliedTheme == "dark" && isPurpleActive() -> setTheme(R.style.Theme_ClintBrowser_Dark_Purple)
-            appliedTheme == "dark" && isBlueActive() -> setTheme(R.style.Theme_ClintBrowser_Dark_Blue)
-            appliedTheme == "dark" && isYellowActive() -> setTheme(R.style.Theme_ClintBrowser_Dark_Yellow)
-            appliedTheme == "dark" && isRedActive() -> setTheme(R.style.Theme_ClintBrowser_Dark_Red)
-            appliedTheme == "dark" && isGreenActive() -> setTheme(R.style.Theme_ClintBrowser_Dark_Green)
-            appliedTheme == "dark" && isOrangeActive() -> setTheme(R.style.Theme_ClintBrowser_Dark_Orange)
-            appliedTheme == "dark" && isMaterialYouActive() -> setTheme(R.style.Theme_ClintBrowser_Dark_MaterialYou)
-            appliedTheme == "dark" -> setTheme(R.style.Theme_ClintBrowser_Dark)
-            appliedTheme == "light" && isPurpleActive() -> setTheme(R.style.Theme_ClintBrowser_Light_Purple)
-            appliedTheme == "light" && isBlueActive() -> setTheme(R.style.Theme_ClintBrowser_Light_Blue)
-            appliedTheme == "light" && isYellowActive() -> setTheme(R.style.Theme_ClintBrowser_Light_Yellow)
-            appliedTheme == "light" && isRedActive() -> setTheme(R.style.Theme_ClintBrowser_Light_Red)
-            appliedTheme == "light" && isGreenActive() -> setTheme(R.style.Theme_ClintBrowser_Light_Green)
-            appliedTheme == "light" && isOrangeActive() -> setTheme(R.style.Theme_ClintBrowser_Light_Orange)
-            appliedTheme == "light" && isMaterialYouActive() -> setTheme(R.style.Theme_ClintBrowser_Light_MaterialYou)
-            appliedTheme == "light" -> setTheme(R.style.Theme_ClintBrowser_Light)
-            isPurpleActive() -> setTheme(R.style.Theme_ClintBrowser_Purple)
-            isBlueActive() -> setTheme(R.style.Theme_ClintBrowser_Blue)
-            isYellowActive() -> setTheme(R.style.Theme_ClintBrowser_Yellow)
-            isRedActive() -> setTheme(R.style.Theme_ClintBrowser_Red)
-            isGreenActive() -> setTheme(R.style.Theme_ClintBrowser_Green)
-            isOrangeActive() -> setTheme(R.style.Theme_ClintBrowser_Orange)
-            isDefaultMaterialYou() -> {
-                setTheme(R.style.Theme_ClintBrowser_MaterialYou)
-                if (DynamicColors.isDynamicColorAvailable()) {
-                    DynamicColors.applyToActivityIfAvailable(this)
-                    theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_PreserveDefaultBackground, true)
-                }
-                return
-            }
-            else -> setTheme(R.style.Theme_ClintBrowser)
-        }
-        if (isMaterialYouActive()) {
-            DynamicColors.applyToActivityIfAvailable(this)
-        }
-        applyIntensityOverlay()
-    }
-
-    private fun applyIntensityOverlay() {
-        if (!isSurfaceIntensityActive()) return
-        val intensity = appliedIntensity ?: "soft_tint"
-        val isLight = appliedTheme == "light"
-        val isPurple = isPurpleActive()
-        val isBlue = isBlueActive()
-        val isYellow = isYellowActive()
-        val isRed = isRedActive()
-        val isGreen = isGreenActive()
-        val isOrange = isOrangeActive()
-        val isMaterialYou = isMaterialYouActive()
-        when (intensity) {
-            "soft_tint" -> {
-                if (isPurple && !isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Purple_Dark, true)
-                else if (isPurple && isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Purple_Light, true)
-                else if (isBlue && !isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Blue_Dark, true)
-                else if (isBlue && isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Blue_Light, true)
-                else if (isYellow && !isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Yellow_Dark, true)
-                else if (isYellow && isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Yellow_Light, true)
-                else if (isRed && !isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Red_Dark, true)
-                else if (isRed && isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Red_Light, true)
-                else if (isGreen && !isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Green_Dark, true)
-                else if (isGreen && isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Green_Light, true)
-                else if (isOrange && !isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Orange_Dark, true)
-                else if (isOrange && isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_Orange_Light, true)
-                else if (isMaterialYou && !isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_MaterialYou_Dark, true)
-                else if (isMaterialYou && isLight) theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_SoftTint_MaterialYou_Light, true)
-            }
-            "pure_mode" -> {
-                when {
-                    isMaterialYou && !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_MaterialYou_Dark, true)
-                    isMaterialYou && isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_MaterialYou_Light, true)
-                    isPurple && !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Purple_Dark, true)
-                    isPurple && isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Purple_Light, true)
-                    isBlue && !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Blue_Dark, true)
-                    isBlue && isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Blue_Light, true)
-                    isYellow && !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Yellow_Dark, true)
-                    isYellow && isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Yellow_Light, true)
-                    isRed && !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Red_Dark, true)
-                    isRed && isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Red_Light, true)
-                    isGreen && !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Green_Dark, true)
-                    isGreen && isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Green_Light, true)
-                    isOrange && !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Orange_Dark, true)
-                    isOrange && isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Orange_Light, true)
-                    !isLight -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Dark, true)
-                    else -> theme.applyStyle(R.style.ThemeOverlay_ClintBrowser_SurfaceIntensity_PureMode_Light, true)
-                }
-            }
+        applyWindowChrome()
+        window.decorView.post {
+            applyStatusBarVisibility()
+            startRevealIfNeeded()
         }
     }
 
     @Suppress("DEPRECATION")
-    private fun applySystemBarAppearance() {
-        val isLight = appliedTheme == "light"
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.isAppearanceLightStatusBars = isLight
-        controller.isAppearanceLightNavigationBars = isLight
-        if (isMaterialYouActive()) {
-            val tv = TypedValue()
-            val colorAttr = if (appliedIntensity == "soft_tint") {
-                com.google.android.material.R.attr.colorSurfaceContainer
-            } else {
-                com.google.android.material.R.attr.colorSurface
-            }
-            if (theme.resolveAttribute(colorAttr, tv, true)) {
-                window.statusBarColor = tv.data
-                window.navigationBarColor = tv.data
-            }
-        }
-    }
-
-    fun getDialogTheme(): Int {
-        val theme = appliedTheme ?: "default"
-        val accent = appliedAccent ?: "default"
+    private fun applyWindowChrome() {
+        val theme = appliedTheme ?: "dark"
+        val accent = appliedAccent ?: "material_you"
         val intensity = appliedIntensity ?: "soft_tint"
-        val useMaterialYou = accent == "material_you" && (theme == "dark" || theme == "light")
-        val isDefaultMY = accent == "material_you" && theme == "default"
-        val usePurple = accent == "purple"
-        val useBlue = accent == "blue"
-        val useYellow = accent == "yellow"
-        val useRed = accent == "red"
-        val useGreen = accent == "green"
-        val useOrange = accent == "orange"
-        val isLight = theme == "light"
-        val isDark = theme == "dark"
-
-        if (intensity == "pure_mode" && (isDark || isLight)) {
-            return when {
-                useMaterialYou && isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_MaterialYou_Dark
-                useMaterialYou && isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_MaterialYou_Light
-                usePurple && isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Purple_Dark
-                usePurple && isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Purple_Light
-                useBlue && isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Blue_Dark
-                useBlue && isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Blue_Light
-                useYellow && isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Yellow_Dark
-                useYellow && isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Yellow_Light
-                useRed && isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Red_Dark
-                useRed && isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Red_Light
-                useGreen && isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Green_Dark
-                useGreen && isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Green_Light
-                useOrange && isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Orange_Dark
-                useOrange && isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Orange_Light
-                isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Dark
-                else -> R.style.ThemeOverlay_ClintBrowser_Dialog_PureMode_Light
-            }
-        }
-
-        if (intensity == "soft_tint" && usePurple) {
-            return when {
-                isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Purple_Dark
-                isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Purple_Light
-                else -> R.style.ThemeOverlay_ClintBrowser_Dialog_Purple
-            }
-        }
-
-        if (intensity == "soft_tint" && useBlue) {
-            return when {
-                isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Blue_Dark
-                isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Blue_Light
-                else -> R.style.ThemeOverlay_ClintBrowser_Dialog_Blue
-            }
-        }
-
-        if (intensity == "soft_tint" && useYellow) {
-            return when {
-                isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Yellow_Dark
-                isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Yellow_Light
-                else -> R.style.ThemeOverlay_ClintBrowser_Dialog_Yellow
-            }
-        }
-
-        if (intensity == "soft_tint" && useRed) {
-            return when {
-                isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Red_Dark
-                isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Red_Light
-                else -> R.style.ThemeOverlay_ClintBrowser_Dialog_Red
-            }
-        }
-
-        if (intensity == "soft_tint" && useGreen) {
-            return when {
-                isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Green_Dark
-                isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Green_Light
-                else -> R.style.ThemeOverlay_ClintBrowser_Dialog_Green
-            }
-        }
-
-        if (intensity == "soft_tint" && useOrange) {
-            return when {
-                isDark -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Orange_Dark
-                isLight -> R.style.ThemeOverlay_ClintBrowser_Dialog_SoftTint_Orange_Light
-                else -> R.style.ThemeOverlay_ClintBrowser_Dialog_Orange
-            }
-        }
-
-        return when {
-            theme == "dark" && usePurple -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark_Purple
-            theme == "dark" && useBlue -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark_Blue
-            theme == "dark" && useYellow -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark_Yellow
-            theme == "dark" && useRed -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark_Red
-            theme == "dark" && useGreen -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark_Green
-            theme == "dark" && useOrange -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark_Orange
-            theme == "dark" && useMaterialYou -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark_MaterialYou
-            theme == "dark" -> R.style.ThemeOverlay_ClintBrowser_Dialog_Dark
-            theme == "light" && usePurple -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light_Purple
-            theme == "light" && useBlue -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light_Blue
-            theme == "light" && useYellow -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light_Yellow
-            theme == "light" && useRed -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light_Red
-            theme == "light" && useGreen -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light_Green
-            theme == "light" && useOrange -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light_Orange
-            theme == "light" && useMaterialYou -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light_MaterialYou
-            theme == "light" -> R.style.ThemeOverlay_ClintBrowser_Dialog_Light
-            usePurple -> R.style.ThemeOverlay_ClintBrowser_Dialog_Purple
-            useBlue -> R.style.ThemeOverlay_ClintBrowser_Dialog_Blue
-            useYellow -> R.style.ThemeOverlay_ClintBrowser_Dialog_Yellow
-            useRed -> R.style.ThemeOverlay_ClintBrowser_Dialog_Red
-            useGreen -> R.style.ThemeOverlay_ClintBrowser_Dialog_Green
-            useOrange -> R.style.ThemeOverlay_ClintBrowser_Dialog_Orange
-            isDefaultMY -> R.style.ThemeOverlay_ClintBrowser_Dialog_Default_MaterialYou
-            else -> R.style.ThemeOverlay_ClintBrowser_Dialog
-        }
+        val resolved = resolveClintTheme(this, theme, accent, intensity)
+        window.setBackgroundDrawable(ColorDrawable(resolved.background.toArgb()))
+        window.statusBarColor = resolved.statusBar.toArgb()
+        window.navigationBarColor = resolved.navigationBar.toArgb()
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.isAppearanceLightStatusBars = resolved.isLight
+        controller.isAppearanceLightNavigationBars = resolved.isLight
     }
 
     fun captureAndRecreate(newTheme: String) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val current = prefs.getString("app_theme", "dark") ?: "dark"
         if (current == newTheme) return
-        if (newTheme == "default") {
-            prefs.edit().putString("surface_intensity", "soft_tint").apply()
-        }
         captureScreenBitmap()
         prefs.edit().putString("app_theme", newTheme).commit()
         window.setWindowAnimations(0)
@@ -338,10 +91,10 @@ abstract class ClintActivity : AppCompatActivity() {
 
     fun captureAndApplyAccentColor(newAccent: String) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("accent_color", "purple") ?: "purple"
+        val current = prefs.getString("accent_color", "material_you") ?: "material_you"
         if (current == newAccent) return
-        val currentIntensity = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint"
-        if (currentIntensity == "strong_tint" && newAccent != "purple" && newAccent != "blue" && newAccent != "yellow" && newAccent != "red" && newAccent != "green" && newAccent != "orange") {
+        val currentIntensity = prefs.getString("surface_intensity", "soft_tint") ?: "soft_tint"
+        if (currentIntensity == "strong_tint" && newAccent != "purple" && newAccent != "deep_purple" && newAccent != "royal_purple" && newAccent != "amethyst" && newAccent != "lavender" && newAccent != "teal" && newAccent != "pink" && newAccent != "indigo" && newAccent != "cyan" && newAccent != "amber" && newAccent != "mint" && newAccent != "crimson" && newAccent != "slate" && newAccent != "graphite" && newAccent != "obsidian" && newAccent != "onyx" && newAccent != "coral" && newAccent != "midnight" && newAccent != "sepia" && newAccent != "forest" && newAccent != "plum" && newAccent != "sand" && newAccent != "ruby" && newAccent != "sky" && newAccent != "charcoal" && newAccent != "peach" && newAccent != "emerald" && newAccent != "blue" && newAccent != "yellow" && newAccent != "lemon" && newAccent != "gold" && newAccent != "red" && newAccent != "green" && newAccent != "orange" && newAccent != "deep_orange" && newAccent != "tangerine" && newAccent != "apricot" && newAccent != "copper" && newAccent != "scarlet" && newAccent != "lime" && newAccent != "olive" && newAccent != "default" && newAccent != "material_you" && newAccent != "violet" && newAccent != "titanium" && newAccent != "azure" && newAccent != "mustard" && newAccent != "burgundy" && newAccent != "terracotta" && newAccent != "sage") {
             prefs.edit().putString("surface_intensity", "soft_tint").apply()
         }
         captureScreenBitmap()
@@ -352,7 +105,7 @@ abstract class ClintActivity : AppCompatActivity() {
 
     fun captureAndApplySurfaceIntensity(newIntensity: String) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("surface_intensity", "strong_tint") ?: "strong_tint"
+        val current = prefs.getString("surface_intensity", "soft_tint") ?: "soft_tint"
         if (current == newIntensity) return
         captureScreenBitmap()
         prefs.edit().putString("surface_intensity", newIntensity).commit()
@@ -468,5 +221,6 @@ abstract class ClintActivity : AppCompatActivity() {
         } else {
             controller.show(WindowInsetsCompat.Type.navigationBars())
         }
+        window.decorView.requestApplyInsets()
     }
 }

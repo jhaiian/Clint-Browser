@@ -172,7 +172,7 @@ internal fun MainActivity.buildMenuSnapshot(): BrowserMenuSnapshot {
         isDesktopMode = isDesktopMode,
         isDataSaverEnabled = prefs.getBoolean("data_saver_enabled", false),
         pendingDownloadCount = ClintDownloadManager.downloadsFlow.value
-            .count { it.status in DownloadStatus.NOT_FINISHED }.toLong(),
+            .count { it.status in DownloadStatus.RUNNING_OR_QUEUED }.toLong(),
         isUserScriptsEnabled = UserScriptState.isEnabled(this),
         isQuiverGuardEnabled = prefs.getBoolean("quiver_guard_enabled", false),
         quiverGuardBlockedCount = tabManager.activeTab?.id?.let { BlockedRequestCounter.getTabCount(it) } ?: 0L,

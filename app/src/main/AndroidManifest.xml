@@ -57,7 +57,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ClintBrowser"
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar"
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="true">
 
@@ -199,6 +199,12 @@
 
         <activity
             android:name=".settings.menucustomization.MenuCustomizationActivity"
+            android:exported="false"
+            android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
+            android:parentActivityName=".settings.SettingsActivity" />
+
+        <activity
+            android:name=".settings.supportclint.SupportClintActivity"
             android:exported="false"
             android:configChanges="uiMode|screenSize|smallestScreenSize|screenLayout|orientation"
             android:parentActivityName=".settings.SettingsActivity" />

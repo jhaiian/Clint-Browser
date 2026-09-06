@@ -46,16 +46,7 @@ fun SetupLayoutPage(
     val context = LocalContext.current
 
     val swatch = remember(theme, accent) {
-        when (accent) {
-            "material_you" -> ThemeSwatchUtils.resolveMaterialYouSwatchColors(context, theme)
-            "purple" -> ThemeSwatchUtils.resolvePurpleSwatchColors(context, theme)
-            "blue" -> ThemeSwatchUtils.resolveBlueSwatchColors(context, theme)
-            "yellow" -> ThemeSwatchUtils.resolveYellowSwatchColors(context, theme)
-            "red" -> ThemeSwatchUtils.resolveRedSwatchColors(context, theme)
-            "green" -> ThemeSwatchUtils.resolveGreenSwatchColors(context, theme)
-            "orange" -> ThemeSwatchUtils.resolveOrangeSwatchColors(context, theme)
-            else -> ThemeSwatchUtils.resolveDefaultSwatchColors(context, theme)
-        }
+        ThemeSwatchUtils.resolveSwatchColors(context, theme, accent)
     }
     val bg = androidx.compose.ui.graphics.Color(swatch.bg)
     val surface = androidx.compose.ui.graphics.Color(swatch.surface)

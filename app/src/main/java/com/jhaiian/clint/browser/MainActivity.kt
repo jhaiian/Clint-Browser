@@ -297,10 +297,6 @@ class MainActivity : ClintActivity(), OverlayHostActivity, SnackbarHostActivity 
             "quiver_guard_enabled" -> onQuiverGuardEnabled(prefs.getBoolean("quiver_guard_enabled", false))
             "user_scripts_enabled" -> applyUserScripts()
             "data_saver_enabled", "data_saver_disable_images", "data_saver_disable_autoplay" -> applyDataSaverSettings()
-            "force_dark_web" -> {
-                tabManager.tabs.forEach { applyWebDarkMode(it.webView) }
-                tabManager.activeTab?.webView?.reload()
-            }
             "hide_bars_on_scroll" -> {
                 if (!prefs.getBoolean("hide_bars_on_scroll", true)) {
                     animateBottomBarTo(0f, animated = false)

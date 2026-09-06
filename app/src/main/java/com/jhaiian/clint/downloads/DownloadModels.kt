@@ -12,6 +12,9 @@ enum class DownloadStatus {
 
         val NOT_FINISHED: Set<DownloadStatus> =
             setOf(QUEUED, CONNECTING, ALLOCATING, DOWNLOADING, RETRYING, COPYING_TEMP, DELETING_TEMP, PAUSED)
+
+        val RUNNING_OR_QUEUED: Set<DownloadStatus> =
+            setOf(QUEUED, CONNECTING, ALLOCATING, DOWNLOADING, COPYING_TEMP, DELETING_TEMP)
     }
 }
 

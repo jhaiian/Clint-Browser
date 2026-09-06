@@ -32,9 +32,6 @@ private const val GITHUB_URL = "https://github.com/jhaiian/ClintBrowser"
 private const val KEEP_ANDROID_OPEN_URL = "https://keepandroidopen.org"
 private const val DISCORD_URL = "https://discord.gg/4kUe4yPQ32"
 private const val REDDIT_URL = "https://www.reddit.com/r/ClintBrowser"
-private const val PATREON_URL = "https://www.patreon.com/Jhaiian"
-private const val KOFI_URL = "https://ko-fi.com/jhaiian"
-private const val PAYPAL_URL = "https://www.paypal.me/jhaiian"
 private const val LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
 private const val CONTACT_EMAIL_URL = "mailto:jhaiianbetter@duck.com"
 private const val CONTRIBUTORS_URL = "https://github.com/jhaiian/ClintBrowser/blob/main/Contributors.md"
@@ -256,21 +253,6 @@ fun AboutScreen(
             AboutLinkRow(stringResource(R.string.about_community_discord_label), stringResource(R.string.about_community_discord_url), colors, { onLinkClick(DISCORD_URL) })
             AboutThinDivider(colors.surfaceVariant)
             AboutLinkRow(stringResource(R.string.about_community_reddit_label), stringResource(R.string.about_community_reddit_url), colors, { onLinkClick(REDDIT_URL) })
-        }
-
-        AboutCard(stringResource(R.string.about_section_donate), colors) {
-            Text(
-                stringResource(R.string.about_donate_text),
-                color = colors.secondaryText,
-                fontSize = 13.sp,
-                lineHeight = 19.sp,
-                modifier = Modifier.padding(bottom = 10.dp)
-            )
-            AboutLinkRow(stringResource(R.string.about_donate_patreon_label), stringResource(R.string.about_patreon_url), colors, { onLinkClick(PATREON_URL) })
-            AboutThinDivider(colors.surfaceVariant)
-            AboutLinkRow(stringResource(R.string.about_donate_kofi_label), stringResource(R.string.about_kofi_url), colors, { onLinkClick(KOFI_URL) })
-            AboutThinDivider(colors.surfaceVariant)
-            AboutLinkRow(stringResource(R.string.about_donate_paypal_label), stringResource(R.string.about_paypal_url), colors, { onLinkClick(PAYPAL_URL) })
         }
 
         AboutCard(stringResource(R.string.about_section_contact), colors) {

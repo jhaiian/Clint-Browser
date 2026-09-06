@@ -4,6 +4,158 @@ All notable changes to Clint Browser are documented here.
 
 ---
 
+# v1.1.5
+
+---
+
+## What's New
+
+If you guys didn't know, **Clint** is an acronym. It's not just "Clint." It stands for **Customizable Layered Internet Navigation Tool**.
+
+See that word *Customizable*? Yeah. The app only had 40+ possible theme combinations before. I actually forgot the exact number, but guys, that ain't enough.
+
+So I decided to:
+
+### Revamp the Theme System
+
+Before, Clint only had 8 accent colors. Now Clint has this many accent colors:
+
+**Dynamic:**
+- 🔄 Material You
+
+**Purple Family:**
+- 🟣 Purple
+- 🪻 Deep Purple
+- 👑 Royal Purple
+- 💎 Amethyst
+- 🌸 Lavender
+- 🍇 Plum
+- 🟪 Violet
+
+**Dark/Neutral Family:**
+- ⚫ Monochrome
+- 🖤 Charcoal
+- 🌑 Slate
+- 🩶 Graphite
+- ⬛ Obsidian
+- ⚫ Onyx
+- 🔘 Titanium
+
+**Blue Family:**
+- 🔵 Indigo
+- 🔷 Blue
+- 🌌 Midnight
+- 🩵 Cyan
+- ☁️ Sky
+- 🌊 Teal
+- 💠 Azure
+
+**Yellow Family:**
+- 🟡 Yellow
+- 🍋 Lemon
+- 🪙 Gold
+- 🟠 Amber
+- 🏖️ Sand
+- 📜 Sepia
+- 🌕 Mustard
+
+**Red Family:**
+- 🔴 Red
+- 🟥 Crimson
+- 💎 Ruby
+- 🩷 Pink
+- 🪸 Coral
+- ❤️ Scarlet
+- 🍷 Burgundy
+
+**Orange Family:**
+- 🟠 Orange
+- 🔥 Deep Orange
+- 🍊 Tangerine
+- 🍑 Apricot
+- 🟤 Copper
+- 🍑 Peach
+- 🧱 Terracotta
+
+**Green Family:**
+- 🟢 Green
+- 💚 Emerald
+- 🌿 Mint
+- 🌲 Forest
+- 🍋‍🟩 Lime
+- 🫒 Olive
+- 🌱 Sage
+
+Total = 1+7+7+7+7+7+7+7 = 50
+
+---
+
+### Surface Intensity / Color Intensity
+
+I also expanded the Surface Intensity / Color Intensity options from 3 to 5.
+
+- **No Tint (New):** Plain background with accent-colored buttons and icons only.
+- **Soft Tint**
+- **Strong Tint**
+- **AMOLED** (formerly Pure Mode)
+- **AMOLED No Tint:** True black surfaces with accent-colored buttons and icons only.
+
+In exchange, I removed the Legacy theme. **RIP Legacy.**
+
+BTW, those were the start of Clint.
+
+But I also added Strong Tint to Material You, which previously was only available with Soft Tint and AMOLED.
+
+Same thing with Monochrome. It now has a Strong Tint variant too.
+
+---
+
+### Removed Dark Mode Switches for Websites
+
+I also removed the switches for Dark Mode on websites because Android WebView already automatically makes websites look light or dark depending on whether you select Light or Dark mode.
+
+Those switches were mainly for the Legacy theme, so now they're basically useless.
+
+---
+
+## The Math
+
+Now we're done discussing what's new.
+
+Let's do the math, okay?
+
+- **2** = Dark / Light
+- **50** = Accent Colors
+- **5** = Surface Intensity / Color Intensity
+
+**2 × 50 × 5 = 500 possible theme combinations**
+
+So yeah, Clint now has **500 possible theme combinations**.
+
+---
+
+> BTW guys, nobody asked for this. Not my friends, not even an issue request. I just felt like it had to be done.
+>
+> Clint is supposed to be *Customizable*, after all.
+>
+> And BTW, if you want me to add more colors, just let me know.
+
+---
+
+## Other Changes
+
+- Added a dedicated activity for Donations. *(Guys, I'm broke, alright.)*
+
+---
+
+## Bug Fixes
+
+- Fixed Automatic Space After Punctuation adding spaces to addresses in the Address Bar. (Thanks to @ncgjbr-ai for reporting this! #42)
+- Fixed the default outline not following the selected theme.
+- Fixed paused download count on download badge.
+
+---
+
 # v1.1.4-r3
 
 ---

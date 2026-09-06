@@ -48,6 +48,7 @@ import com.jhaiian.clint.R
 import com.jhaiian.clint.base.ClintActivity
 import com.jhaiian.clint.settings.backuprestore.BackupRestorePane
 import com.jhaiian.clint.settings.main.MainSettingsScreen
+import com.jhaiian.clint.settings.supportclint.SupportClintActivity
 import com.jhaiian.clint.ui.DocumentViewer
 import com.jhaiian.clint.ui.OverlayHostActivity
 import com.jhaiian.clint.ui.theme.ClintComposeTheme
@@ -223,7 +224,8 @@ private fun SettingsListPane(activity: SettingsActivity, onNavigate: (String) ->
                 },
                 onMiscClick = { onNavigate(DEST_MISC) },
                 onDebugClick = { onNavigate(DEST_DEBUG) },
-                onAboutClick = { onNavigate(DEST_ABOUT) }
+                onAboutClick = { onNavigate(DEST_ABOUT) },
+                onSupportClintClick = { activity.startActivity(Intent(activity, SupportClintActivity::class.java)) }
             )
         }
     }

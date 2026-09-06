@@ -9,3 +9,4 @@
 -keep public class com.caverock.androidsvg.** { *; }
 -keep class com.google.flatbuffers.** { *; }
 -dontwarn com.google.flatbuffers.**
+-dontwarn pl.droidsonroids.gif.**

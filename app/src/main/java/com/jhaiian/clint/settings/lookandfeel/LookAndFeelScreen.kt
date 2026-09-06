@@ -2,7 +2,6 @@ package com.jhaiian.clint.settings.lookandfeel
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contrast
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
@@ -36,7 +35,6 @@ fun LookAndFeelScreen(
     onThemeSelected: (String) -> Unit,
     onAccentSelected: (String) -> Unit,
     onIntensitySelected: (String) -> Unit,
-    onForceDarkWebToggled: () -> Unit,
     onLanguageSelected: (String) -> Unit,
     onAddressBarPositionSelected: (String) -> Unit,
     onMenuStyleSelected: (String) -> Unit,
@@ -49,7 +47,6 @@ fun LookAndFeelScreen(
 ) {
     val colors = LocalClintColors.current
     val intensityEnabled = ThemeSwatchUtils.isSurfaceIntensityEnabled(state.theme, state.accent)
-    val forceDarkWebEnabled = state.theme != "dark" && state.theme != "light"
 
     SettingsScreenScaffold(
         overlay = {
@@ -130,22 +127,6 @@ fun LookAndFeelScreen(
                 colors = colors,
                 enabled = intensityEnabled,
                 onClick = { if (intensityEnabled) state.openDialog = LookAndFeelDialog.SURFACE_INTENSITY }
-            )
-            RowDivider(colors.divider)
-            SettingsRow(
-                icon = androidx.compose.material.icons.Icons.Filled.DarkMode,
-                title = stringResource(R.string.force_dark_web_title),
-                summary = stringResource(R.string.force_dark_web_summary),
-                colors = colors,
-                enabled = forceDarkWebEnabled,
-                onClick = { if (forceDarkWebEnabled) onForceDarkWebToggled() },
-                trailing = {
-                    ClintSwitch(checked = when (state.theme) {
-                            "dark" -> true
-                            "light" -> false
-                            else -> state.forceDarkWeb
-                        })
-                }
             )
         }
 
@@ -230,15 +211,59 @@ fun LookAndFeelScreen(
 private fun accentSummaryRes(accent: String): Int = when (accent) {
     "material_you" -> R.string.accent_material_you
     "purple" -> R.string.accent_purple
+    "deep_purple" -> R.string.accent_deep_purple
+    "royal_purple" -> R.string.accent_royal_purple
+    "amethyst" -> R.string.accent_amethyst
+    "lavender" -> R.string.accent_lavender
+    "teal" -> R.string.accent_teal
+    "azure" -> R.string.accent_azure
+    "pink" -> R.string.accent_pink
+    "indigo" -> R.string.accent_indigo
+    "cyan" -> R.string.accent_cyan
+    "amber" -> R.string.accent_amber
+    "mint" -> R.string.accent_mint
+    "crimson" -> R.string.accent_crimson
+    "slate" -> R.string.accent_slate
+    "graphite" -> R.string.accent_graphite
+    "obsidian" -> R.string.accent_obsidian
+    "onyx" -> R.string.accent_onyx
+    "titanium" -> R.string.accent_titanium
+    "coral" -> R.string.accent_coral
+    "burgundy" -> R.string.accent_burgundy
+    "scarlet" -> R.string.accent_scarlet
+    "midnight" -> R.string.accent_midnight
+    "sepia" -> R.string.accent_sepia
+    "mustard" -> R.string.accent_mustard
+    "forest" -> R.string.accent_forest
+    "sage" -> R.string.accent_sage
+    "lime" -> R.string.accent_lime
+    "olive" -> R.string.accent_olive
+    "plum" -> R.string.accent_plum
+    "violet" -> R.string.accent_violet
+    "sand" -> R.string.accent_sand
+    "ruby" -> R.string.accent_ruby
+    "sky" -> R.string.accent_sky
+    "charcoal" -> R.string.accent_charcoal
+    "peach" -> R.string.accent_peach
+    "terracotta" -> R.string.accent_terracotta
+    "emerald" -> R.string.accent_emerald
     "blue" -> R.string.accent_blue
     "yellow" -> R.string.accent_yellow
+    "lemon" -> R.string.accent_lemon
+    "gold" -> R.string.accent_gold
     "red" -> R.string.accent_red
     "green" -> R.string.accent_green
     "orange" -> R.string.accent_orange
+    "deep_orange" -> R.string.accent_deep_orange
+    "tangerine" -> R.string.accent_tangerine
+    "apricot" -> R.string.accent_apricot
+    "copper" -> R.string.accent_copper
     else -> R.string.accent_default
 }
 
 private fun intensitySummaryRes(intensity: String): Int = when (intensity) {
+    "amoled_no_tint" -> R.string.surface_intensity_amoled_no_tint
+    "no_tint" -> R.string.surface_intensity_no_tint
     "strong_tint" -> R.string.surface_intensity_strong
     "pure_mode" -> R.string.surface_intensity_pure
     else -> R.string.surface_intensity_soft

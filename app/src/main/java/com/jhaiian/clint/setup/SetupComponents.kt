@@ -2,6 +2,8 @@ package com.jhaiian.clint.setup
 import androidx.compose.material.icons.filled.Check
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -23,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.jhaiian.clint.R
+import com.jhaiian.clint.ui.theme.LocalClintColors
 
 @Composable
 fun SelectableCard(
@@ -122,12 +126,13 @@ fun SetupPrimaryButton(
 
 @Composable
 fun DefaultChip(text: String, color: Color, modifier: Modifier = Modifier) {
-    Box(modifier) {
-        AndroidView(
-            factory = { ctx -> android.view.View(ctx) },
-            update = { view -> view.background = ContextCompat.getDrawable(view.context, R.drawable.chip_background) },
-            modifier = Modifier.matchParentSize()
-        )
+    val colors = LocalClintColors.current
+    Box(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.surfaceVariant)
+            .border(1.dp, color, RoundedCornerShape(12.dp))
+    ) {
         Text(
             text = text,
             color = color,

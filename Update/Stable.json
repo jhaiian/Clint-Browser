@@ -1,12 +1,12 @@
 {
-  "version": "1.1.4-r3",
-  "changelog": "# Clint Browser v1.1.4-r3\n\n---\n\n## Bug Fixes\n\n- Fixed visible visual artifacts on some GPUs. (Thanks to @ncgjbr-ai for reporting this in #39!)\n\n---\n\n## Other Changes\n\n- Bump `com.android.application` from 9.3.2 to 9.4.0 by @dependabot[bot] in #40\n\n---",
+  "version": "1.1.4-r2",
+  "changelog": "# Clint Browser v1.1.4-r2\n\n---\n\n## Bug Fixes\n\n- Fixed an issue where the status bar became transparent instead of having its own view when the status bar was enabled and the search bar was positioned at the bottom. (Thanks to @ncgjbr-ai for reporting this in #38!)\n- Fixed the animation of the bottom search bar when opening the search overlay.\n\n---\n\n> *You can skip this version if you don't use this combination of settings. I just wanted to release a quick fix because I don't want anybody to experience these bugs, especially since the next major update might take longer.*\n\n---",
   "downloads": {
-    "arm64-v8a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r3/ClintBrowser-1.1.4-r3-arm64-v8a.apk",
-    "armeabi-v7a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r3/ClintBrowser-1.1.4-r3-armeabi-v7a.apk",
-    "x86": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r3/ClintBrowser-1.1.4-r3-x86.apk",
-    "x86_64": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r3/ClintBrowser-1.1.4-r3-x86_64.apk",
-    "universal": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r3/ClintBrowser-1.1.4-r3-universal.apk"
+    "arm64-v8a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-arm64-v8a.apk",
+    "armeabi-v7a": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-armeabi-v7a.apk",
+    "x86": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-x86.apk",
+    "x86_64": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-x86_64.apk",
+    "universal": "https://github.com/jhaiian/ClintBrowser/releases/download/v1.1.4-r2/ClintBrowser-1.1.4-r2-universal.apk"
   },
-  "versionCode": 28
+  "versionCode": 27
 }
